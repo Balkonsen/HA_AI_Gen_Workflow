@@ -569,14 +569,14 @@ pre_import_validation() {
     # Check all YAML files in import directory
     local has_errors=false
     
-    for file in "${IMPORT_DIR}"/*.{yaml,yml} 2>/dev/null; do
+    for file in "${IMPORT_DIR}"/*.{yaml,yml}; do
         if [ -f "${file}" ]; then
             info "Validating: $(basename ${file})"
             if ! validate_yaml_syntax "${file}"; then
                 has_errors=true
             fi
         fi
-    done
+    done 2>/dev/null
     
     if [ "$has_errors" = true ]; then
         error "YAML validation failed"
