@@ -41,6 +41,7 @@ With this system, AI assistants can help you:
 - 500MB free space for exports
 
 ## 🚀 Quick Start
+### See also docs/quick_reference.md
 
 ### 1. Installation
 
