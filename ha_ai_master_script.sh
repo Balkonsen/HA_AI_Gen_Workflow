@@ -15,12 +15,13 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="/usr/local/ha-ai-workflow"
 CONFIG_DIR="/config"
 EXPORT_DIR="${CONFIG_DIR}/ai_exports"
 SECRETS_DIR="${EXPORT_DIR}/secrets"
 ARCHIVES_DIR="${EXPORT_DIR}/archives"
 IMPORT_DIR="${CONFIG_DIR}/ai_imports/pending"
-BIN_DIR="${SCRIPT_DIR}/bin"
+BIN_DIR="${BASE_DIR}/bin"
 LOG_FILE="${EXPORT_DIR}/workflow.log"
 AUTO_MODE=false
 STRICT_MODE=true
