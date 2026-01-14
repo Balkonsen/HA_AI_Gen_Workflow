@@ -952,7 +952,7 @@ EXAMPLES:
     $(basename $0) export --auto
     $(basename $0) import --auto
 
-For more information, see: ${SCRIPT_DIR}/docs/README.md
+For more information, see: ${BASE_DIR}/docs/README.md
 EOF
 }
 
