@@ -121,8 +121,8 @@ done
 # Step 5: Install master script
 info "Step 5/7: Installing master script..."
 
-if [ -f "${SCRIPT_DIR}/ha_ai_master.sh" ]; then
-    cp "${SCRIPT_DIR}/ha_ai_master.sh" "${INSTALL_DIR}/"
+if [ -f "${SCRIPT_DIR}/ha_ai_master_script.sh" ]; then
+    cp "${SCRIPT_DIR}/ha_ai_master_script.sh" "${INSTALL_DIR}/ha_ai_master.sh"
     chmod +x "${INSTALL_DIR}/ha_ai_master.sh"
     ln -sf "${INSTALL_DIR}/ha_ai_master.sh" /usr/local/bin/ha-ai-workflow
     success "Master script installed"
