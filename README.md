@@ -48,7 +48,9 @@ With this system, AI assistants can help you:
 ```bash
 # Download the setup script
 cd /tmp
-wget https://https://github.com/Balkonsen/HA_AI_Gen_Workflow
+wget https://github.com/Balkonsen/HA_AI_Gen_Workflow/archive/refs/tags/pre-release.tar.gz
+tar -xzf pre-release.tar.gz
+cd pre-release
 
 # Run setup (as root)
 sudo ./setup.sh
