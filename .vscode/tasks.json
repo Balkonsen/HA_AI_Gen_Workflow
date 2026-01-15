@@ -1,0 +1,407 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🏠 HA Workflow: Setup Configuration",
+            "type": "shell",
+            "command": "python3",
+            "args": ["${workspaceFolder}/bin/workflow_orchestrator.py", "setup"],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📤 HA Workflow: Export (Local)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "export",
+                "--source", "${input:haConfigPath}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📤 HA Workflow: Export (SSH Remote)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "export",
+                "--remote"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔐 HA Workflow: Sanitize Export",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "sanitize",
+                "--source", "${input:exportPath}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🤖 HA Workflow: Generate AI Context",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "context",
+                "--source", "${input:exportPath}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📥 HA Workflow: Import (Local)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "import",
+                "--source", "${input:importPath}",
+                "--target", "${input:haConfigPath}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📥 HA Workflow: Import (SSH Remote)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "import",
+                "--source", "${input:importPath}",
+                "--remote"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📥 HA Workflow: Import (Dry Run)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "import",
+                "--source", "${input:importPath}",
+                "--target", "${input:haConfigPath}",
+                "--dry-run"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔍 HA Workflow: Validate Export",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "validate",
+                "--source", "${input:exportPath}"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🚀 HA Workflow: Full Pipeline (Local)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "full",
+                "--source", "${input:haConfigPath}"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🚀 HA Workflow: Full Pipeline (SSH Remote)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/workflow_orchestrator.py",
+                "full",
+                "--remote"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🖥️ HA Workflow: Start GUI",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m", "streamlit", "run",
+                "${workspaceFolder}/bin/workflow_gui.py",
+                "--server.port", "8501"
+            ],
+            "group": "none",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔗 Test SSH Connection",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "${workspaceFolder}/bin/ssh_transfer.py",
+                "--host", "${input:sshHost}",
+                "--user", "${input:sshUser}",
+                "--port", "${input:sshPort}",
+                "--key", "${input:sshKeyPath}",
+                "--test"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🧪 Run All Tests",
+            "type": "shell",
+            "command": "pytest",
+            "args": ["-v", "--cov=bin", "--cov-report=term"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Current Test File",
+            "type": "shell",
+            "command": "pytest",
+            "args": ["${file}", "-v"],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Quick Validate",
+            "type": "shell",
+            "command": "./tools/quick_validate.sh",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Full Validation",
+            "type": "shell",
+            "command": "./tools/validate_all.sh",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Format Code (Black)",
+            "type": "shell",
+            "command": "black",
+            "args": ["--line-length", "120", "bin/"],
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint Python (Flake8)",
+            "type": "shell",
+            "command": "flake8",
+            "args": ["bin/", "--max-line-length=120", "--ignore=E203,W503"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Security Scan (Bandit)",
+            "type": "shell",
+            "command": "bandit",
+            "args": ["-r", "bin/", "-ll", "-i"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Validate Shell Scripts",
+            "type": "shell",
+            "command": "./tests/validate_shell_scripts.sh",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Build Test Image",
+            "type": "shell",
+            "command": "docker",
+            "args": ["build", "-f", "Dockerfile.test", "-t", "ha-ai-workflow-test", "."],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Run Tests",
+            "type": "shell",
+            "command": "./tools/run_docker_tests.sh",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Generate Coverage Report",
+            "type": "shell",
+            "command": "pytest",
+            "args": ["--cov=bin", "--cov-report=html"],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pre-commit: Run All",
+            "type": "shell",
+            "command": "pre-commit",
+            "args": ["run", "--all-files"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "haConfigPath",
+            "type": "promptString",
+            "description": "Path to Home Assistant configuration directory",
+            "default": "/config"
+        },
+        {
+            "id": "exportPath",
+            "type": "promptString",
+            "description": "Path to export directory",
+            "default": "./exports/export_latest"
+        },
+        {
+            "id": "importPath",
+            "type": "promptString",
+            "description": "Path to import directory",
+            "default": "./imports/import_latest"
+        },
+        {
+            "id": "sshHost",
+            "type": "promptString",
+            "description": "SSH Host (IP or hostname)",
+            "default": "192.168.1.100"
+        },
+        {
+            "id": "sshUser",
+            "type": "promptString",
+            "description": "SSH Username",
+            "default": "root"
+        },
+        {
+            "id": "sshPort",
+            "type": "promptString",
+            "description": "SSH Port",
+            "default": "22"
+        },
+        {
+            "id": "sshKeyPath",
+            "type": "promptString",
+            "description": "Path to SSH private key",
+            "default": "~/.ssh/id_rsa"
+        }
+    ]
+}

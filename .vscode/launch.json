@@ -1,0 +1,183 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🏠 HA Workflow: Setup",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["setup"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "📤 HA Workflow: Export Local",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["export", "--source", "${input:haConfigPath}"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "📤 HA Workflow: Export Remote",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["export", "--remote"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "🤖 HA Workflow: Generate AI Context",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["context", "--source", "${input:exportPath}"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "📥 HA Workflow: Import Local",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["import", "--source", "${input:importPath}", "--target", "${input:haConfigPath}"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "📥 HA Workflow: Import Remote",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["import", "--source", "${input:importPath}", "--remote"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "🚀 HA Workflow: Full Pipeline",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/workflow_orchestrator.py",
+            "args": ["full", "--source", "${input:haConfigPath}"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "🖥️ HA Workflow: Start GUI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": ["run", "${workspaceFolder}/bin/workflow_gui.py", "--server.port", "8501"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "🧪 Pytest: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}",
+                "-v",
+                "--tb=short"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "🧪 Pytest: All Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "🧪 Pytest: With Coverage",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "tests/",
+                "-v",
+                "--cov=bin",
+                "--cov-report=term"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "🔧 Debug Secrets Manager",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/secrets_manager.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "🔧 Debug SSH Transfer",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/ssh_transfer.py",
+            "args": ["--host", "${input:sshHost}", "--user", "${input:sshUser}", "--test"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Bash: Current Script",
+            "type": "bashdb",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "terminalKind": "integrated"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "haConfigPath",
+            "type": "promptString",
+            "description": "Path to Home Assistant configuration directory",
+            "default": "/config"
+        },
+        {
+            "id": "exportPath",
+            "type": "promptString",
+            "description": "Path to export directory",
+            "default": "./exports/export_latest"
+        },
+        {
+            "id": "importPath",
+            "type": "promptString",
+            "description": "Path to import directory",
+            "default": "./imports/import_latest"
+        },
+        {
+            "id": "sshHost",
+            "type": "promptString",
+            "description": "SSH Host",
+            "default": "192.168.1.100"
+        },
+        {
+            "id": "sshUser",
+            "type": "promptString",
+            "description": "SSH Username",
+            "default": "root"
+        }
+    ]
+}

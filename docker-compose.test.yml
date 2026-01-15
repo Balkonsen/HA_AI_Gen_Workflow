@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Test runner
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./bin:/workspace/bin
+      - ./tests:/workspace/tests
+      - ./coverage:/workspace/coverage
+    environment:
+      - PYTHONPATH=/workspace/bin
+    command: pytest -v --cov=bin --cov-report=html --cov-report=term
+
+  # Linting service
+  lint:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./bin:/workspace/bin
+    command: >
+      sh -c "
+        black --check --line-length 120 bin/ &&
+        flake8 bin/ --max-line-length=120 --ignore=E203,W503 &&
+        bandit -r bin/ -ll -i
+      "
+
+  # Shell validation service
+  shellcheck:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/workspace
+    command: bash tests/validate_shell_scripts.sh
+
+  # Development environment with interactive shell
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/workspace
+    stdin_open: true
+    tty: true
+    command: bash

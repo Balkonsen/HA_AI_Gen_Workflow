@@ -1,0 +1,155 @@
+# HA AI Gen Workflow Configuration
+# Copy this file to workflow_config.yaml and customize your settings
+# DO NOT commit workflow_config.yaml - it contains sensitive paths
+
+# =============================================================================
+# SSH Connection Settings (for remote Home Assistant access)
+# =============================================================================
+ssh:
+  # Enable SSH for remote HA access (set to false for local/docker setups)
+  enabled: false
+  
+  # SSH Host (IP or hostname of your Home Assistant server)
+  host: "192.168.1.100"
+  
+  # SSH Port (usually 22)
+  port: 22
+  
+  # SSH Username
+  user: "root"
+  
+  # Authentication method: "key" or "password"
+  auth_method: "key"
+  
+  # Path to SSH private key (if auth_method is "key")
+  key_path: "~/.ssh/id_rsa"
+  
+  # SSH password will be prompted if auth_method is "password"
+  # Never store passwords in this file!
+  
+  # Remote Home Assistant config path
+  remote_config_path: "/config"
+
+# =============================================================================
+# Local Path Configuration
+# =============================================================================
+paths:
+  # Where exports are stored locally
+  export_dir: "./exports"
+  
+  # Where AI-modified configs are imported from
+  import_dir: "./imports"
+  
+  # Where encrypted secrets are stored
+  secrets_dir: "./secrets"
+  
+  # Backup directory for rollbacks
+  backup_dir: "./backups"
+  
+  # AI context output directory
+  ai_context_dir: "./ai_context"
+
+# =============================================================================
+# Export Settings
+# =============================================================================
+export:
+  # Include these file patterns in export
+  include_patterns:
+    - "*.yaml"
+    - "*.yml"
+    - "*.json"
+    - "blueprints/**"
+    - "custom_components/**"
+    - "www/**"
+    - ".storage/core.*"
+    - ".storage/lovelace*"
+  
+  # Exclude these patterns
+  exclude_patterns:
+    - "secrets.yaml"
+    - "*.log"
+    - "*.db"
+    - "*.db-*"
+    - "tts/**"
+    - "deps/**"
+    - "__pycache__/**"
+  
+  # Sensitive fields to sanitize (regex patterns)
+  sensitive_fields:
+    - "password"
+    - "token"
+    - "api_key"
+    - "secret"
+    - "latitude"
+    - "longitude"
+    - "email"
+    - "phone"
+
+# =============================================================================
+# Secrets Encryption Settings
+# =============================================================================
+secrets:
+  # Encryption method: "fernet" (symmetric) or "age" (asymmetric)
+  encryption_method: "fernet"
+  
+  # Path to encryption key file (auto-generated if not exists)
+  key_file: "./secrets/.encryption_key"
+  
+  # Label prefix for secrets placeholders
+  label_prefix: "HA_SECRET"
+  
+  # Auto-restore secrets on import
+  auto_restore: true
+
+# =============================================================================
+# AI Integration Settings
+# =============================================================================
+ai:
+  # AI context generation options
+  context:
+    # Include entity analysis
+    include_entities: true
+    
+    # Include device analysis
+    include_devices: true
+    
+    # Include automation analysis
+    include_automations: true
+    
+    # Include integration analysis
+    include_integrations: true
+    
+    # Maximum context file size (KB)
+    max_size_kb: 500
+  
+  # Prompt template to use
+  prompt_template: "templates/example_ai_prompts.md"
+
+# =============================================================================
+# Validation Settings
+# =============================================================================
+validation:
+  # Run YAML syntax check
+  check_yaml_syntax: true
+  
+  # Check for undefined secrets references
+  check_secrets_references: true
+  
+  # Validate entity IDs
+  check_entity_ids: true
+  
+  # Run Home Assistant config check (requires HA CLI)
+  run_ha_check: false
+
+# =============================================================================
+# VS Code Integration
+# =============================================================================
+vscode:
+  # Show notifications for workflow steps
+  notifications: true
+  
+  # Auto-open generated files
+  auto_open_files: true
+  
+  # Use integrated terminal
+  use_integrated_terminal: true

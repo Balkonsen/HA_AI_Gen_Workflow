@@ -1,0 +1,41 @@
+# Docker Test Environment for HA AI Gen Workflow
+
+FROM python:3.11-slim
+
+# Labels
+LABEL maintainer="HA AI Gen Workflow"
+LABEL description="Test environment for HA AI Gen Workflow"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    bash \
+    git \
+    shellcheck \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy project files
+COPY requirements-test.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-test.txt
+
+# Copy project code
+COPY bin/ ./bin/
+COPY tests/ ./tests/
+COPY pytest.ini .
+COPY *.sh ./
+
+# Make scripts executable
+RUN chmod +x *.sh tests/*.sh
+
+# Set environment variables
+ENV PYTHONPATH=/workspace/bin
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Default command runs all tests
+CMD ["pytest", "-v", "--cov=bin", "--cov-report=term"]

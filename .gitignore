@@ -1,0 +1,101 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+.tox/
+.nox/
+*.log
+
+# IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+ai_exports/
+ai_imports/
+secrets/
+archives/
+*.backup
+validation.log
+
+# Docker
+.dockerignore
+
+# Git
+.git/
+
+# Secrets - IMPORTANT: Never commit actual secrets!
+.secrets.baseline
+*.pem
+*.key
+*.crt
+secrets/secrets_vault.enc
+secrets/.encryption_key
+secrets/secrets_mapping.json
+
+# Workflow directories (contain user-specific data)
+exports/
+imports/
+backups/
+ai_context/
+
+# User config (contains sensitive settings)
+workflow_config.yaml
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# CI/CD
+.github/*
+!.github/workflows/
+
+# Build artifacts
+*.tar.gz
+*.zip
+*.deb
+*.rpm

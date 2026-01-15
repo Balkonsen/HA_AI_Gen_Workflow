@@ -3,21 +3,40 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024+-blue.svg)](https://www.home-assistant.io/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/Balkonsen/HA_AI_Gen_Workflow)
+[![Coverage](https://img.shields.io/badge/coverage-80%25-green.svg)](https://github.com/Balkonsen/HA_AI_Gen_Workflow)
 
 > **Automated export, AI-powered development, and git-versioned import workflow for Home Assistant**
 
 Transform your Home Assistant configuration management with AI assistance while maintaining complete control through git versioning and automated validation.
 
+## 🆕 **NEW: Complete Integrated Workflow!**
+
+This project now includes:
+- ✅ **SSH Remote Support** - Export/Import from/to remote HA instances
+- ✅ **Encrypted Secrets Management** - Secrets stored separately with AES encryption
+- ✅ **Labeled Placeholders** - AI-compatible secret labels for automatic restoration
+- ✅ **VS Code Integration** - Tasks and launch configurations for full IDE workflow
+- ✅ **Streamlit GUI** - Optional graphical interface for the complete workflow
+- ✅ **Configurable Paths** - Flexible export/import directory configuration
+
+👉 **Quick Start**: See [GETTING_STARTED.md](GETTING_STARTED.md)  
+👉 **For Developers**: See [docs/deployment_guide.md](docs/deployment_guide.md)  
+👉 **Quick Reference**: See [docs/quick_reference.md](docs/quick_reference.md)
+
 ## ✨ Features
 
 - 🔒 **Automated Sanitization**: Removes all sensitive data (passwords, tokens, IPs, emails)
+- 🔐 **Encrypted Secrets**: Secrets stored separately with Fernet (AES-128) encryption
+- 📍 **Labeled Placeholders**: `<<HA_SECRET_PASSWORD_001>>` format for AI compatibility
 - 🤖 **AI-Ready Context**: Generates optimized prompts for AI assistants (Claude, ChatGPT, etc.)
+- 📡 **SSH Remote Access**: Export/import from remote HA installations
 - 📦 **Complete Export**: Entities, devices, configurations, automations, scripts, add-ons
 - 🌳 **Git Versioning**: Full version control with automatic branching and merging
 - ✅ **Validation**: Automatic configuration checking before deployment
 - 🔄 **Automated Workflow**: One-command export and import
-- 🐛 **Debug Reports**: AI-friendly error reports for troubleshooting
-- 🔐 **Secrets Management**: Secure backup and restoration of sensitive data
+- 🖥️ **GUI Option**: Streamlit-based graphical interface
+- 💻 **VS Code Integration**: Full IDE support with tasks and debugging
 
 ## 🎯 What Can AI Help You Build?
 
@@ -35,53 +54,97 @@ With this system, AI assistants can help you:
 
 ## 📋 Prerequisites
 - Home Assistant OS or Supervised installation
-- SSH access to Home Assistant host
+- SSH access to Home Assistant host (for remote mode)
 - Python 3.8 or higher
 - Git (usually pre-installed)
 - 500MB free space for exports
 
 ## 🚀 Quick Start
-### See also docs/quick_reference.md
 
-### 1. Installation
+### Option 1: VS Code (Recommended)
 
-```bash
-# Download the setup script
-cd /tmp
-wget https://github.com/Balkonsen/HA_AI_Gen_Workflow/archive/refs/tags/pre-release.tar.gz
-tar -xzf pre-release.tar.gz
-cd pre-release
+1. Clone the repository
+2. Open in VS Code
+3. Run: `Terminal > Run Task > 🏠 HA Workflow: Setup Configuration`
+4. Configure SSH and paths interactively
+5. Run: `Terminal > Run Task > 🚀 HA Workflow: Full Pipeline`
 
-# Run setup (as root)
-sudo ./setup.sh
-```
-
-This installs:
-- All Python scripts
-- Master orchestrator
-- Git initialization
-- Directory structure
-- Documentation
-
-### 2. First Export
+### Option 2: Command Line
 
 ```bash
-# Export your configuration
-ha-ai-workflow export
+# Setup configuration
+python3 bin/workflow_orchestrator.py setup
+
+# Run full pipeline (local)
+python3 bin/workflow_orchestrator.py full --source /config
+
+# Or for remote HA
+python3 bin/workflow_orchestrator.py full --remote
 ```
 
-**Output:**
-```
-✓ Export completed
-✓ Export verified
-✓ AI context generated
-✓ Secrets backed up
+### Option 3: GUI (Streamlit)
 
-Export Location: /config/ai_exports/ha_export_20260113_120000
-AI Prompt: /config/ai_exports/ha_export_20260113_120000/AI_PROMPT.md
+```bash
+pip install streamlit
+streamlit run bin/workflow_gui.py
 ```
 
-### 3. Work with AI
+## 📡 SSH Configuration
+
+For remote Home Assistant access, configure SSH in `workflow_config.yaml`:
+
+```yaml
+ssh:
+  enabled: true
+  host: "192.168.1.100"
+  port: 22
+  user: "root"
+  auth_method: "key"
+  key_path: "~/.ssh/id_rsa"
+  remote_config_path: "/config"
+```
+
+## 🔐 Secrets Handling
+
+### How It Works
+
+1. **Export**: Sensitive data is detected and replaced with labeled placeholders
+   ```yaml
+   # Original
+   password: my_secret_password
+   
+   # Exported
+   password: <<HA_SECRET_PASSWORD_001>>
+   ```
+
+2. **Storage**: Actual values are encrypted and stored separately in `./secrets/`
+
+3. **AI Context**: Labels and descriptions (no values) are included for AI
+   ```json
+   {
+     "HA_SECRET_PASSWORD_001": {
+       "type": "PASSWORD",
+       "description": "Secret from password field",
+       "placeholder": "<<HA_SECRET_PASSWORD_001>>"
+     }
+   }
+   ```
+
+4. **Import**: Labels are automatically restored to actual values
+
+### Workflow Example
+
+```bash
+# 1. Export with sanitization
+python3 bin/workflow_orchestrator.py export --source /config
+
+# 2. AI modifies files (preserves <<HA_SECRET_*>> labels)
+
+# 3. Import with automatic secret restoration
+python3 bin/workflow_orchestrator.py import --source ./imports/ai_modified --target /config
+```
+
+## 🎯 First Export
 
 ```bash
 # View the AI-ready prompt

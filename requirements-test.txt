@@ -1,0 +1,34 @@
+# Test Requirements
+# Python testing dependencies for HA AI Gen Workflow
+
+# Core testing framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+pytest-asyncio>=0.21.1
+
+# Code quality
+pylint>=3.0.0
+black>=23.7.0
+flake8>=6.1.0
+mypy>=1.5.0
+bandit>=1.7.5
+
+# YAML handling
+PyYAML>=6.0.1
+
+# HTTP mocking for API tests
+responses>=0.23.3
+requests-mock>=1.11.0
+
+# Coverage reporting
+coverage>=7.3.0
+
+# Utilities
+python-dateutil>=2.8.2
+
+# Encryption (for secrets management)
+cryptography>=41.0.0
+
+# GUI (optional - for Streamlit interface)
+streamlit>=1.28.0
