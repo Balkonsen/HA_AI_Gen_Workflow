@@ -1,0 +1,17 @@
+# Production Requirements
+# Python dependencies for HA AI Gen Workflow
+
+# YAML handling
+PyYAML>=6.0.1
+
+# HTTP requests
+requests>=2.31.0
+
+# Date utilities
+python-dateutil>=2.8.2
+
+# Encryption (for secrets management)
+cryptography>=41.0.0
+
+# GUI (optional - for Streamlit interface)
+streamlit>=1.28.0
