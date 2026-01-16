@@ -603,6 +603,396 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+## SSH Configuration and Troubleshooting
+
+### SSH Connection Setup
+
+The workflow supports SSH for remote Home Assistant access. Proper configuration is critical for reliable operation.
+
+#### Configuration File
+
+Edit `config/workflow_config.yaml`:
+
+```yaml
+ssh:
+  enabled: true
+  host: "192.168.1.100"      # Your HA server IP or hostname
+  port: 22                    # SSH port (default: 22)
+  user: "root"                # SSH username
+  auth_method: "key"          # "key" or "password"
+  key_path: "~/.ssh/id_rsa"  # Path to SSH private key
+  remote_config_path: "/config"
+  
+  # Timeout settings (in seconds)
+  connection_timeout: 30      # SSH connection timeout
+  transfer_timeout: 600       # File transfer timeout (10 minutes)
+  
+  # Retry configuration
+  retry_attempts: 3           # Number of retry attempts
+  retry_delay: 2              # Delay between retries
+```
+
+#### CLI Overrides
+
+Override timeout values via command line:
+
+```bash
+# Custom SSH timeout
+./bin/workflow_orchestrator.py export --remote --ssh-timeout 60
+
+# Custom transfer timeout (for large configs)
+./bin/workflow_orchestrator.py export --remote --transfer-timeout 1200
+
+# Both timeouts
+./bin/workflow_orchestrator.py import --remote --source ./imports/config \
+  --ssh-timeout 45 --transfer-timeout 900
+```
+
+#### Direct SSH Testing
+
+Test SSH connection directly:
+
+```bash
+# Basic test
+./bin/ssh_transfer.py --host 192.168.1.100 --test
+
+# With custom timeout
+./bin/ssh_transfer.py --host 192.168.1.100 --test --ssh-timeout 60
+
+# With SSH key
+./bin/ssh_transfer.py --host 192.168.1.100 --user root \
+  --key ~/.ssh/ha_key --test
+```
+
+### Timeout Configuration Guide
+
+#### Default Values
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `connection_timeout` | 30s | Time to establish SSH connection |
+| `transfer_timeout` | 600s (10min) | Time for file transfer operations |
+| `retry_attempts` | 3 | Number of retry attempts for transient failures |
+| `retry_delay` | 2s | Delay between retry attempts |
+
+#### Recommended Settings by Scenario
+
+**Local Network (Proxmox VM / Docker on LAN)**
+```yaml
+connection_timeout: 15   # Fast local network
+transfer_timeout: 300    # 5 minutes for typical configs
+retry_attempts: 2        # Fewer retries needed
+retry_delay: 1           # Short delay
+```
+
+**Remote Network (Over Internet/VPN)**
+```yaml
+connection_timeout: 60   # Slower connection establishment
+transfer_timeout: 1200   # 20 minutes for large configs
+retry_attempts: 5        # More retries for unstable connections
+retry_delay: 5           # Longer delay between retries
+```
+
+**Slow/Unreliable Network**
+```yaml
+connection_timeout: 90
+transfer_timeout: 1800   # 30 minutes
+retry_attempts: 5
+retry_delay: 10
+```
+
+**Large Configuration Files (>100MB)**
+```yaml
+connection_timeout: 30
+transfer_timeout: 3600   # 60 minutes
+retry_attempts: 3
+retry_delay: 5
+```
+
+### Common SSH Errors and Solutions
+
+#### Connection Refused
+```
+Error: Connection refused: SSH service may not be running on 192.168.1.100:22
+```
+
+**Solutions:**
+1. Verify SSH service is running:
+   ```bash
+   # On HA host
+   systemctl status sshd
+   ```
+2. Check firewall rules allow port 22
+3. Verify correct IP address and port
+4. For Home Assistant OS, ensure SSH add-on is installed and started
+
+#### Authentication Failed
+```
+Error: Authentication failed: Check username, password, or SSH key
+```
+
+**Solutions:**
+1. Verify SSH key is correct:
+   ```bash
+   # Test SSH key
+   ssh -i ~/.ssh/id_rsa root@192.168.1.100
+   ```
+2. Check key permissions:
+   ```bash
+   chmod 600 ~/.ssh/id_rsa
+   chmod 700 ~/.ssh
+   ```
+3. Verify public key is in `~/.ssh/authorized_keys` on remote host
+4. Try password authentication if key fails
+5. Check username is correct (usually `root` for HA OS)
+
+#### Connection Timeout
+```
+Error: Connection timeout after 30s. Host may be unreachable.
+```
+
+**Solutions:**
+1. Verify host is reachable:
+   ```bash
+   ping 192.168.1.100
+   ```
+2. Increase timeout for slow networks:
+   ```yaml
+   connection_timeout: 60
+   ```
+3. Check network connectivity
+4. Verify VPN is active (if accessing remotely)
+5. Check if host is behind firewall/NAT
+
+#### Hostname Resolution Failed
+```
+Error: Cannot resolve hostname: ha.local
+```
+
+**Solutions:**
+1. Use IP address instead of hostname
+2. Add hostname to `/etc/hosts`:
+   ```bash
+   echo "192.168.1.100 ha.local" | sudo tee -a /etc/hosts
+   ```
+3. Verify DNS is working:
+   ```bash
+   nslookup ha.local
+   ```
+4. Use mDNS (.local domains) if on local network
+
+#### Transfer Timeout
+```
+Error: Transfer timeout after 600s
+```
+
+**Solutions:**
+1. Increase transfer timeout:
+   ```yaml
+   transfer_timeout: 1200  # 20 minutes
+   ```
+2. Check network bandwidth
+3. Reduce configuration size by excluding unnecessary files
+4. Use faster connection (LAN vs WiFi)
+5. Check for network congestion
+
+#### Permission Denied (File Operations)
+```
+Error: Permission denied: /config/configuration.yaml
+```
+
+**Solutions:**
+1. Verify SSH user has read/write permissions:
+   ```bash
+   # On remote host
+   ls -la /config
+   ```
+2. Use correct user (usually `root` for HA OS)
+3. Check SELinux/AppArmor settings
+4. Ensure target directory exists and is writable
+
+#### No Route to Host
+```
+Error: Network unreachable: Cannot reach host 192.168.1.100
+```
+
+**Solutions:**
+1. Verify host is on same network or routable
+2. Check routing table:
+   ```bash
+   ip route
+   ```
+3. Verify network interface is up
+4. Check VPN connection for remote access
+5. Verify firewall allows traffic
+
+### SSH Key Setup
+
+#### Generate SSH Key (if needed)
+
+```bash
+# Generate new SSH key
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/ha_key -C "HA AI Workflow"
+
+# Set correct permissions
+chmod 600 ~/.ssh/ha_key
+chmod 644 ~/.ssh/ha_key.pub
+```
+
+#### Copy Key to Remote Host
+
+```bash
+# Option 1: Using ssh-copy-id
+ssh-copy-id -i ~/.ssh/ha_key.pub root@192.168.1.100
+
+# Option 2: Manual copy
+cat ~/.ssh/ha_key.pub | ssh root@192.168.1.100 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+# Option 3: For Home Assistant OS
+# Add public key via SSH add-on configuration UI
+```
+
+#### Test SSH Key
+
+```bash
+# Test connection
+ssh -i ~/.ssh/ha_key root@192.168.1.100 "echo 'SSH key works!'"
+
+# Test with verbose output
+ssh -vvv -i ~/.ssh/ha_key root@192.168.1.100
+```
+
+### Retry Logic
+
+The SSH module automatically retries transient failures:
+
+- **Retried automatically:** Network timeouts, temporary connection issues
+- **Not retried:** Authentication failures, file not found, permission denied
+- **Configurable:** Retry attempts and delay between retries
+
+**Monitoring retries:**
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+
+# Now retries will be logged
+```
+
+### Performance Optimization
+
+#### For Local Networks
+
+```yaml
+# Optimized for LAN (Proxmox/Docker)
+ssh:
+  connection_timeout: 10
+  transfer_timeout: 300
+  retry_attempts: 2
+  retry_delay: 1
+```
+
+#### Connection Pooling
+
+The module reuses SSH connections where possible to reduce overhead.
+
+#### Large File Transfers
+
+For large configuration exports/imports:
+1. Use rsync (automatically preferred when available)
+2. Increase `transfer_timeout`
+3. Consider compression (rsync uses `-z` by default)
+4. Exclude unnecessary files in config
+
+### Debugging SSH Issues
+
+#### Enable Verbose Logging
+
+```python
+import logging
+
+# Enable debug logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+```
+
+#### SSH Command Line Testing
+
+```bash
+# Test with verbose output
+ssh -vvv root@192.168.1.100
+
+# Test specific command
+ssh root@192.168.1.100 "echo 'test' && ls -la /config"
+
+# Test SCP transfer
+scp -v /tmp/test.txt root@192.168.1.100:/tmp/
+
+# Test with timeout
+timeout 30 ssh root@192.168.1.100 "echo 'test'"
+```
+
+#### Network Diagnostics
+
+```bash
+# Check connectivity
+ping -c 4 192.168.1.100
+
+# Check SSH port
+nc -zv 192.168.1.100 22
+
+# Trace route
+traceroute 192.168.1.100
+
+# Check DNS
+nslookup ha.local
+```
+
+### Security Considerations
+
+1. **Use SSH keys** instead of passwords when possible
+2. **Restrict SSH key permissions** (600 for private key)
+3. **Use non-root user** if possible (requires proper permissions)
+4. **Firewall rules:** Only allow SSH from trusted IPs
+5. **Change default SSH port** (update `port` in config)
+6. **Disable password auth** on remote host after key setup
+7. **Regular key rotation:** Generate new keys periodically
+8. **Monitor failed attempts:** Check SSH logs for suspicious activity
+
+### Example Workflows
+
+#### Complete Export/Import with SSH
+
+```bash
+# 1. Configure SSH
+vim config/workflow_config.yaml
+
+# 2. Test connection
+./bin/ssh_transfer.py --host 192.168.1.100 --test
+
+# 3. Export from remote
+./bin/workflow_orchestrator.py export --remote
+
+# 4. Make modifications
+# ... edit files ...
+
+# 5. Import back to remote
+./bin/workflow_orchestrator.py import --remote --source ./imports/modified_config
+```
+
+#### Handling Large Configurations
+
+```bash
+# Export with extended timeout
+./bin/workflow_orchestrator.py export --remote --transfer-timeout 1800
+
+# Import with progress
+./bin/workflow_orchestrator.py import --remote \
+  --source ./imports/large_config \
+  --transfer-timeout 1800
+```
+
 ## Best Practices
 
 ### Code Style
