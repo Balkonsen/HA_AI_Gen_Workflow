@@ -29,6 +29,17 @@ ssh:
   
   # Remote Home Assistant config path
   remote_config_path: "/config"
+  
+  # Connection timeout in seconds (default: 30s for local networks, increase for remote)
+  connection_timeout: 30
+  
+  # File transfer timeout in seconds (default: 600s = 10 minutes)
+  # Increase for large configurations or slow networks
+  transfer_timeout: 600
+  
+  # Retry configuration for transient failures
+  retry_attempts: 3      # Number of retry attempts for failed connections
+  retry_delay: 2         # Delay in seconds between retry attempts
 
 # =============================================================================
 # Local Path Configuration

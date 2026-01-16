@@ -28,17 +28,24 @@ from ha_export_verifier import ExportVerifier
 class WorkflowOrchestrator:
     """Orchestrates the complete HA AI workflow."""
     
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, ssh_timeout: Optional[int] = None, 
+                 transfer_timeout: Optional[int] = None):
         """Initialize orchestrator.
         
         Args:
             config_path: Optional path to configuration file
+            ssh_timeout: Override SSH connection timeout from CLI
+            transfer_timeout: Override file transfer timeout from CLI
         """
         self.config = WorkflowConfig(config_path)
         self.secrets_manager = SecretsManager(
             secrets_dir=self.config.get('paths.secrets_dir'),
             label_prefix=self.config.get('secrets.label_prefix')
         )
+        
+        # Store CLI overrides for timeouts
+        self.ssh_timeout_override = ssh_timeout
+        self.transfer_timeout_override = transfer_timeout
         
         self._ensure_directories()
     
@@ -64,6 +71,13 @@ class WorkflowOrchestrator:
             return None
         
         ssh_config = self.config.get('ssh')
+        
+        # Apply CLI overrides for timeouts
+        if self.ssh_timeout_override:
+            ssh_config['connection_timeout'] = self.ssh_timeout_override
+        if self.transfer_timeout_override:
+            ssh_config['transfer_timeout'] = self.transfer_timeout_override
+        
         remote_manager = HARemoteManager(ssh_config)
         
         timestamp = self._get_timestamp()
@@ -261,6 +275,13 @@ This export contains placeholder labels for sensitive data:
             return True
         
         ssh_config = self.config.get('ssh')
+        
+        # Apply CLI overrides for timeouts
+        if self.ssh_timeout_override:
+            ssh_config['connection_timeout'] = self.ssh_timeout_override
+        if self.transfer_timeout_override:
+            ssh_config['transfer_timeout'] = self.transfer_timeout_override
+        
         remote_manager = HARemoteManager(ssh_config)
         
         return remote_manager.import_config(
@@ -424,6 +445,10 @@ Examples:
     parser.add_argument('--target', '-t', help='Target path for import')
     parser.add_argument('--remote', '-r', action='store_true', help='Use SSH for remote HA')
     parser.add_argument('--dry-run', '-n', action='store_true', help='Dry run (no changes)')
+    parser.add_argument('--ssh-timeout', type=int, default=30, 
+                       help='SSH connection timeout in seconds (default: 30)')
+    parser.add_argument('--transfer-timeout', type=int, default=600,
+                       help='File transfer timeout in seconds (default: 600)')
     
     args = parser.parse_args()
     
@@ -432,7 +457,11 @@ Examples:
         interactive_setup()
         return 0
     
-    orchestrator = WorkflowOrchestrator(args.config)
+    orchestrator = WorkflowOrchestrator(
+        args.config, 
+        ssh_timeout=args.ssh_timeout, 
+        transfer_timeout=args.transfer_timeout
+    )
     
     if args.command == 'export':
         if args.remote:

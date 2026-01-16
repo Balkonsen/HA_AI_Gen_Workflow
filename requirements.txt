@@ -13,5 +13,8 @@ python-dateutil>=2.8.2
 # Encryption (for secrets management)
 cryptography>=41.0.0
 
+# SSH support (for remote HA access)
+paramiko>=3.0.0
+
 # GUI (optional - for Streamlit interface)
 streamlit>=1.28.0

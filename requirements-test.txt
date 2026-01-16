@@ -21,6 +21,9 @@ PyYAML>=6.0.1
 responses>=0.23.3
 requests-mock>=1.11.0
 
+# SSH support (for remote HA access)
+paramiko>=3.0.0
+
 # Coverage reporting
 coverage>=7.3.0
 
