@@ -71,5 +71,6 @@
         "docs",
         "ci",
         "security"
-    ]
+    ],
+    "python.analysis.diagnosticMode": "workspace"
 }
