@@ -31,6 +31,7 @@
 ### What is HA AI Workflow?
 
 A complete toolset for:
+
 - **Exporting** Home Assistant configuration with automatic secrets sanitization
 - **Generating AI-friendly context** for use with Claude, ChatGPT, Gemini
 - **Importing** AI-modified configurations back to Home Assistant
@@ -38,16 +39,16 @@ A complete toolset for:
 
 ### Key Features
 
-| Feature | Description |
-|---------|-------------|
-| 🔒 **Automated Sanitization** | Removes passwords, tokens, IPs, emails |
-| 🔐 **Encrypted Secrets** | AES-128 (Fernet) encryption for sensitive data |
-| 📍 **Labeled Placeholders** | `<<HA_SECRET_PASSWORD_001>>` format for AI compatibility |
-| 🤖 **AI-Ready Export** | Optimized structure for Claude, ChatGPT, Gemini |
-| 📡 **SSH Remote Access** | Export/import from remote HA installations |
-| 📦 **Complete Export** | Entities, devices, configs, automations, scripts |
-| 🌳 **Git Versioning** | Automatic branching and merging |
-| 🖥️ **Multiple Interfaces** | CLI, VS Code Tasks, GUI (Streamlit) |
+| Feature                       | Description                                              |
+| ----------------------------- | -------------------------------------------------------- |
+| 🔒 **Automated Sanitization** | Removes passwords, tokens, IPs, emails                   |
+| 🔐 **Encrypted Secrets**      | AES-128 (Fernet) encryption for sensitive data           |
+| 📍 **Labeled Placeholders**   | `<<HA_SECRET_PASSWORD_001>>` format for AI compatibility |
+| 🤖 **AI-Ready Export**        | Optimized structure for Claude, ChatGPT, Gemini          |
+| 📡 **SSH Remote Access**      | Export/import from remote HA installations               |
+| 📦 **Complete Export**        | Entities, devices, configs, automations, scripts         |
+| 🌳 **Git Versioning**         | Automatic branching and merging                          |
+| 🖥️ **Multiple Interfaces**    | CLI, VS Code Tasks, GUI (Streamlit)                      |
 
 ### Export Structure
 
@@ -74,11 +75,76 @@ export_YYYYMMDD_HHMMSS/
 ### Prerequisites
 
 - Python 3.8 or higher
-- Git installed
+- Git installed (optional but recommended)
 - SSH access (for remote HA)
 - 500MB free disk space
 
-### Option A: Quick Install (Recommended)
+---
+
+### Option A: Windows 11 Automated Install (Recommended for Windows)
+
+**Fully automated installer that handles everything:**
+
+#### One-Click Installation
+
+Simply **double-click `Install-Windows.bat`** in the project folder.
+
+#### PowerShell Installation
+
+```powershell
+# Clone repository
+git clone https://github.com/Balkonsen/HA_AI_Gen_Workflow.git
+cd HA_AI_Gen_Workflow
+
+# Run automated installer
+.\install_windows.ps1
+```
+
+#### Installation Options
+
+```powershell
+# Install and launch GUI immediately
+.\install_windows.ps1 -LaunchGUI
+
+# Unattended mode (no prompts)
+.\install_windows.ps1 -Unattended
+
+# Full unattended with auto GUI launch
+.\install_windows.ps1 -Unattended -LaunchGUI
+
+# Skip dependency checks (if Python already installed)
+.\install_windows.ps1 -SkipPythonCheck -SkipGitCheck
+
+# Don't create desktop shortcuts
+.\install_windows.ps1 -NoShortcuts
+```
+
+#### What the Windows Installer Does
+
+| Step | Action                                                           |
+| ---- | ---------------------------------------------------------------- |
+| 1    | Checks Python 3.8+ (offers auto-install via winget if missing)   |
+| 2    | Checks Git (optional, offers auto-install)                       |
+| 3    | Creates Python virtual environment (`.venv`)                     |
+| 4    | Installs all Python dependencies                                 |
+| 5    | Creates directory structure (`exports/`, `imports/`, `secrets/`) |
+| 6    | Generates configuration file                                     |
+| 7    | Creates `Start-HA-AI-Workflow.bat` (GUI launcher)                |
+| 8    | Creates `Start-HA-AI-CLI.bat` (CLI launcher)                     |
+| 9    | Creates desktop shortcuts                                        |
+| 10   | Verifies installation                                            |
+
+#### After Windows Installation
+
+- **Launch GUI**: Double-click desktop shortcut or `Start-HA-AI-Workflow.bat`
+- **Use CLI**: Double-click `Start-HA-AI-CLI.bat`
+- **Browser**: http://localhost:8501
+
+📖 **Full Windows guide**: [docs/WINDOWS_INSTALLATION.md](WINDOWS_INSTALLATION.md)
+
+---
+
+### Option B: Quick Install (Linux/macOS)
 
 ```bash
 # Clone repository
@@ -92,7 +158,7 @@ pip install -r requirements-test.txt
 python3 bin/workflow_orchestrator.py setup
 ```
 
-### Option B: Direct Installation on HA Host
+### Option C: Direct Installation on HA Host
 
 ```bash
 # SSH into Home Assistant
@@ -107,7 +173,7 @@ cd ha-ai-workflow
 ./setup.sh
 ```
 
-### Option C: Docker Installation
+### Option D: Docker Installation
 
 ```bash
 # Build test image
@@ -162,23 +228,23 @@ cp config/workflow_config.yaml.template config/workflow_config.yaml
 # SSH Connection Settings
 # =============================================================================
 ssh:
-  enabled: false                    # Enable for remote HA access
-  host: "192.168.1.100"            # HA server IP or hostname
-  port: 22                          # SSH port
-  user: "root"                      # SSH username
-  auth_method: "key"                # "key" or "password"
-  key_path: "~/.ssh/id_rsa"        # SSH private key path
-  remote_config_path: "/config"     # HA config path on remote
+  enabled: false # Enable for remote HA access
+  host: "192.168.1.100" # HA server IP or hostname
+  port: 22 # SSH port
+  user: "root" # SSH username
+  auth_method: "key" # "key" or "password"
+  key_path: "~/.ssh/id_rsa" # SSH private key path
+  remote_config_path: "/config" # HA config path on remote
 
 # =============================================================================
 # Local Path Configuration
 # =============================================================================
 paths:
-  export_dir: "./exports"           # Export output directory
-  import_dir: "./imports"           # Import source directory
-  secrets_dir: "./secrets"          # Encrypted secrets storage
-  backup_dir: "./backups"           # Backup directory
-  ai_context_dir: "./ai_context"    # AI context output
+  export_dir: "./exports" # Export output directory
+  import_dir: "./imports" # Import source directory
+  secrets_dir: "./secrets" # Encrypted secrets storage
+  backup_dir: "./backups" # Backup directory
+  ai_context_dir: "./ai_context" # AI context output
 
 # =============================================================================
 # Export Settings
@@ -191,14 +257,14 @@ export:
     - "blueprints/**"
     - "custom_components/**"
     - ".storage/core.*"
-  
+
   exclude_patterns:
     - "secrets.yaml"
     - "*.log"
     - "*.db"
     - "tts/**"
     - "deps/**"
-  
+
   sensitive_fields:
     - "password"
     - "token"
@@ -211,10 +277,10 @@ export:
 # Secrets Encryption
 # =============================================================================
 secrets:
-  encryption_method: "fernet"       # AES-128 encryption
+  encryption_method: "fernet" # AES-128 encryption
   key_file: "./secrets/.encryption_key"
-  label_prefix: "HA_SECRET"         # Placeholder prefix
-  auto_restore: true                # Auto-restore on import
+  label_prefix: "HA_SECRET" # Placeholder prefix
+  auto_restore: true # Auto-restore on import
 
 # =============================================================================
 # AI Integration
@@ -234,7 +300,7 @@ validation:
   check_yaml_syntax: true
   check_secrets_references: true
   check_entity_ids: true
-  run_ha_check: false               # Requires HA CLI
+  run_ha_check: false # Requires HA CLI
 ```
 
 ### Interactive Setup
@@ -244,6 +310,7 @@ python3 bin/workflow_orchestrator.py setup
 ```
 
 This wizard will guide you through:
+
 1. SSH connection configuration
 2. Path setup
 3. Secrets encryption
@@ -257,15 +324,15 @@ This wizard will guide you through:
 
 #### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `setup` | Interactive configuration setup |
-| `export` | Export HA configuration |
-| `sanitize` | Sanitize secrets in export |
-| `context` | Generate AI context |
-| `import` | Import configuration to HA |
-| `validate` | Validate export/import |
-| `full` | Run complete workflow |
+| Command    | Description                     |
+| ---------- | ------------------------------- |
+| `setup`    | Interactive configuration setup |
+| `export`   | Export HA configuration         |
+| `sanitize` | Sanitize secrets in export      |
+| `context`  | Generate AI context             |
+| `import`   | Import configuration to HA      |
+| `validate` | Validate export/import          |
+| `full`     | Run complete workflow           |
 
 #### CLI Examples
 
@@ -309,35 +376,35 @@ python3 bin/workflow_orchestrator.py full --remote
 
 Run via `Terminal → Run Task` or `Ctrl+Shift+P → Tasks: Run Task`:
 
-| Task | Description |
-|------|-------------|
-| 🏠 Setup Configuration | Interactive setup wizard |
-| 📤 Export (Local) | Export from local /config |
-| 📤 Export (SSH Remote) | Export via SSH |
-| 🔐 Sanitize Export | Remove secrets from export |
-| 🤖 Generate AI Context | Create AI-ready files |
-| 📥 Import (Local) | Import to local HA |
-| 📥 Import (SSH Remote) | Import via SSH |
-| 📥 Import (Dry Run) | Preview import changes |
-| 🔍 Validate Export | Validate exported files |
-| 🚀 Full Pipeline (Local) | Complete local workflow |
-| 🚀 Full Pipeline (SSH Remote) | Complete remote workflow |
-| 🖥️ Start GUI | Launch Streamlit GUI |
+| Task                          | Description                |
+| ----------------------------- | -------------------------- |
+| 🏠 Setup Configuration        | Interactive setup wizard   |
+| 📤 Export (Local)             | Export from local /config  |
+| 📤 Export (SSH Remote)        | Export via SSH             |
+| 🔐 Sanitize Export            | Remove secrets from export |
+| 🤖 Generate AI Context        | Create AI-ready files      |
+| 📥 Import (Local)             | Import to local HA         |
+| 📥 Import (SSH Remote)        | Import via SSH             |
+| 📥 Import (Dry Run)           | Preview import changes     |
+| 🔍 Validate Export            | Validate exported files    |
+| 🚀 Full Pipeline (Local)      | Complete local workflow    |
+| 🚀 Full Pipeline (SSH Remote) | Complete remote workflow   |
+| 🖥️ Start GUI                  | Launch Streamlit GUI       |
 
 ### Option 3: VS Code Debug Configurations
 
 Press `F5` or use Run → Start Debugging:
 
-| Configuration | Description |
-|---------------|-------------|
-| 🏠 HA Workflow: Setup | Debug setup wizard |
-| 📤 HA Workflow: Export Local | Debug local export |
-| 📤 HA Workflow: Export Remote | Debug remote export |
-| 🤖 Generate AI Context | Debug context generation |
-| 📥 HA Workflow: Import | Debug import process |
-| 🚀 Full Pipeline | Debug complete workflow |
-| 🧪 Pytest: Current File | Debug current test file |
-| 🧪 Pytest: All Tests | Debug all tests |
+| Configuration                 | Description              |
+| ----------------------------- | ------------------------ |
+| 🏠 HA Workflow: Setup         | Debug setup wizard       |
+| 📤 HA Workflow: Export Local  | Debug local export       |
+| 📤 HA Workflow: Export Remote | Debug remote export      |
+| 🤖 Generate AI Context        | Debug context generation |
+| 📥 HA Workflow: Import        | Debug import process     |
+| 🚀 Full Pipeline              | Debug complete workflow  |
+| 🧪 Pytest: Current File       | Debug current test file  |
+| 🧪 Pytest: All Tests          | Debug all tests          |
 
 ### Option 4: Bash Script (HA Host)
 
@@ -373,6 +440,7 @@ Terminal → Run Task → 🖥️ HA Workflow: Start GUI
 Open http://localhost:8501 in your browser.
 
 GUI Features:
+
 - Step-by-step workflow wizard
 - SSH configuration interface
 - Export/Import with progress
@@ -409,6 +477,7 @@ python3 bin/workflow_orchestrator.py export --remote
 ```
 
 **Output:**
+
 ```
 exports/
 └── export_20260118_143022/
@@ -424,15 +493,16 @@ exports/
 
 Upload files from `ai_upload/` folder to your AI assistant:
 
-| AI Service | Max File Size | Supported Types |
-|------------|---------------|-----------------|
-| Claude | 30MB/file, 100MB total | .md, .json, .yaml |
-| ChatGPT | 512MB/file | .md, .json, .yaml |
-| Gemini | 2GB/file | .md, .json, .yaml |
+| AI Service | Max File Size          | Supported Types   |
+| ---------- | ---------------------- | ----------------- |
+| Claude     | 30MB/file, 100MB total | .md, .json, .yaml |
+| ChatGPT    | 512MB/file             | .md, .json, .yaml |
+| Gemini     | 2GB/file               | .md, .json, .yaml |
 
 **Example AI Prompts:**
+
 ```
-"Based on my ha_entities.json, create an automation that turns off all 
+"Based on my ha_entities.json, create an automation that turns off all
 lights when no motion is detected for 10 minutes."
 
 "Review my automations in ha_config.yaml and suggest optimizations."
@@ -486,19 +556,20 @@ python3 bin/workflow_orchestrator.py full --remote
 
 ### Sensitive Data Patterns
 
-| Type | Pattern Example | Placeholder |
-|------|-----------------|-------------|
-| Password | `password: secret123` | `<<HA_SECRET_PASSWORD_001>>` |
-| Token | `token: abc123xyz` | `<<HA_SECRET_TOKEN_001>>` |
-| API Key | `api_key: key123` | `<<HA_SECRET_API_KEY_001>>` |
-| IP Address | `host: 192.168.1.100` | `<<HA_SECRET_IP_001>>` |
-| Email | `email: user@example.com` | `<<HA_SECRET_EMAIL_001>>` |
-| Coordinates | `latitude: 52.5200` | `<<HA_SECRET_LATITUDE_001>>` |
-| MAC Address | `mac: AA:BB:CC:DD:EE:FF` | `<<HA_SECRET_MAC_001>>` |
+| Type        | Pattern Example           | Placeholder                  |
+| ----------- | ------------------------- | ---------------------------- |
+| Password    | `password: secret123`     | `<<HA_SECRET_PASSWORD_001>>` |
+| Token       | `token: abc123xyz`        | `<<HA_SECRET_TOKEN_001>>`    |
+| API Key     | `api_key: key123`         | `<<HA_SECRET_API_KEY_001>>`  |
+| IP Address  | `host: 192.168.1.100`     | `<<HA_SECRET_IP_001>>`       |
+| Email       | `email: user@example.com` | `<<HA_SECRET_EMAIL_001>>`    |
+| Coordinates | `latitude: 52.5200`       | `<<HA_SECRET_LATITUDE_001>>` |
+| MAC Address | `mac: AA:BB:CC:DD:EE:FF`  | `<<HA_SECRET_MAC_001>>`      |
 
 ### Example Transformation
 
 **Original:**
+
 ```yaml
 mqtt:
   broker: 192.168.1.50
@@ -507,6 +578,7 @@ mqtt:
 ```
 
 **Exported (sanitized):**
+
 ```yaml
 mqtt:
   broker: <<HA_SECRET_IP_001>>
@@ -515,6 +587,7 @@ mqtt:
 ```
 
 **Secrets Map (encrypted):**
+
 ```json
 {
   "HA_SECRET_IP_001": "192.168.1.50",
@@ -554,6 +627,7 @@ ssh root@192.168.1.100 "echo Connected!"
 ```
 
 **Configuration:**
+
 ```yaml
 ssh:
   enabled: true
@@ -567,16 +641,18 @@ ssh:
 ### Option B: Password Authentication (Interactive)
 
 **Configuration:**
+
 ```yaml
 ssh:
   enabled: true
   host: "192.168.1.100"
   port: 22
   user: "root"
-  auth_method: "interactive"  # Prompts for password
+  auth_method: "interactive" # Prompts for password
 ```
 
 **Usage:**
+
 ```bash
 # Will prompt for password
 python3 bin/workflow_orchestrator.py export --remote
@@ -593,12 +669,13 @@ python3 bin/workflow_orchestrator.py export --remote
 ```
 
 **Configuration:**
+
 ```yaml
 ssh:
   enabled: true
   host: "192.168.1.100"
   auth_method: "paramiko"
-  password: "${SSH_PASSWORD}"  # From environment
+  password: "${SSH_PASSWORD}" # From environment
 ```
 
 ### Option D: sshpass Utility
@@ -613,6 +690,7 @@ export SSH_PASSWORD="your_password"
 ```
 
 **Configuration:**
+
 ```yaml
 ssh:
   enabled: true
@@ -640,7 +718,7 @@ ssh:
   enabled: true
   host: "192.168.1.100"
   user: "root"
-  
+
   docker:
     enabled: true
     container_name: "homeassistant"
@@ -654,17 +732,18 @@ ssh:
 
 Install these VS Code extensions for the best experience:
 
-| Extension | ID | Purpose |
-|-----------|------|---------|
-| Python | `ms-python.python` | Python support |
-| YAML | `redhat.vscode-yaml` | YAML validation |
-| Home Assistant | `keesschollaart.vscode-home-assistant` | HA syntax |
-| GitLens | `eamodio.gitlens` | Git visualization |
-| Bash Debug | `rogalmic.bash-debug` | Shell debugging |
+| Extension      | ID                                     | Purpose           |
+| -------------- | -------------------------------------- | ----------------- |
+| Python         | `ms-python.python`                     | Python support    |
+| YAML           | `redhat.vscode-yaml`                   | YAML validation   |
+| Home Assistant | `keesschollaart.vscode-home-assistant` | HA syntax         |
+| GitLens        | `eamodio.gitlens`                      | Git visualization |
+| Bash Debug     | `rogalmic.bash-debug`                  | Shell debugging   |
 
 ### Workspace Settings
 
 The project includes `.vscode/settings.json` with:
+
 - Python formatting (Black)
 - YAML schema validation
 - File associations
@@ -675,6 +754,7 @@ The project includes `.vscode/settings.json` with:
 Run via `Ctrl+Shift+P` → `Tasks: Run Task`:
 
 **Workflow Tasks:**
+
 - 🏠 Setup Configuration
 - 📤 Export (Local/Remote)
 - 🔐 Sanitize Export
@@ -683,6 +763,7 @@ Run via `Ctrl+Shift+P` → `Tasks: Run Task`:
 - 🚀 Full Pipeline
 
 **Development Tasks:**
+
 - 🧪 Run All Tests
 - Run Current Test File
 - Format Code (Black)
@@ -690,6 +771,7 @@ Run via `Ctrl+Shift+P` → `Tasks: Run Task`:
 - Security Scan (Bandit)
 
 **Docker Tasks:**
+
 - Docker: Build Test Image
 - Docker: Run Tests
 
@@ -697,22 +779,22 @@ Run via `Ctrl+Shift+P` → `Tasks: Run Task`:
 
 Press `F5` to debug:
 
-| Configuration | Use Case |
-|---------------|----------|
-| Python: Current File | Debug any Python file |
-| 🧪 Pytest: Current File | Debug current test |
-| 🧪 Pytest: All Tests | Debug all tests |
-| 🔧 Debug SSH Transfer | Debug SSH connection |
-| Bash: Current Script | Debug shell scripts |
+| Configuration           | Use Case              |
+| ----------------------- | --------------------- |
+| Python: Current File    | Debug any Python file |
+| 🧪 Pytest: Current File | Debug current test    |
+| 🧪 Pytest: All Tests    | Debug all tests       |
+| 🔧 Debug SSH Transfer   | Debug SSH connection  |
+| Bash: Current Script    | Debug shell scripts   |
 
 ### Keybindings
 
-| Shortcut | Action |
-|----------|--------|
-| `F5` | Start debugging |
-| `Ctrl+Shift+B` | Run build task |
-| `Ctrl+Shift+T` | Run test task |
-| `Ctrl+Shift+P` → "Tasks" | Run any task |
+| Shortcut                 | Action          |
+| ------------------------ | --------------- |
+| `F5`                     | Start debugging |
+| `Ctrl+Shift+B`           | Run build task  |
+| `Ctrl+Shift+T`           | Run test task   |
+| `Ctrl+Shift+P` → "Tasks" | Run any task    |
 
 ---
 
@@ -802,13 +884,13 @@ pytest -v -m security
 
 ### Test Files
 
-| File | Coverage |
-|------|----------|
-| `test_context_gen.py` | AI context generation |
-| `test_diagnostic_export.py` | Export functionality |
-| `test_config_import.py` | Import functionality |
-| `test_export_verifier.py` | Validation logic |
-| `test_bash_scripts.bats` | Bash script tests |
+| File                        | Coverage              |
+| --------------------------- | --------------------- |
+| `test_context_gen.py`       | AI context generation |
+| `test_diagnostic_export.py` | Export functionality  |
+| `test_config_import.py`     | Import functionality  |
+| `test_export_verifier.py`   | Validation logic      |
+| `test_bash_scripts.bats`    | Bash script tests     |
 
 ### Validation Tools
 
@@ -825,11 +907,13 @@ make validate
 ```
 
 **Quick Validation Checks:**
+
 - Python syntax
 - Shell syntax
 - Quick test run
 
 **Full Validation Checks:**
+
 1. Environment setup
 2. Code formatting (Black)
 3. Code linting (Flake8)
@@ -855,6 +939,7 @@ pre-commit run --all-files
 ```
 
 Hooks include:
+
 - Trailing whitespace removal
 - YAML/JSON validation
 - Black formatting
@@ -879,21 +964,21 @@ make docker-test
 
 ### Makefile Targets
 
-| Target | Description |
-|--------|-------------|
-| `make install` | Install dependencies |
-| `make test` | Run all tests |
-| `make coverage` | Run tests with coverage |
-| `make lint` | Run linters |
-| `make format` | Format code with Black |
-| `make security` | Run security scan |
-| `make validate` | Full validation |
-| `make quick-validate` | Quick validation |
-| `make pre-commit` | Setup pre-commit hooks |
-| `make docker-build` | Build Docker test image |
-| `make docker-test` | Run Docker tests |
-| `make clean` | Clean generated files |
-| `make gui` | Start Streamlit GUI |
+| Target                | Description             |
+| --------------------- | ----------------------- |
+| `make install`        | Install dependencies    |
+| `make test`           | Run all tests           |
+| `make coverage`       | Run tests with coverage |
+| `make lint`           | Run linters             |
+| `make format`         | Format code with Black  |
+| `make security`       | Run security scan       |
+| `make validate`       | Full validation         |
+| `make quick-validate` | Quick validation        |
+| `make pre-commit`     | Setup pre-commit hooks  |
+| `make docker-build`   | Build Docker test image |
+| `make docker-test`    | Run Docker tests        |
+| `make clean`          | Clean generated files   |
+| `make gui`            | Start Streamlit GUI     |
 
 ---
 
@@ -902,6 +987,7 @@ make docker-test
 ### Common Issues
 
 #### "PyYAML Not Found"
+
 ```bash
 pip install pyyaml
 # On HA OS:
@@ -909,6 +995,7 @@ pip install pyyaml --break-system-packages
 ```
 
 #### "Permission Denied"
+
 ```bash
 # Run with sudo on HA host
 sudo python3 bin/workflow_orchestrator.py export --source /config
@@ -918,6 +1005,7 @@ chmod +x bin/*.py
 ```
 
 #### "SSH Connection Failed"
+
 ```bash
 # Test SSH manually
 ssh -v root@192.168.1.100
@@ -930,6 +1018,7 @@ python3 bin/ssh_transfer_password.py --host 192.168.1.100 --test
 ```
 
 #### "No Files to Import"
+
 ```bash
 # Check import directory
 ls -la imports/
@@ -939,6 +1028,7 @@ mv ai_config.yaml imports/pending/
 ```
 
 #### "Secrets File Not Found"
+
 ```bash
 # Run export first to generate secrets
 python3 bin/workflow_orchestrator.py export --source /config
@@ -948,6 +1038,7 @@ ls -la secrets/
 ```
 
 #### "Configuration Check Fails"
+
 ```bash
 # Review errors
 ha core check
@@ -957,6 +1048,7 @@ python3 -c "import yaml; yaml.safe_load(open('configuration.yaml'))"
 ```
 
 #### "Git Conflicts"
+
 ```bash
 cd /config
 git status
@@ -1023,12 +1115,12 @@ echo "*.encryption_key" >> .gitignore
 ssh:
   # Use SSH keys
   auth_method: "key"
-  
+
   # Use specific port
   port: 22222
-  
+
   # Limit to local network
-  host: "192.168.1.100"  # Not public IP
+  host: "192.168.1.100" # Not public IP
 ```
 
 ---
@@ -1238,5 +1330,5 @@ ai_upload/
 
 ---
 
-*Documentation generated for HA AI Gen Workflow v2.0*
-*Last updated: January 2026*
+_Documentation generated for HA AI Gen Workflow v2.0_
+_Last updated: January 2026_
