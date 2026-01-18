@@ -1,75 +1,63 @@
 {
-    "python.testing.pytestEnabled": true,
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestArgs": [
-        "tests",
-        "-v"
-    ],
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.banditEnabled": true,
-    "python.linting.flake8Args": [
-        "--max-line-length=120",
-        "--ignore=E203,W503"
-    ],
-    "python.formatting.provider": "black",
-    "python.formatting.blackArgs": [
-        "--line-length",
-        "120"
-    ],
-    "[python]": {
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
-        },
-        "editor.rulers": [120]
-    },
-    "[shellscript]": {
-        "editor.defaultFormatter": "foxundermoon.shell-format",
-        "editor.formatOnSave": true
-    },
-    "[markdown]": {
-        "editor.formatOnSave": true,
-        "editor.wordWrap": "on",
-        "editor.rulers": [80, 120]
-    },
-    "files.exclude": {
-        "**/__pycache__": true,
-        "**/*.pyc": true,
-        "**/.pytest_cache": true,
-        "**/htmlcov": true,
-        "**/.coverage": true
-    },
-    "files.watcherExclude": {
-        "**/__pycache__/**": true,
-        "**/htmlcov/**": true,
-        "**/.pytest_cache/**": true
-    },
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["tests", ".", "-v"],
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.banditEnabled": true,
+  "python.linting.flake8Args": ["--max-line-length=120", "--ignore=E203,W503"],
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--line-length", "120"],
+  "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.fixAll": "explicit"
+      "source.organizeImports": "explicit",
     },
-    "shellcheck.enable": true,
-    "shellcheck.executablePath": "shellcheck",
-    "shellcheck.run": "onSave",
-    "coverage-gutters.coverageFileNames": [
-        "coverage.xml",
-        "htmlcov/index.html"
-    ],
-    "coverage-gutters.showLineCoverage": true,
-    "coverage-gutters.showRulerCoverage": true,
-    "git.enableCommitSigning": false,
-    "git.confirmSync": false,
-    "conventionalCommits.autoCommit": false,
-    "conventionalCommits.scopes": [
-        "context-gen",
-        "diagnostic",
-        "import",
-        "verify",
-        "tests",
-        "docs",
-        "ci",
-        "security"
-    ]
+    "editor.rulers": [120],
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.formatOnSave": true,
+  },
+  "[markdown]": {
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "on",
+    "editor.rulers": [80, 120],
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true,
+    "**/htmlcov": true,
+    "**/.coverage": true,
+  },
+  "files.watcherExclude": {
+    "**/__pycache__/**": true,
+    "**/htmlcov/**": true,
+    "**/.pytest_cache/**": true,
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+  },
+  "shellcheck.enable": true,
+  "shellcheck.executablePath": "shellcheck",
+  "shellcheck.run": "onSave",
+  "coverage-gutters.coverageFileNames": ["coverage.xml", "htmlcov/index.html"],
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showRulerCoverage": true,
+  "git.enableCommitSigning": false,
+  "git.confirmSync": false,
+  "conventionalCommits.autoCommit": false,
+  "conventionalCommits.scopes": [
+    "context-gen",
+    "diagnostic",
+    "import",
+    "verify",
+    "tests",
+    "docs",
+    "ci",
+    "security",
+  ],
 }

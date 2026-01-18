@@ -18,5 +18,7 @@
     "rogalmic.bash-debug",
     "ms-python.debugpy",
     "debugpyattacher.debugpy-attacher",
+    "pamaron.pytest-runner",
+    "muzhe-zhou.requirement-test-align",
   ],
 }
