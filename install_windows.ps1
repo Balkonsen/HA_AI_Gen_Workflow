@@ -141,34 +141,62 @@ function Get-ScriptDirectory {
 function Test-PythonInstallation {
     Write-Log "Checking Python installation..." -Level "HEADER"
     
-    # Check multiple Python locations
-    $pythonCommands = @("python", "python3", "py -3")
+    # Check multiple Python locations - prefer direct python.exe paths
+    # Order matters: prefer direct paths over py launcher for better venv compatibility
+    $pythonCommands = @()
+    
+    # First, try to find python.exe in common locations
+    $commonPaths = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python310\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python39\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python38\python.exe",
+        "$env:ProgramFiles\Python313\python.exe",
+        "$env:ProgramFiles\Python312\python.exe",
+        "$env:ProgramFiles\Python311\python.exe",
+        "$env:ProgramFiles\Python310\python.exe",
+        "C:\Python313\python.exe",
+        "C:\Python312\python.exe",
+        "C:\Python311\python.exe"
+    )
+    
+    foreach ($path in $commonPaths) {
+        if (Test-Path $path) {
+            $pythonCommands += $path
+        }
+    }
+    
+    # Then add standard commands
+    $pythonCommands += @("python", "python3", "py -3")
+    
     $pythonPath = $null
     $pythonVersion = $null
     
     foreach ($cmd in $pythonCommands) {
         try {
-            $cmdParts = $cmd -split " "
-            $exe = $cmdParts[0]
-            $args = if ($cmdParts.Length -gt 1) { $cmdParts[1..($cmdParts.Length-1)] + "--version" } else { @("--version") }
+            if ($cmd -eq "py -3") {
+                $result = & py -3 --version 2>&1
+            } elseif ($cmd -match "^py ") {
+                $pyArgs = ($cmd -replace "^py ", "") -split " "
+                $result = & py @pyArgs --version 2>&1
+            } else {
+                $result = & $cmd --version 2>&1
+            }
             
-            $result = & $exe @args 2>&1
             if ($LASTEXITCODE -eq 0 -and $result -match "Python (\d+\.\d+\.\d+)") {
                 $version = [version]$Matches[1]
                 if ($version -ge $script:Config.MinPythonVersion) {
                     $pythonPath = $cmd
                     $pythonVersion = $version
-                    break
+                    Write-Log "Found Python $pythonVersion ($pythonPath)" -Level "SUCCESS"
+                    return @{ Path = $pythonPath; Version = $pythonVersion }
                 }
             }
         } catch {
             continue
         }
-    }
-    
-    if ($pythonPath) {
-        Write-Log "Found Python $pythonVersion ($pythonPath)" -Level "SUCCESS"
-        return @{ Path = $pythonPath; Version = $pythonVersion }
     }
     
     Write-Log "Python $($script:Config.MinPythonVersion) or higher not found" -Level "WARNING"
@@ -296,23 +324,62 @@ function New-VirtualEnvironment {
     }
     
     Write-Log "Creating new virtual environment at $venvPath..." -Level "STEP"
+    Write-Log "Using Python: $PythonPath" -Level "STEP"
     
     try {
-        $cmdParts = $PythonPath -split " "
-        $exe = $cmdParts[0]
-        $baseArgs = if ($cmdParts.Length -gt 1) { $cmdParts[1..($cmdParts.Length-1)] } else { @() }
-        $args = $baseArgs + @("-m", "venv", $venvPath)
-        
-        & $exe @args
+        # Handle different Python command formats
+        if ($PythonPath -eq "py -3") {
+            # Use py launcher with -3 flag
+            Write-Log "Running: py -3 -m venv `"$venvPath`"" -Level "STEP"
+            $output = & py -3 -m venv "$venvPath" 2>&1
+        } elseif ($PythonPath -match "^py ") {
+            # Other py launcher variants
+            $pyArgs = ($PythonPath -replace "^py ", "") -split " "
+            $allArgs = $pyArgs + @("-m", "venv", $venvPath)
+            Write-Log "Running: py $($allArgs -join ' ')" -Level "STEP"
+            $output = & py @allArgs 2>&1
+        } else {
+            # Direct python/python3 command
+            Write-Log "Running: $PythonPath -m venv `"$venvPath`"" -Level "STEP"
+            $output = & $PythonPath -m venv "$venvPath" 2>&1
+        }
         
         if ($LASTEXITCODE -ne 0) {
+            Write-Log "venv output: $output" -Level "WARNING"
             throw "venv creation failed with exit code $LASTEXITCODE"
+        }
+        
+        # Verify venv was created
+        $activateScript = Join-Path $venvPath "Scripts\Activate.ps1"
+        if (-not (Test-Path $activateScript)) {
+            throw "Virtual environment created but activation script not found"
         }
         
         Write-Log "Virtual environment created successfully" -Level "SUCCESS"
         return $venvPath
     } catch {
         Write-Log "Failed to create virtual environment: $_" -Level "ERROR"
+        
+        # Try alternative method using Start-Process
+        Write-Log "Trying alternative venv creation method..." -Level "STEP"
+        try {
+            if ($PythonPath -eq "py -3") {
+                $proc = Start-Process -FilePath "py" -ArgumentList "-3", "-m", "venv", $venvPath -Wait -PassThru -NoNewWindow
+            } else {
+                $proc = Start-Process -FilePath $PythonPath -ArgumentList "-m", "venv", $venvPath -Wait -PassThru -NoNewWindow
+            }
+            
+            if ($proc.ExitCode -eq 0) {
+                $activateScript = Join-Path $venvPath "Scripts\Activate.ps1"
+                if (Test-Path $activateScript) {
+                    Write-Log "Virtual environment created successfully (alternative method)" -Level "SUCCESS"
+                    return $venvPath
+                }
+            }
+        } catch {
+            Write-Log "Alternative method also failed: $_" -Level "ERROR"
+        }
+        
         return $null
     }
 }
