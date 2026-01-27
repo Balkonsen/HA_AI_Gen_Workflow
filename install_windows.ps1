@@ -574,7 +574,7 @@ function Show-CompletionSummary {
     Write-Host "      ha-ai-workflow.ps1 import" -ForegroundColor Gray
     Write-Host ""
     Write-Host "💡 Pro tip: " -NoNewline -ForegroundColor Blue
-    Write-Host "Use 'ha-ai-workflow.ps1 --help' for all options"
+    Write-Host "Use ha-ai-workflow.ps1 --help for all options"
     Write-Host ""
     Write-Host "📋 Log file: " -NoNewline -ForegroundColor Gray
     Write-Host $LOG_FILE -ForegroundColor White
