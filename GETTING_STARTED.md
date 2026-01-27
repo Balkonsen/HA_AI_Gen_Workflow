@@ -7,10 +7,10 @@ Complete this checklist to set up your development environment and start working
 ### 1. System Requirements
 - [ ] Python 3.8 or higher installed
 - [ ] Git installed and configured
-- [ ] Bash shell available
+- [ ] Bash shell available (Linux/Mac) or PowerShell (Windows)
 - [ ] pip package manager working
 
-**Verify:**
+**Verify (Linux/Mac):**
 ```bash
 python3 --version  # Should show 3.8+
 git --version
@@ -18,16 +18,50 @@ bash --version
 pip --version
 ```
 
+**Verify (Windows):**
+```powershell
+python --version  # Should show 3.8+
+git --version
+$PSVersionTable.PSVersion  # Should show 5.1+
+pip --version
+```
+
 ### 2. Clone Repository
 - [ ] Repository cloned
 - [ ] Navigated to project directory
 
+**Linux/Mac:**
 ```bash
 git clone https://github.com/Balkonsen/HA_AI_Gen_Workflow.git
 cd HA_AI_Gen_Workflow
 ```
 
+**Windows:**
+```powershell
+git clone https://github.com/Balkonsen/HA_AI_Gen_Workflow.git
+cd HA_AI_Gen_Workflow
+```
+
 ### 3. Install Dependencies
+
+**Option A: Windows Automated Installer (Recommended for Windows)**
+- [ ] Run PowerShell as Administrator
+- [ ] Execute the installer script
+- [ ] Verify installation completed
+
+```powershell
+# Right-click PowerShell -> Run as Administrator
+.\install_windows.ps1
+```
+
+The Windows installer automatically:
+- Creates directory structure
+- Installs Python packages
+- Sets up PATH
+- Initializes Git repository
+- Creates documentation
+
+**Option B: Manual Installation (Linux/Mac/Windows)**
 - [ ] Created virtual environment (optional but recommended)
 - [ ] Installed test dependencies
 - [ ] Verified installation
