@@ -13,6 +13,7 @@ $ErrorActionPreference = "Stop"
 $INSTALL_DIR = "$env:ProgramFiles\HA-AI-Workflow"
 $CONFIG_DIR = "$env:USERPROFILE\ha-config"
 $LOG_FILE = "$env:TEMP\ha-ai-workflow-install.log"
+$SCRIPT_DIR = $PSScriptRoot
 
 # Initialize log file
 "Installation started at $(Get-Date)" | Out-File -FilePath $LOG_FILE -Encoding UTF8
@@ -201,8 +202,7 @@ function Install-PythonPackages {
         }
         
         # Install requirements if file exists
-        $scriptDir = Split-Path -Parent $MyInvocation.PSCommandPath
-        $requirementsFile = Join-Path $scriptDir "requirements.txt"
+        $requirementsFile = Join-Path $SCRIPT_DIR "requirements.txt"
         
         if (Test-Path $requirementsFile) {
             Write-Log "Installing requirements from requirements.txt..." -Level "INFO"
@@ -226,8 +226,6 @@ function Install-Scripts {
     Write-Log "Step 4/7: Installing Python scripts..." -Level "INFO"
     
     try {
-        $scriptDir = Split-Path -Parent $MyInvocation.PSCommandPath
-        
         # List of scripts to install
         $scripts = @(
             "ha_diagnostic_export.py",
@@ -248,12 +246,12 @@ function Install-Scripts {
             $sourcePath = $null
             
             # Check in current directory
-            if (Test-Path (Join-Path $scriptDir $script)) {
-                $sourcePath = Join-Path $scriptDir $script
+            if (Test-Path (Join-Path $SCRIPT_DIR $script)) {
+                $sourcePath = Join-Path $SCRIPT_DIR $script
             }
             # Check in bin subdirectory
-            elseif (Test-Path (Join-Path $scriptDir "bin\$script")) {
-                $sourcePath = Join-Path $scriptDir "bin\$script"
+            elseif (Test-Path (Join-Path $SCRIPT_DIR "bin\$script")) {
+                $sourcePath = Join-Path $SCRIPT_DIR "bin\$script"
             }
             
             if ($sourcePath) {
@@ -280,8 +278,7 @@ function Install-MasterScript {
     Write-Log "Step 5/7: Installing master script..." -Level "INFO"
     
     try {
-        $scriptDir = Split-Path -Parent $MyInvocation.PSCommandPath
-        $masterScriptSh = Join-Path $scriptDir "ha_ai_master_script.sh"
+        $masterScriptSh = Join-Path $SCRIPT_DIR "ha_ai_master_script.sh"
         
         # For Windows, create a PowerShell wrapper instead
         $wrapperContent = @"
@@ -309,6 +306,8 @@ if (Test-Path `$orchestrator) {
         $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
         if ($currentPath -notlike "*$INSTALL_DIR*") {
             Write-Log "Adding installation directory to user PATH..." -Level "INFO"
+            Write-Log "Backing up current PATH to log file..." -Level "INFO"
+            "PATH Backup: $currentPath" | Out-File -FilePath $LOG_FILE -Append -Encoding UTF8
             [Environment]::SetEnvironmentVariable(
                 "Path",
                 "$currentPath;$INSTALL_DIR",
@@ -329,7 +328,7 @@ function Initialize-GitRepository {
     Write-Log "Step 6/7: Initializing Git repository..." -Level "INFO"
     
     try {
-        Push-Location $CONFIG_DIR
+        Push-Location $CONFIG_DIR -ErrorAction Stop
         
         if (Test-Path ".git") {
             Write-Log "Git repository already exists" -Level "INFO"
@@ -337,7 +336,10 @@ function Initialize-GitRepository {
         else {
             # Initialize git repository
             git config --global init.defaultBranch main 2>$null
-            git init
+            git init 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                throw "Git init failed"
+            }
             
             # Create .gitignore
             $gitignoreContent = @"
@@ -609,6 +611,6 @@ catch {
     Write-Log "Installation failed: $($_.Exception.Message)" -Level "ERROR"
     Write-Log $_.ScriptStackTrace -Level "ERROR"
     
-    pause
+    Read-Host "Press Enter to continue..."
     exit 1
 }
