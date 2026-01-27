@@ -59,6 +59,36 @@ With this system, AI assistants can help you:
 - Git (usually pre-installed)
 - 500MB free space for exports
 
+## 💻 Windows Installation
+
+For Windows users, we provide a dedicated PowerShell installer:
+
+1. **Download the repository** or clone it:
+   ```powershell
+   git clone https://github.com/Balkonsen/HA_AI_Gen_Workflow.git
+   cd HA_AI_Gen_Workflow
+   ```
+
+2. **Run the installer as Administrator**:
+   ```powershell
+   # Right-click PowerShell -> Run as Administrator
+   .\install_windows.ps1
+   ```
+
+The installer will:
+- ✅ Check and validate dependencies (Python, Git)
+- ✅ Create necessary directory structure
+- ✅ Install Python packages (PyYAML, etc.)
+- ✅ Set up the workflow scripts
+- ✅ Initialize Git repository
+- ✅ Add commands to PATH
+
+After installation, restart your terminal and use:
+```powershell
+ha-ai-workflow.ps1 export
+ha-ai-workflow.ps1 import
+```
+
 ## 🚀 Quick Start
 
 ### Option 1: VS Code (Recommended)
