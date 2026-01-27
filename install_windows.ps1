@@ -398,9 +398,9 @@ function Install-Documentation {
 
 ## First Export
 
-``````powershell
+```powershell
 ha-ai-workflow.ps1 export
-``````
+```
 
 This will:
 1. Export your HA configuration
@@ -411,22 +411,22 @@ This will:
 ## Working with AI
 
 1. Find the generated prompt:
-   ``````powershell
+   ```powershell
    Get-Content `$env:USERPROFILE\ha-config\ai_exports\ha_export_*\AI_PROMPT.md
-   ``````
+   ```
 
 2. Share with AI assistant (exclude secrets!)
 
 3. Place AI-generated files in:
-   ``````powershell
+   ```powershell
    `$env:USERPROFILE\ha-config\ai_imports\pending\
-   ``````
+   ```
 
 ## Import AI Changes
 
-``````powershell
+```powershell
 ha-ai-workflow.ps1 import
-``````
+```
 
 This will:
 1. Scan for new files
@@ -436,16 +436,16 @@ This will:
 
 ## Check Status
 
-``````powershell
+```powershell
 ha-ai-workflow.ps1 status
-``````
+```
 
 ## Automated Mode
 
-``````powershell
+```powershell
 ha-ai-workflow.ps1 export --auto
 ha-ai-workflow.ps1 import --auto
-``````
+```
 "@
         
         $quickstartPath = Join-Path "$INSTALL_DIR\docs" "QUICKSTART.md"
@@ -462,43 +462,43 @@ Install Python from: https://www.python.org/downloads/
 Make sure to check "Add Python to PATH" during installation.
 
 ### PyYAML Not Found
-``````powershell
+```powershell
 python -m pip install pyyaml --user
-``````
+```
 
 ### Permission Denied
 Run PowerShell as Administrator:
 Right-click PowerShell -> Run as Administrator
 
 ### Out of Space
-``````powershell
+```powershell
 # Clean old archives
 Remove-Item -Path `$env:USERPROFILE\ha-config\ai_exports\archives\* -Recurse -Force
-``````
+```
 
 ## Import Issues
 
 ### Validation Failed
 Check the debug report:
-``````powershell
+```powershell
 Get-Content `$env:USERPROFILE\ha-config\ai_exports\debug_report_*.md
-``````
+```
 
 ### Git Conflicts
-``````powershell
+```powershell
 cd `$env:USERPROFILE\ha-config
 git status
 git stash
 ha-ai-workflow.ps1 import
-``````
+```
 
 ### Rollback Changes
-``````powershell
+```powershell
 cd `$env:USERPROFILE\ha-config
 git log --oneline
 git checkout <commit-hash>
 # Restart Home Assistant
-``````
+```
 
 ## Common Problems
 
