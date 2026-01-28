@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.1] - 2026-01-28
+
+### Fixed
+- Fixed "s6-overlay-suexec: fatal: can only run as pid 1" error by adding `init: false` to config.yaml
+
 ## [1.0.0] - 2024-01-28
 
 ### Added

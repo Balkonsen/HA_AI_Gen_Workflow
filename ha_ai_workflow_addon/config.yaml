@@ -1,11 +1,13 @@
 name: HA AI Gen Workflow
-version: "1.0.0"
+version: "1.0.1"
 slug: ha_ai_gen_workflow
 description: >-
   Automated export, AI-powered development, and git-versioned import workflow
   for Home Assistant. Export your configuration, sanitize secrets, generate
   AI-ready context, and import AI-modified configurations safely.
 url: https://github.com/Balkonsen/HA_AI_Gen_Workflow
+# Disable init process injection to prevent s6-overlay-suexec PID 1 conflict
+init: false
 arch:
   - amd64
   - aarch64
