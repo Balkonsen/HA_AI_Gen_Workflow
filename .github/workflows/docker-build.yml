@@ -11,7 +11,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/ha_ai_gen_workflow
+  # Image name matches config.yaml image field (ghcr.io/balkonsen/ha_ai_gen_workflow-{arch})
+  IMAGE_NAME: balkonsen/ha_ai_gen_workflow
 
 permissions:
   contents: read
@@ -42,7 +43,8 @@ jobs:
       - name: Get Version
         id: version
         run: |
-          VERSION=$(grep 'version:' ha_ai_workflow_addon/config.yaml | sed 's/.*"\(.*\)"/\1/')
+          # Extract version from config.yaml (handles quoted version like version: "1.0.0")
+          VERSION=$(grep '^version:' ha_ai_workflow_addon/config.yaml | head -n1 | sed 's/version: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
@@ -67,7 +69,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix=
+            type=sha,prefix=sha-
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5

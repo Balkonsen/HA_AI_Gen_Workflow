@@ -31,7 +31,7 @@ ports_description:
   8501/tcp: Streamlit Web UI
 # File system access (minimum required permissions)
 # Note: Using 'config:rw' for direct access to /config directory
-# Don't include 'addon_config' when 'config' is used (they conflict)
+# Do not include 'addon_config' when 'config' is used (they conflict)
 map:
   - config:rw
   - ssl:ro
