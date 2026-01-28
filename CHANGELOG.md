@@ -39,16 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secrets detection in pre-commit hooks
 - Trivy vulnerability scanning in CI/CD
 
-## [0.1.0] - 2024-XX-XX
+## [0.1.0] - 2024-01-01
 
 ### Added
 - Initial release
-- Home Assistant configuration export
-- Automatic secret sanitization
-- AI context generation
-- Configuration import with secret restoration
-- Export verification
-- SSH remote access support
 
 [1.0.0]: https://github.com/Balkonsen/HA_AI_Gen_Workflow/compare/v0.9.0...v1.0.0
 [0.9.0]: https://github.com/Balkonsen/HA_AI_Gen_Workflow/compare/v0.1.0...v0.9.0
