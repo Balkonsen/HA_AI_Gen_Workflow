@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.3] - 2026-01-28
+
+### Fixed
+- **CRITICAL FIX**: Resolved "404 Not Found" error when accessing add-on web UI through Home Assistant Ingress
+  - Added `--server.enableWebsocketCompression=false` flag to Streamlit configuration
+  - This flag is required for Streamlit 1.10+ to work correctly behind reverse proxies and Home Assistant's Ingress
+  - The internal URL shown in logs (`http://0.0.0.0:8501/...`) is now correctly handled by the Ingress proxy
+
+### Documentation
+- Added troubleshooting section explaining the 404 error and its resolution
+- Clarified that SSH server is NOT required for add-on usage
+- Explained that SSH is only needed for remote Home Assistant instances
+- Documented that the URL shown in logs is internal and should not be accessed directly
+- Added instructions to access the add-on through Home Assistant's sidebar or "Open Web UI" button
+
 ## [1.0.2] - 2026-01-28
 
 ### Fixed

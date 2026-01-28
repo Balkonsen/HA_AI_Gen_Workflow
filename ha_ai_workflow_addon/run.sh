@@ -368,6 +368,7 @@ STREAMLIT_CMD=(
     # CORS and XSRF protection are handled by Home Assistant's ingress proxy
     --server.enableCORS=false
     --server.enableXsrfProtection=false
+    --server.enableWebsocketCompression=false
     --server.headless=true
     --browser.gatherUsageStats=false
     --theme.base=dark
