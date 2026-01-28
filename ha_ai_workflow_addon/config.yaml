@@ -13,8 +13,12 @@ arch:
 startup: application
 boot: auto
 host_network: false
+# API access configuration
 homeassistant_api: true
 hassio_api: true
+hassio_role: homeassistant
+auth_api: true
+# UI configuration
 panel_icon: mdi:robot-industrial
 panel_title: AI Workflow
 panel_admin: true
@@ -25,11 +29,13 @@ ports:
   8501/tcp: null
 ports_description:
   8501/tcp: Streamlit Web UI
+# File system access (minimum required permissions)
 map:
   - config:rw
   - ssl:ro
   - share:rw
   - addon_config:rw
+# Add-on options with defaults
 options:
   export_path: /config/ai_exports
   import_path: /config/ai_imports
@@ -40,6 +46,7 @@ options:
   ssh_port: 22
   ssh_key_path: ""
   remote_config_path: /config
+# Schema validation for options
 schema:
   export_path: str
   import_path: str

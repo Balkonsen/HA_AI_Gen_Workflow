@@ -10,6 +10,7 @@ This add-on provides a web-based graphical interface for the Home Assistant AI G
 - 📥 **Import Configuration** - Import AI-modified configurations with automatic secret restoration
 - 🔍 **Validation** - Verify configurations before deployment
 - 📡 **SSH Support** - Connect to remote Home Assistant instances
+- 🔑 **Secure API Access** - Uses SUPERVISOR_TOKEN for authenticated HA API calls
 
 ## Configuration
 
@@ -62,10 +63,30 @@ The default paths work for most installations.
 
 ## Security
 
+This add-on follows Home Assistant security best practices:
+
+### Authentication
+- Uses **SUPERVISOR_TOKEN** for all Home Assistant API interactions
+- Token is automatically provided by the Supervisor (never stored in files)
+- All API calls use Bearer token authentication
+
+### Permissions
+- **homeassistant_api**: Enabled for configuration validation and restart
+- **hassio_api**: Enabled for add-on and system information
+- **hassio_role**: Set to `homeassistant` (minimum required)
+- **auth_api**: Enabled for user authentication in the UI
+- **panel_admin**: Only administrators can access the add-on
+
+### Data Protection
 - Secrets are automatically sanitized during export
-- Encrypted secrets are stored separately
+- Encrypted secrets are stored separately from configuration
 - Never share the secrets directory with AI assistants
-- All changes are validated before deployment
+- All configuration changes are validated before deployment
+
+### File System Access
+- `/config` - Read/Write (required for export/import)
+- `/ssl` - Read-only (for SSH key access)
+- `/share` - Read/Write (for file sharing)
 
 ## Troubleshooting
 
@@ -74,6 +95,13 @@ The default paths work for most installations.
 1. Check the add-on logs for error messages
 2. Verify the configured paths exist and are writable
 3. Ensure Home Assistant API access is enabled
+4. Check if SUPERVISOR_TOKEN is available in logs
+
+### API Connection Issues
+
+1. Verify add-on has `homeassistant_api: true` permission
+2. Check add-on logs for "API connection verified" message
+3. Restart the add-on if connection was established after startup
 
 ### SSH Connection Failed
 

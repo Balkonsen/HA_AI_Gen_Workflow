@@ -1,11 +1,9 @@
-#!/usr/bin/env bashio
+#!/usr/bin/with-contenv bashio
 # shellcheck shell=bash
 # HA AI Gen Workflow Add-on Run Script
+# Uses SUPERVISOR_TOKEN for secure HA API access
 
 set -e
-
-# Get configuration from add-on options
-CONFIG_PATH=/data/options.json
 
 EXPORT_PATH=$(bashio::config 'export_path')
 IMPORT_PATH=$(bashio::config 'import_path')
@@ -24,7 +22,35 @@ bashio::log.info "Starting HA AI Gen Workflow..."
 bashio::log.info "Export path: ${EXPORT_PATH}"
 bashio::log.info "Import path: ${IMPORT_PATH}"
 
-# Generate workflow configuration
+# Verify SUPERVISOR_TOKEN is available for secure API access
+if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+    bashio::log.info "SUPERVISOR_TOKEN available - HA API access enabled"
+else
+    bashio::log.warning "SUPERVISOR_TOKEN not available - some features may be limited"
+fi
+
+# Test Home Assistant API connectivity (optional, for diagnostics)
+test_ha_api() {
+    local response
+    response=$(curl -s -o /dev/null -w "%{http_code}" \
+        -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+        "http://supervisor/core/api/config" 2>/dev/null || echo "000")
+    
+    if [[ "${response}" == "200" ]]; then
+        bashio::log.info "Home Assistant API connection verified"
+        return 0
+    else
+        bashio::log.warning "Home Assistant API returned status: ${response}"
+        return 1
+    fi
+}
+
+# Test API if token is available
+if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+    test_ha_api || bashio::log.warning "API test failed, continuing anyway..."
+fi
+
+# Generate workflow configuration with HA API settings
 cat > /app/workflow_config.yaml << EOF
 paths:
   export_dir: "${EXPORT_PATH}"
@@ -56,6 +82,13 @@ export:
     - "*.db-shm"
     - "__pycache__"
     - ".git"
+
+# Home Assistant API configuration (for add-on use)
+homeassistant:
+  api_url: "http://supervisor/core/api"
+  supervisor_url: "http://supervisor"
+  # Token is provided via SUPERVISOR_TOKEN environment variable
+  # Never store tokens in config files
 EOF
 
 # Get ingress information for Streamlit
@@ -63,6 +96,12 @@ INGRESS_URL=$(bashio::addon.ingress_url)
 
 bashio::log.info "Ingress URL: ${INGRESS_URL}"
 bashio::log.info "Starting Streamlit GUI..."
+
+# Export environment variables for Python scripts to use
+# SUPERVISOR_TOKEN is already available from the container environment
+export HA_API_URL="http://supervisor/core/api"
+export HA_SUPERVISOR_URL="http://supervisor"
+export HA_CONFIG_PATH="/config"
 
 # Run Streamlit with proper configuration for ingress
 exec streamlit run /app/bin/workflow_gui.py \
