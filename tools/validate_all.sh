@@ -93,7 +93,25 @@ print_header "1. Environment Check"
 
 run_check "Python version check" "python3 --version"
 run_check "Git repository check" "git rev-parse --git-dir"
-run_check "Dependencies check" "pip list | grep -q pytest"
+
+# Check dependencies with better error messaging
+print_step "Dependencies check"
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+if pip list | grep -q pytest; then
+    success "Dependencies check passed"
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+else
+    failure "Dependencies check failed"
+    echo "  Required test dependencies are not installed."
+    echo ""
+    echo "  To install dependencies, run one of:"
+    echo "    • make install"
+    echo "    • pip install -r requirements-test.txt"
+    echo ""
+    echo "  See GETTING_STARTED.md for complete setup instructions."
+    echo ""
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
 
 # Check 2: Python Formatting
 print_header "2. Code Formatting (Black)"
