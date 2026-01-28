@@ -10,15 +10,52 @@
 
 Transform your Home Assistant configuration management with AI assistance while maintaining complete control through git versioning and automated validation.
 
-## 🆕 **NEW: Complete Integrated Workflow!**
+## 🏠 **Home Assistant Add-on Installation (Recommended)**
 
-This project now includes:
+Install this workflow directly in Home Assistant with a graphical interface:
+
+### Quick Installation
+
+1. **Add Repository to Home Assistant:**
+   - Navigate to **Settings** → **Add-ons** → **Add-on Store**
+   - Click the **⋮** menu (top right) → **Repositories**
+   - Add this repository URL:
+     ```
+     https://github.com/Balkonsen/HA_AI_Gen_Workflow
+     ```
+   - Click **Add** → **Close**
+
+2. **Install the Add-on:**
+   - Find **"HA AI Gen Workflow"** in the Add-on Store
+   - Click **Install**
+   - Wait for installation to complete
+
+3. **Start and Access:**
+   - Go to the add-on page and click **Start**
+   - Enable **"Show in sidebar"** for easy access
+   - Click **"Open Web UI"** or use the sidebar link
+
+### Add-on Features
+
+- 🖥️ **Web-based GUI** - Full Streamlit interface integrated into Home Assistant
+- 📤 **One-click Export** - Export and sanitize your configuration
+- 🤖 **AI Context Generation** - Generate AI-ready files automatically
+- 📥 **Safe Import** - Import AI-modified configs with validation
+- 🔐 **Automatic Secret Handling** - Secrets sanitized and restored automatically
+- 📡 **SSH Support** - Connect to remote HA instances
+
+---
+
+## 🆕 **Features Overview**
+
+This project includes:
 - ✅ **SSH Remote Support** - Export/Import from/to remote HA instances
 - ✅ **Encrypted Secrets Management** - Secrets stored separately with AES encryption
 - ✅ **Labeled Placeholders** - AI-compatible secret labels for automatic restoration
 - ✅ **VS Code Integration** - Tasks and launch configurations for full IDE workflow
-- ✅ **Streamlit GUI** - Optional graphical interface for the complete workflow
+- ✅ **Streamlit GUI** - Graphical interface for the complete workflow
 - ✅ **Configurable Paths** - Flexible export/import directory configuration
+- ✅ **Home Assistant Add-on** - Native integration with HA Supervisor
 
 👉 **Quick Start**: See [GETTING_STARTED.md](GETTING_STARTED.md)  
 👉 **For Developers**: See [docs/deployment_guide.md](docs/deployment_guide.md)  
@@ -37,6 +74,7 @@ This project now includes:
 - 🔄 **Automated Workflow**: One-command export and import
 - 🖥️ **GUI Option**: Streamlit-based graphical interface
 - 💻 **VS Code Integration**: Full IDE support with tasks and debugging
+- 🏠 **Home Assistant Add-on**: Native Supervisor integration with sidebar panel
 
 ## 🎯 What Can AI Help You Build?
 
@@ -52,14 +90,20 @@ With this system, AI assistants can help you:
 
 **All while never seeing your passwords, tokens, or sensitive data!**
 
-## 📋 Prerequisites
+---
+
+## 📋 Alternative Installation Methods
+
+The add-on installation above is recommended for most users. For advanced users or development, see below.
+
+### Prerequisites (for manual installation)
 - Home Assistant OS or Supervised installation
 - SSH access to Home Assistant host (for remote mode)
 - Python 3.8 or higher
 - Git (usually pre-installed)
 - 500MB free space for exports
 
-## 💻 Windows Installation
+### 💻 Windows Installation
 
 For Windows users, we provide a dedicated PowerShell installer:
 
@@ -575,14 +619,14 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/ha-ai-workflow/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/ha-ai-workflow/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/ha-ai-workflow/wiki)
+- **Issues**: [GitHub Issues](https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Balkonsen/HA_AI_Gen_Workflow/discussions)
+- **Documentation**: [Wiki](https://github.com/Balkonsen/HA_AI_Gen_Workflow/wiki)
 
 ## 🗺️ Roadmap
 
-- [ ] Web UI for workflow management
-- [ ] Integration with HA add-on store
+- [x] Web UI for workflow management
+- [x] Integration with HA add-on store
 - [ ] Multi-instance support
 - [ ] Cloud backup options
 - [ ] Automated testing framework

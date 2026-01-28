@@ -1,0 +1,53 @@
+name: HA AI Gen Workflow
+version: "1.0.0"
+slug: ha_ai_gen_workflow
+description: >-
+  Automated export, AI-powered development, and git-versioned import workflow
+  for Home Assistant. Export your configuration, sanitize secrets, generate
+  AI-ready context, and import AI-modified configurations safely.
+url: https://github.com/Balkonsen/HA_AI_Gen_Workflow
+arch:
+  - amd64
+  - aarch64
+  - armv7
+startup: application
+boot: auto
+host_network: false
+homeassistant_api: true
+hassio_api: true
+panel_icon: mdi:robot-industrial
+panel_title: AI Workflow
+panel_admin: true
+ingress: true
+ingress_port: 8501
+ingress_stream: true
+ports:
+  8501/tcp: null
+ports_description:
+  8501/tcp: Streamlit Web UI
+map:
+  - config:rw
+  - ssl:ro
+  - share:rw
+  - addon_config:rw
+options:
+  export_path: /config/ai_exports
+  import_path: /config/ai_imports
+  secrets_path: /config/ai_secrets
+  ssh_enabled: false
+  ssh_host: ""
+  ssh_user: root
+  ssh_port: 22
+  ssh_key_path: ""
+  remote_config_path: /config
+schema:
+  export_path: str
+  import_path: str
+  secrets_path: str
+  ssh_enabled: bool
+  ssh_host: str?
+  ssh_user: str?
+  ssh_port: int?
+  ssh_key_path: str?
+  remote_config_path: str?
+image: ghcr.io/balkonsen/ha_ai_gen_workflow-{arch}
