@@ -1,0 +1,11 @@
+build_from:
+  amd64: ghcr.io/home-assistant/amd64-base-python:3.11-alpine3.18
+  aarch64: ghcr.io/home-assistant/aarch64-base-python:3.11-alpine3.18
+  armv7: ghcr.io/home-assistant/armv7-base-python:3.11-alpine3.18
+args:
+  BUILD_FROM: ghcr.io/home-assistant/amd64-base-python:3.11-alpine3.18
+labels:
+  io.hass.name: HA AI Gen Workflow
+  io.hass.description: AI-powered Home Assistant configuration workflow with GUI
+  io.hass.type: addon
+  io.hass.arch: amd64|aarch64|armv7
