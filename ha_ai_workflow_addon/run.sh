@@ -342,12 +342,6 @@ fi
 
 log_debug "Streamlit command: ${STREAMLIT_CMD[*]}"
 
-# Run Streamlit with error handling
+# Run Streamlit with exec (replaces current process)
 log_info "Executing Streamlit..."
-if exec "${STREAMLIT_CMD[@]}"; then
-    log_info "Streamlit started successfully"
-else
-    log_error "Failed to start Streamlit"
-    log_error "Check the logs above for more details"
-    exit 1
-fi
+exec "${STREAMLIT_CMD[@]}"
