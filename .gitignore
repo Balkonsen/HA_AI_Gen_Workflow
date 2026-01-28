@@ -93,6 +93,7 @@ tmp/
 # CI/CD
 .github/*
 !.github/workflows/
+!.github/copilot-instructions.md
 
 # Build artifacts
 *.tar.gz
