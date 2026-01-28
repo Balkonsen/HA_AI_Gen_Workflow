@@ -30,11 +30,12 @@ ports:
 ports_description:
   8501/tcp: Streamlit Web UI
 # File system access (minimum required permissions)
+# Note: Using 'config:rw' for direct access to /config directory
+# Don't include 'addon_config' when 'config' is used (they conflict)
 map:
   - config:rw
   - ssl:ro
   - share:rw
-  - addon_config:rw
 # Add-on options with defaults
 options:
   export_path: /config/ai_exports
