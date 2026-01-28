@@ -28,7 +28,12 @@ WORKDIR /app
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt /app/
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+# RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+# Retry pip install up to 5 times, and as fallback use the official PyPI index
+RUN for i in 1 2 3 4 5; do \
+        pip3 install --no-cache-dir --break-system-packages --timeout=300 -r requirements.txt && break || sleep 15; \
+    done || \
+    pip3 install --no-cache-dir --break-system-packages --timeout=300 --index-url=https://pypi.org/simple -r requirements.txt
 
 # Copy application files
 COPY bin/ /app/bin/
