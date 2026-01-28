@@ -441,9 +441,7 @@ Examples:
     parser.add_argument("--target", "-t", help="Target path for import")
     parser.add_argument("--remote", "-r", action="store_true", help="Use SSH for remote HA")
     parser.add_argument("--dry-run", "-n", action="store_true", help="Dry run (no changes)")
-    parser.add_argument(
-        "--ssh-timeout", type=int, default=30, help="SSH connection timeout in seconds (default: 30)"
-    )
+    parser.add_argument("--ssh-timeout", type=int, default=30, help="SSH connection timeout in seconds (default: 30)")
     parser.add_argument(
         "--transfer-timeout", type=int, default=600, help="File transfer timeout in seconds (default: 600)"
     )
