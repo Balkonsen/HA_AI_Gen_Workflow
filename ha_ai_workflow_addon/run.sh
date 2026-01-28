@@ -51,13 +51,14 @@ get_config() {
     # Try primary config file
     if [[ -f "${CONFIG_FILE}" ]]; then
         log_debug "Reading from primary config: ${CONFIG_FILE}"
-        value=$(jq -r ".${key} // empty" "${CONFIG_FILE}" 2>/dev/null || echo "")
+        # Use jq with --arg for safe parameter passing
+        value=$(jq -r --arg k "${key}" '.[$k] // empty' "${CONFIG_FILE}" 2>/dev/null || echo "")
     fi
     
     # Fallback to secondary config file
     if [[ -z "${value}" ]] && [[ -f "${CONFIG_FILE_FALLBACK}" ]]; then
         log_debug "Trying fallback config: ${CONFIG_FILE_FALLBACK}"
-        value=$(jq -r ".${key} // empty" "${CONFIG_FILE_FALLBACK}" 2>/dev/null || echo "")
+        value=$(jq -r --arg k "${key}" '.[$k] // empty' "${CONFIG_FILE_FALLBACK}" 2>/dev/null || echo "")
     fi
     
     # Use default if still empty
@@ -69,14 +70,22 @@ get_config() {
     echo "${value}"
 }
 
-# Failsafe: Check if jq is available
+# Failsafe: Check if jq is available (required for JSON config parsing)
 if ! command -v jq &> /dev/null; then
-    log_error "jq is not installed - installing now..."
-    apk add --no-cache jq || {
-        log_error "Failed to install jq. Cannot proceed."
+    log_warning "jq is not installed - installing now..."
+    if ! apk add --no-cache jq; then
+        log_error "Failed to install jq. Cannot proceed without JSON parser."
+        log_error "This add-on requires Alpine Linux with apk package manager."
         exit 1
-    }
+    fi
     log_info "jq installed successfully"
+    
+    # Verify jq is now available
+    if ! command -v jq &> /dev/null; then
+        log_error "jq installation appeared successful but command not found"
+        log_error "This is a critical error - cannot parse configuration"
+        exit 1
+    fi
 fi
 
 # Failsafe: Check if config file exists
@@ -118,11 +127,19 @@ REMOTE_CONFIG_PATH=$(get_config 'remote_config_path' '/config')
 log_info "Creating necessary directories..."
 for dir in "${EXPORT_PATH}" "${IMPORT_PATH}" "${SECRETS_PATH}"; do
     if ! mkdir -p "${dir}" 2>/dev/null; then
-        log_error "Failed to create directory: ${dir}"
-        log_warning "Attempting to create with elevated permissions..."
-        if ! sudo mkdir -p "${dir}" 2>/dev/null; then
-            log_error "Failed to create directory even with sudo: ${dir}"
-            log_warning "Continuing anyway - directory may already exist"
+        log_warning "Failed to create directory: ${dir}"
+        # Try with sudo if available (uncommon in containers but worth trying)
+        if command -v sudo &> /dev/null; then
+            log_debug "Attempting to create with elevated permissions..."
+            if sudo mkdir -p "${dir}" 2>/dev/null; then
+                log_debug "Created directory with sudo: ${dir}"
+            else
+                log_warning "Failed to create directory even with elevated permissions: ${dir}"
+                log_warning "Directory may already exist or permissions issue - continuing anyway"
+            fi
+        else
+            log_warning "sudo not available - continuing anyway"
+            log_debug "Directory may already exist or be created later"
         fi
     else
         log_debug "Created directory: ${dir}"
@@ -193,6 +210,19 @@ fi
 # Generate workflow configuration with HA API settings
 log_info "Generating workflow configuration..."
 log_debug "Writing config to /app/workflow_config.yaml"
+
+# Verify /app directory exists and is writable
+if [[ ! -d "/app" ]]; then
+    log_error "/app directory does not exist - this is unexpected"
+    log_error "Cannot proceed without application directory"
+    exit 1
+fi
+
+if [[ ! -w "/app" ]]; then
+    log_error "/app directory is not writable"
+    log_error "Cannot write configuration file"
+    exit 1
+fi
 
 if ! cat > /app/workflow_config.yaml << EOF
 paths:
@@ -268,7 +298,12 @@ fi
 
 # Method 3: Fallback to default ingress path
 if [[ -z "${INGRESS_URL}" ]]; then
-    INGRESS_URL="/api/hassio_ingress/$(cat /data/slug 2>/dev/null || echo 'ha_ai_gen_workflow')"
+    # Try to read slug file, suppress error if it doesn't exist
+    local_slug='ha_ai_gen_workflow'
+    if [[ -f "/data/slug" ]]; then
+        local_slug=$(cat /data/slug 2>/dev/null || echo 'ha_ai_gen_workflow')
+    fi
+    INGRESS_URL="/api/hassio_ingress/${local_slug}"
     log_warning "Using fallback ingress URL: ${INGRESS_URL}"
 fi
 
@@ -289,13 +324,21 @@ log_debug "  HA_CONFIG_PATH=${HA_CONFIG_PATH}"
 # Failsafe: Check if Streamlit is available
 log_info "Verifying Streamlit installation..."
 if ! command -v streamlit &> /dev/null; then
-    log_error "Streamlit is not installed!"
-    log_error "Attempting to install Streamlit..."
+    log_warning "Streamlit is not installed"
+    log_info "Attempting to install Streamlit..."
+    
+    # Check if pip3 is available
+    if ! command -v pip3 &> /dev/null; then
+        log_error "pip3 is not available - cannot install Streamlit"
+        log_error "This is a critical error - the add-on cannot function without Streamlit"
+        exit 1
+    fi
     
     if pip3 install --no-cache-dir streamlit; then
         log_info "Streamlit installed successfully"
     else
         log_error "Failed to install Streamlit - cannot start the application"
+        log_error "Check the logs above for pip3 error messages"
         exit 1
     fi
 fi
@@ -321,6 +364,8 @@ STREAMLIT_CMD=(
     streamlit run /app/bin/workflow_gui.py
     --server.port=8501
     --server.address=0.0.0.0
+    # Security settings disabled for Home Assistant ingress compatibility
+    # CORS and XSRF protection are handled by Home Assistant's ingress proxy
     --server.enableCORS=false
     --server.enableXsrfProtection=false
     --server.headless=true
@@ -328,8 +373,12 @@ STREAMLIT_CMD=(
     --theme.base=dark
 )
 
-# Only add baseUrlPath if ingress URL is properly set
+# Only add baseUrlPath if ingress URL is properly set and not root
 if [[ -n "${INGRESS_URL}" ]] && [[ "${INGRESS_URL}" != "/" ]]; then
+    # Basic validation: ensure URL doesn't contain obvious problematic characters
+    if [[ "${INGRESS_URL}" =~ [[:space:]] ]]; then
+        log_warning "Ingress URL contains spaces, which may cause issues: '${INGRESS_URL}'"
+    fi
     STREAMLIT_CMD+=(--server.baseUrlPath="${INGRESS_URL}")
     log_debug "Using baseUrlPath: ${INGRESS_URL}"
 fi
