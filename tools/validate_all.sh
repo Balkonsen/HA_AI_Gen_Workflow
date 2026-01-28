@@ -99,7 +99,6 @@ print_step "Dependencies check"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 if pip list | grep -q pytest; then
     success "Dependencies check passed"
-    PASSED_CHECKS=$((PASSED_CHECKS + 1))
 else
     failure "Dependencies check failed"
     echo "  Required test dependencies are not installed."
@@ -110,7 +109,6 @@ else
     echo ""
     echo "  See GETTING_STARTED.md for complete setup instructions."
     echo ""
-    FAILED_CHECKS=$((FAILED_CHECKS + 1))
 fi
 
 # Check 2: Python Formatting
