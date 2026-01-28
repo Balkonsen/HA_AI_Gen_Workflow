@@ -1,5 +1,5 @@
 name: HA AI Gen Workflow
-version: "1.0.1"
+version: "1.0.2"
 slug: ha_ai_gen_workflow
 description: >-
   Automated export, AI-powered development, and git-versioned import workflow
@@ -49,6 +49,8 @@ options:
   ssh_port: 22
   ssh_key_path: ""
   remote_config_path: /config
+  debug_mode: false
+  verbose: false
 # Schema validation for options
 schema:
   export_path: str
@@ -60,4 +62,6 @@ schema:
   ssh_port: int?
   ssh_key_path: str?
   remote_config_path: str?
+  debug_mode: bool?
+  verbose: bool?
 image: ghcr.io/balkonsen/ha_ai_gen_workflow-{arch}

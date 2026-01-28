@@ -33,6 +33,15 @@ This add-on provides a web-based graphical interface for the Home Assistant AI G
 | `ssh_key_path` | Path to SSH private key | (empty) |
 | `remote_config_path` | Remote config directory | `/config` |
 
+### Logging and Debug Settings (Optional)
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `debug_mode` | Enable detailed debug logging | `false` |
+| `verbose` | Enable verbose output | `false` |
+
+**Note**: Enable `debug_mode` or `verbose` to troubleshoot startup issues. This provides detailed logs about configuration loading, API connectivity, and initialization steps.
+
 ## Usage
 
 ### Step 1: Configure Paths
@@ -90,12 +99,43 @@ This add-on follows Home Assistant security best practices:
 
 ## Troubleshooting
 
+### s6-overlay-suexec Error (FIXED in v1.0.2)
+
+**Error**: `s6-overlay-suexec: fatal: can only run as pid 1`
+
+**Status**: This error has been completely resolved in version 1.0.2. The add-on no longer depends on s6-overlay and uses native bash scripts instead.
+
+**What was changed**:
+- Removed dependency on s6-overlay bashio functions
+- Rewrote startup script to use standard bash
+- Added comprehensive fallback mechanisms
+- Implemented custom logging system
+
+If you still see this error after upgrading to v1.0.2, please:
+1. Restart the add-on
+2. Enable `debug_mode: true` in the configuration
+3. Check the logs for detailed information
+4. Report the issue with full logs at: https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
+
 ### Add-on Won't Start
 
-1. Check the add-on logs for error messages
-2. Verify the configured paths exist and are writable
-3. Ensure Home Assistant API access is enabled
-4. Check if SUPERVISOR_TOKEN is available in logs
+1. **Enable debug logging**: Set `debug_mode: true` and `verbose: true` in add-on configuration
+2. Check the add-on logs for error messages (look for RED [ERROR] messages)
+3. Verify the configured paths exist and are writable
+4. Ensure Home Assistant API access is enabled
+5. Check if SUPERVISOR_TOKEN is available in logs (look for "SUPERVISOR_TOKEN available" message)
+
+### Configuration Loading Issues
+
+The add-on has multiple fallback mechanisms:
+- Primary config: `/data/options.json`
+- Fallback config: `/config/options.json`
+- Default values for all options
+
+If you see warnings about missing config files:
+1. This is normal if running outside Home Assistant
+2. The add-on will use default values
+3. Enable `debug_mode` to see which values are being used
 
 ### API Connection Issues
 
