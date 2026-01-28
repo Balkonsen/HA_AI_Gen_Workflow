@@ -35,3 +35,7 @@ cryptography>=41.0.0
 
 # GUI (optional - for Streamlit interface)
 streamlit>=1.28.0
+
+# Pin rpds-py to version compatible with Alpine 3.18's Cargo
+# rpds-py 0.30.0+ uses Cargo.lock v4 which requires Cargo 1.78+
+rpds-py<0.30.0
