@@ -1,6 +1,25 @@
 # Changelog
 
-## [1.0.2] - 2026-01-28
+## [1.0.3] - 2026-01-28 (Late afternoon)
+
+**Note**: This is the third rapid bug fix release today, addressing critical startup and UI accessibility issues discovered after initial release.
+
+### Fixed
+- **CRITICAL FIX**: Resolved "404 Not Found" error when accessing add-on web UI through Home Assistant Ingress
+  - Added `--server.enableWebsocketCompression=false` flag to Streamlit configuration
+  - This flag is required for Streamlit 1.10+ to work correctly behind reverse proxies and Home Assistant's Ingress
+  - The internal URL shown in logs (`http://0.0.0.0:8501/...`) is now correctly handled by the Ingress proxy
+
+### Documentation
+- Added troubleshooting section explaining the 404 error and its resolution
+- Clarified that SSH server is NOT required for add-on usage
+- Explained that SSH is only needed for remote Home Assistant instances
+- Documented that the URL shown in logs is internal and should not be accessed directly
+- Added instructions to access the add-on through Home Assistant's sidebar or "Open Web UI" button
+
+## [1.0.2] - 2026-01-28 (Afternoon)
+
+**Note**: This is a critical bug fix release addressing the s6-overlay error discovered immediately after v1.0.1.
 
 ### Fixed
 - **CRITICAL FIX**: Completely resolved "s6-overlay-suexec: fatal: can only run as pid 1" error
@@ -30,7 +49,9 @@
 - All logging functions replaced with custom implementations
 - Script is now fully self-contained and doesn't require s6-overlay
 
-## [1.0.1] - 2026-01-28
+## [1.0.1] - 2026-01-28 (Morning)
+
+**Note**: Initial patch release fixing startup error.
 
 ### Fixed
 - Fixed "s6-overlay-suexec: fatal: can only run as pid 1" error by adding `init: false` to config.yaml

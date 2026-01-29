@@ -155,6 +155,36 @@ If you see warnings about missing config files:
 2. Check the import files for syntax errors
 3. Verify all required secrets are available
 
+### Web UI Shows 404 Not Found (FIXED in v1.0.3)
+
+**Error**: Opening the add-on web UI shows "404 Not found"
+
+**Status**: This error has been resolved in version 1.0.3. The issue was related to Streamlit's websocket compression setting when running behind Home Assistant's Ingress proxy.
+
+**What was changed**:
+- Added `--server.enableWebsocketCompression=false` flag to Streamlit configuration
+- This is required for Streamlit 1.10+ to work correctly behind reverse proxies/ingress
+
+**Important Notes**:
+- The URL shown in the logs (e.g., `http://0.0.0.0:8501/api/hassio_ingress/...`) is the **internal** container address
+- **Do NOT try to access this URL directly** - it won't work from outside the container
+- **Access the add-on through Home Assistant's sidebar** or the add-on's "Open Web UI" button
+- The add-on uses Home Assistant's Ingress feature, which proxies requests through HA's web interface
+
+**About SSH Server**:
+- **SSH server is NOT required** for the add-on to work
+- SSH is only needed if you want to export/import configurations from/to a **remote** Home Assistant instance
+- For local usage (most common), the add-on accesses your config directly via `/config` mount
+- Enable SSH only if you're managing a separate/remote Home Assistant installation
+
+If you still see 404 errors after upgrading to v1.0.3:
+1. Restart the add-on completely (stop, then start)
+2. Clear your browser cache and reload the page
+3. Try accessing from a different browser or incognito/private mode
+4. Check the add-on logs for any error messages
+5. Enable `debug_mode: true` for detailed logging
+6. Report the issue with full logs at: https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
+
 ## Support
 
 For issues and feature requests, visit:
