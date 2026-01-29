@@ -48,6 +48,7 @@ options:
   ssh_user: root
   ssh_port: 22
   ssh_key_path: ""
+  ssh_password: ""
   remote_config_path: /config
   debug_mode: false
   verbose: false
@@ -61,6 +62,7 @@ schema:
   ssh_user: str?
   ssh_port: int?
   ssh_key_path: str?
+  ssh_password: password?
   remote_config_path: str?
   debug_mode: bool?
   verbose: bool?

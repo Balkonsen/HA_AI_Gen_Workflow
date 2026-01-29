@@ -121,6 +121,7 @@ SSH_HOST=$(get_config 'ssh_host' '')
 SSH_USER=$(get_config 'ssh_user' 'root')
 SSH_PORT=$(get_config 'ssh_port' '22')
 SSH_KEY_PATH=$(get_config 'ssh_key_path' '')
+SSH_PASSWORD=$(get_config 'ssh_password' '')
 REMOTE_CONFIG_PATH=$(get_config 'remote_config_path' '/config')
 
 # Failsafe: Create necessary directories with error handling
@@ -154,14 +155,31 @@ log_debug "  SSH enabled: ${SSH_ENABLED}"
 log_debug "  SSH host: ${SSH_HOST}"
 log_debug "  SSH user: ${SSH_USER}"
 log_debug "  SSH port: ${SSH_PORT}"
-
-# Verify SUPERVISOR_TOKEN is available for secure API access
-if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-    log_info "SUPERVISOR_TOKEN available - HA API access enabled"
-    log_debug "Token length: ${#SUPERVISOR_TOKEN}"
+if [[ -n "${SSH_KEY_PATH}" ]]; then
+    log_debug "  SSH authentication: Key-based"
+elif [[ -n "${SSH_PASSWORD}" ]]; then
+    log_debug "  SSH authentication: Password-based"
 else
-    log_warning "SUPERVISOR_TOKEN not available - some features may be limited"
-    log_warning "This is expected in non-addon environments"
+    log_debug "  SSH authentication: Not configured"
+fi
+
+# Verify SUPERVISOR_TOKEN is available for Home Assistant API access
+if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+    log_info "SUPERVISOR_TOKEN available - Full HA API access enabled"
+    log_debug "Token length: ${#SUPERVISOR_TOKEN}"
+    log_info "Features enabled: entity data, device info, automation analysis"
+else
+    if [[ -f "/data/options.json" ]]; then
+        log_warning "SUPERVISOR_TOKEN not set - This is unexpected in an add-on environment"
+        log_warning "The add-on will work but some HA API features will be unavailable:"
+        log_warning "  - Entity and device information retrieval"
+        log_warning "  - Automation context analysis"
+        log_warning "  - Direct HA API integration features"
+        log_info "Basic workflow features (export/import/sanitize) will still function"
+    else
+        log_info "Running in standalone mode (SUPERVISOR_TOKEN not needed)"
+        log_info "HA API features are disabled but core workflow features work normally"
+    fi
 fi
 
 # Test Home Assistant API connectivity (optional, for diagnostics)
@@ -237,6 +255,8 @@ ssh:
   user: "${SSH_USER}"
   port: ${SSH_PORT}
   key_path: "${SSH_KEY_PATH}"
+  # Note: password is not stored in config file for security
+  # Instead, it's passed via SSH_PASSWORD environment variable if needed
   remote_config_path: "${REMOTE_CONFIG_PATH}"
 
 secrets:
@@ -271,43 +291,31 @@ fi
 
 log_info "Workflow configuration generated successfully"
 
-# Get ingress information for Streamlit
-# Fallback mechanism: try multiple methods to get ingress URL
-log_info "Determining ingress URL..."
+# Detect if running in Home Assistant add-on environment
+# When running as an add-on with ingress, we should NOT set baseUrlPath
+# because Home Assistant's ingress proxy handles path rewriting automatically
+log_info "Checking environment for Home Assistant add-on..."
 
+HA_ADDON_ENVIRONMENT=false
 INGRESS_URL=""
-INGRESS_ENTRY=""
 
-# Method 1: Try reading from environment variable (set by Home Assistant)
-if [[ -n "${INGRESS_ENTRY:-}" ]]; then
-    INGRESS_URL="${INGRESS_ENTRY}"
-    log_debug "Ingress URL from INGRESS_ENTRY: ${INGRESS_URL}"
-fi
-
-# Method 2: Try reading from supervisor API
-if [[ -z "${INGRESS_URL}" ]] && [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-    log_debug "Attempting to get ingress URL from supervisor API..."
-    INGRESS_URL=$(curl -s -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
-        "http://supervisor/addons/self/info" 2>/dev/null | \
-        jq -r '.data.ingress_url // empty' 2>/dev/null || echo "")
+# Check for Home Assistant add-on indicators
+if [[ -n "${SUPERVISOR_TOKEN:-}" ]] || [[ -f "/data/options.json" ]]; then
+    HA_ADDON_ENVIRONMENT=true
+    log_info "Running in Home Assistant add-on environment"
+    log_info "Ingress proxy will handle URL routing automatically"
     
-    if [[ -n "${INGRESS_URL}" ]]; then
-        log_debug "Ingress URL from supervisor API: ${INGRESS_URL}"
-    fi
-fi
-
-# Method 3: Fallback to default ingress path
-if [[ -z "${INGRESS_URL}" ]]; then
-    # Try to read slug file, suppress error if it doesn't exist
-    local_slug='ha_ai_gen_workflow'
+    # For informational purposes only - not used in Streamlit config
     if [[ -f "/data/slug" ]]; then
         local_slug=$(cat /data/slug 2>/dev/null || echo 'ha_ai_gen_workflow')
+        INGRESS_URL="/api/hassio_ingress/${local_slug}"
+        log_info "Add-on accessible via Home Assistant sidebar or: ${INGRESS_URL}"
+    else
+        log_info "Add-on accessible via Home Assistant sidebar"
     fi
-    INGRESS_URL="/api/hassio_ingress/${local_slug}"
-    log_warning "Using fallback ingress URL: ${INGRESS_URL}"
+else
+    log_info "Running in standalone mode (not as Home Assistant add-on)"
 fi
-
-log_info "Ingress URL configured: ${INGRESS_URL}"
 
 # Export environment variables for Python scripts to use
 # SUPERVISOR_TOKEN is already available from the container environment
@@ -315,6 +323,11 @@ log_info "Setting up environment variables..."
 export HA_API_URL="http://supervisor/core/api"
 export HA_SUPERVISOR_URL="http://supervisor"
 export HA_CONFIG_PATH="/config"
+# Export SSH password securely via environment variable (not in config file)
+if [[ -n "${SSH_PASSWORD}" ]]; then
+    export SSH_PASSWORD="${SSH_PASSWORD}"
+    log_debug "SSH_PASSWORD environment variable set"
+fi
 
 log_debug "Environment variables set:"
 log_debug "  HA_API_URL=${HA_API_URL}"
@@ -355,33 +368,44 @@ fi
 log_info "=========================================="
 log_info "Starting Streamlit GUI..."
 log_info "=========================================="
-log_info "Access the UI via Home Assistant sidebar"
-log_info "Or navigate to: ${INGRESS_URL}"
+if [[ "${HA_ADDON_ENVIRONMENT}" == "true" ]]; then
+    log_info "Access the UI via Home Assistant sidebar"
+    if [[ -n "${INGRESS_URL}" ]]; then
+        log_info "Direct URL (if needed): ${INGRESS_URL}"
+    fi
+else
+    log_info "Access the UI at: http://localhost:8501"
+fi
 log_info ""
 
-# Prepare Streamlit command with fallback for base URL path
+# Prepare Streamlit command
 STREAMLIT_CMD=(
     streamlit run /app/bin/workflow_gui.py
     --server.port=8501
     --server.address=0.0.0.0
-    # Security settings disabled for Home Assistant ingress compatibility
-    # CORS and XSRF protection are handled by Home Assistant's ingress proxy
-    --server.enableCORS=false
-    --server.enableXsrfProtection=false
-    --server.enableWebsocketCompression=false
     --server.headless=true
     --browser.gatherUsageStats=false
     --theme.base=dark
 )
 
-# Only add baseUrlPath if ingress URL is properly set and not root
-if [[ -n "${INGRESS_URL}" ]] && [[ "${INGRESS_URL}" != "/" ]]; then
-    # Basic validation: ensure URL doesn't contain obvious problematic characters
-    if [[ "${INGRESS_URL}" =~ [[:space:]] ]]; then
-        log_warning "Ingress URL contains spaces, which may cause issues: '${INGRESS_URL}'"
-    fi
-    STREAMLIT_CMD+=(--server.baseUrlPath="${INGRESS_URL}")
-    log_debug "Using baseUrlPath: ${INGRESS_URL}"
+# Configure based on environment
+if [[ "${HA_ADDON_ENVIRONMENT}" == "true" ]]; then
+    # Home Assistant add-on mode: Ingress proxy handles routing
+    # DO NOT set baseUrlPath - it breaks ingress!
+    # Security is handled by Home Assistant's ingress proxy
+    STREAMLIT_CMD+=(
+        --server.enableCORS=false
+        --server.enableXsrfProtection=false
+        --server.enableWebsocketCompression=false
+    )
+    log_info "Streamlit configured for Home Assistant ingress (no baseUrlPath)"
+else
+    # Standalone mode: Enable security features
+    STREAMLIT_CMD+=(
+        --server.enableCORS=true
+        --server.enableXsrfProtection=true
+    )
+    log_info "Streamlit configured for standalone mode"
 fi
 
 # Add verbose logging if debug mode is enabled

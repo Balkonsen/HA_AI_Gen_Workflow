@@ -84,14 +84,33 @@ def render_configuration():
 
             ssh_user = st.text_input("SSH Username", value=config.get("ssh.user", "root"))
             config.set("ssh.user", ssh_user)
+            
+            # Authentication method selection
+            # Determine current auth method: default to "SSH Key"
+            current_key = config.get("ssh.key_path", "")
+            current_pass = config.get("ssh.password", "")
+            default_index = 1 if (current_pass and not current_key) else 0
+            
+            auth_method = st.radio(
+                "Authentication Method",
+                ["SSH Key", "Password"],
+                index=default_index,
+                horizontal=True
+            )
 
     with col2:
         if ssh_enabled:
             ssh_port = st.number_input("SSH Port", value=config.get("ssh.port", 22), min_value=1, max_value=65535)
             config.set("ssh.port", int(ssh_port))
 
-            ssh_key = st.text_input("SSH Key Path", value=config.get("ssh.key_path", "~/.ssh/id_rsa"))
-            config.set("ssh.key_path", ssh_key)
+            if auth_method == "SSH Key":
+                ssh_key = st.text_input("SSH Key Path", value=config.get("ssh.key_path", "~/.ssh/id_rsa"))
+                config.set("ssh.key_path", ssh_key)
+                config.set("ssh.password", "")  # Clear password if using key
+            else:  # Password
+                ssh_password = st.text_input("SSH Password", value=config.get("ssh.password", ""), type="password")
+                config.set("ssh.password", ssh_password)
+                config.set("ssh.key_path", "")  # Clear key if using password
 
             remote_path = st.text_input("Remote Config Path", value=config.get("ssh.remote_config_path", "/config"))
             config.set("ssh.remote_config_path", remote_path)
@@ -102,7 +121,8 @@ def render_configuration():
                 host=config.get("ssh.host"),
                 user=config.get("ssh.user"),
                 port=config.get("ssh.port"),
-                key_path=config.get("ssh.key_path"),
+                key_path=config.get("ssh.key_path") if config.get("ssh.key_path") else None,
+                password=config.get("ssh.password") if config.get("ssh.password") else None,
             )
             success, msg = ssh.test_connection()
 

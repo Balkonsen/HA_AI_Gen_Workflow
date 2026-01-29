@@ -9,6 +9,7 @@ import sys
 import subprocess
 import logging
 import time
+import shlex
 from pathlib import Path
 from typing import Optional, List, Tuple
 from datetime import datetime
@@ -59,20 +60,41 @@ class SSHTransfer:
         self._sftp = None
 
     def _get_ssh_command_base(self) -> List[str]:
-        """Get base SSH command with authentication."""
-        cmd = ["ssh", "-p", str(self.port)]
+        """Get base SSH command with authentication.
+        
+        Note: For password authentication, caller must set SSHPASS environment
+        variable before calling and clean it up afterward.
+        """
+        cmd = []
+        
+        # Use sshpass for password authentication with environment variable (more secure)
+        if self.password and not self.key_path:
+            cmd.extend(["sshpass", "-e"])  # -e flag reads password from SSHPASS env var
+        
+        cmd.extend(["ssh", "-p", str(self.port)])
 
         if self.key_path:
             cmd.extend(["-i", self.key_path])
-
+            # BatchMode=yes prevents password prompts when using keys
+            cmd.extend(["-o", "BatchMode=yes"])
+        
         cmd.extend(["-o", "StrictHostKeyChecking=accept-new"])
-        cmd.extend(["-o", "BatchMode=yes"])
 
         return cmd
 
     def _get_scp_command_base(self) -> List[str]:
-        """Get base SCP command with authentication."""
-        cmd = ["scp", "-P", str(self.port)]
+        """Get base SCP command with authentication.
+        
+        Note: For password authentication, caller must set SSHPASS environment
+        variable before calling and clean it up afterward.
+        """
+        cmd = []
+        
+        # Use sshpass for password authentication with environment variable (more secure)
+        if self.password and not self.key_path:
+            cmd.extend(["sshpass", "-e"])  # -e flag reads password from SSHPASS env var
+        
+        cmd.extend(["scp", "-P", str(self.port)])
 
         if self.key_path:
             cmd.extend(["-i", self.key_path])
@@ -90,6 +112,10 @@ class SSHTransfer:
         """
         for attempt in range(self.retry_attempts):
             try:
+                # Set SSHPASS for password authentication
+                if self.password and not self.key_path:
+                    os.environ['SSHPASS'] = self.password
+                
                 cmd = self._get_ssh_command_base()
                 cmd.extend([f"{self.user}@{self.host}", "echo 'Connection successful'"])
 
@@ -135,6 +161,11 @@ class SSHTransfer:
             except Exception as e:
                 logger.exception(f"Unexpected error during SSH connection test: {e}")
                 return False, f"Unexpected error: {str(e)}"
+            
+            finally:
+                # Clean up SSHPASS environment variable
+                if 'SSHPASS' in os.environ:
+                    del os.environ['SSHPASS']
 
         return False, "Connection failed after all retry attempts"
 
@@ -152,6 +183,10 @@ class SSHTransfer:
             timeout = self.connection_timeout * 4  # Allow longer for command execution
 
         try:
+            # Set SSHPASS for password authentication
+            if self.password and not self.key_path:
+                os.environ['SSHPASS'] = self.password
+            
             cmd = self._get_ssh_command_base()
             cmd.extend([f"{self.user}@{self.host}", command])
 
@@ -176,6 +211,11 @@ class SSHTransfer:
         except Exception as e:
             logger.exception(f"Unexpected error executing command: {e}")
             return False, "", str(e)
+        
+        finally:
+            # Clean up SSHPASS environment variable
+            if 'SSHPASS' in os.environ:
+                del os.environ['SSHPASS']
 
     def download_file(self, remote_path: str, local_path: str) -> bool:
         """Download file from remote host with retry logic.
@@ -189,6 +229,10 @@ class SSHTransfer:
         """
         for attempt in range(self.retry_attempts):
             try:
+                # Set SSHPASS for password authentication
+                if self.password and not self.key_path:
+                    os.environ['SSHPASS'] = self.password
+                
                 # Ensure local directory exists
                 Path(local_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -247,6 +291,11 @@ class SSHTransfer:
                 logger.exception(f"Unexpected error during download: {e}")
                 print(f"✗ Download error: {e}")
                 return False
+            
+            finally:
+                # Clean up SSHPASS environment variable
+                if 'SSHPASS' in os.environ:
+                    del os.environ['SSHPASS']
 
         return False
 
@@ -262,6 +311,10 @@ class SSHTransfer:
         """
         for attempt in range(self.retry_attempts):
             try:
+                # Set SSHPASS for password authentication
+                if self.password and not self.key_path:
+                    os.environ['SSHPASS'] = self.password
+                
                 # Check if local file exists
                 if not Path(local_path).exists():
                     logger.error(f"Local file not found: {local_path}")
@@ -327,6 +380,11 @@ class SSHTransfer:
                 logger.exception(f"Unexpected error during upload: {e}")
                 print(f"✗ Upload error: {e}")
                 return False
+            
+            finally:
+                # Clean up SSHPASS environment variable
+                if 'SSHPASS' in os.environ:
+                    del os.environ['SSHPASS']
 
         return False
 
@@ -364,13 +422,25 @@ class SSHTransfer:
         try:
             Path(local_path).mkdir(parents=True, exist_ok=True)
 
-            cmd = [
+            # Build rsync command with proper password handling and security
+            cmd = []
+            # Use shlex.quote to properly escape shell arguments
+            ssh_opts = f"ssh -p {shlex.quote(str(self.port))}"
+            
+            if self.key_path:
+                ssh_opts += f" -i {shlex.quote(self.key_path)}"
+            elif self.password:
+                # Use sshpass with environment variable for rsync
+                os.environ['SSHPASS'] = self.password
+                cmd.extend(["sshpass", "-e"])
+            
+            cmd.extend([
                 "rsync",
                 "-avz",
                 "--progress",
                 "-e",
-                f"ssh -p {self.port}" + (f" -i {self.key_path}" if self.key_path else ""),
-            ]
+                ssh_opts,
+            ])
 
             for pattern in exclude_patterns:
                 cmd.extend(["--exclude", pattern])
@@ -406,6 +476,10 @@ class SSHTransfer:
             logger.exception(f"Unexpected rsync error: {e}")
             print(f"✗ rsync error: {e}")
             return False
+        finally:
+            # Clean up environment variable
+            if 'SSHPASS' in os.environ:
+                del os.environ['SSHPASS']
 
     def _scp_download_dir(self, remote_path: str, local_path: str) -> bool:
         """Download directory using SCP."""
@@ -432,13 +506,25 @@ class SSHTransfer:
     def _rsync_upload(self, local_path: str, remote_path: str, exclude_patterns: List[str]) -> bool:
         """Upload using rsync with timeout."""
         try:
-            cmd = [
+            # Build rsync command with proper password handling and security
+            cmd = []
+            # Use shlex.quote to properly escape shell arguments
+            ssh_opts = f"ssh -p {shlex.quote(str(self.port))}"
+            
+            if self.key_path:
+                ssh_opts += f" -i {shlex.quote(self.key_path)}"
+            elif self.password:
+                # Use sshpass with environment variable for rsync
+                os.environ['SSHPASS'] = self.password
+                cmd.extend(["sshpass", "-e"])
+            
+            cmd.extend([
                 "rsync",
                 "-avz",
                 "--progress",
                 "-e",
-                f"ssh -p {self.port}" + (f" -i {self.key_path}" if self.key_path else ""),
-            ]
+                ssh_opts,
+            ])
 
             for pattern in exclude_patterns:
                 cmd.extend(["--exclude", pattern])
@@ -474,6 +560,10 @@ class SSHTransfer:
             logger.exception(f"Unexpected rsync error: {e}")
             print(f"✗ rsync error: {e}")
             return False
+        finally:
+            # Clean up environment variable
+            if 'SSHPASS' in os.environ:
+                del os.environ['SSHPASS']
 
     def backup_remote(self, remote_path: str, backup_name: Optional[str] = None) -> Tuple[bool, str]:
         """Create backup on remote host.
@@ -558,12 +648,18 @@ class HARemoteManager:
             config: SSH configuration dictionary
         """
         self.config = config
+        
+        # Get password from config or environment variable
+        password = config.get("password")
+        if not password:
+            password = os.environ.get("SSH_PASSWORD")
+        
         self.ssh = SSHTransfer(
             host=config.get("host", ""),
             user=config.get("user", "root"),
             port=config.get("port", 22),
             key_path=config.get("key_path"),
-            password=config.get("password"),
+            password=password,
             connection_timeout=config.get("connection_timeout", 30),
             transfer_timeout=config.get("transfer_timeout", 600),
             retry_attempts=config.get("retry_attempts", 3),

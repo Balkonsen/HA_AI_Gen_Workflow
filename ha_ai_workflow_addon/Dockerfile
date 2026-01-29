@@ -11,6 +11,7 @@ RUN apk add --no-cache \
     py3-wheel \
     git \
     openssh-client \
+    sshpass \
     gcc \
     musl-dev \
     python3-dev \
