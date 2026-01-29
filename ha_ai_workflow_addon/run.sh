@@ -326,7 +326,7 @@ export HA_CONFIG_PATH="/config"
 # Export SSH password securely via environment variable (not in config file)
 if [[ -n "${SSH_PASSWORD}" ]]; then
     export SSH_PASSWORD="${SSH_PASSWORD}"
-    log_debug "SSH_PASSWORD environment variable set (length: ${#SSH_PASSWORD})"
+    log_debug "SSH_PASSWORD environment variable set"
 fi
 
 log_debug "Environment variables set:"
