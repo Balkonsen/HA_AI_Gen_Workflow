@@ -86,10 +86,15 @@ def render_configuration():
             config.set("ssh.user", ssh_user)
             
             # Authentication method selection
+            # Determine current auth method: default to "SSH Key"
+            current_key = config.get("ssh.key_path", "")
+            current_pass = config.get("ssh.password", "")
+            default_index = 1 if (current_pass and not current_key) else 0
+            
             auth_method = st.radio(
                 "Authentication Method",
                 ["SSH Key", "Password"],
-                index=0 if config.get("ssh.key_path", "") else (1 if config.get("ssh.password", "") else 0),
+                index=default_index,
                 horizontal=True
             )
 

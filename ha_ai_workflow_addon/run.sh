@@ -156,9 +156,9 @@ log_debug "  SSH host: ${SSH_HOST}"
 log_debug "  SSH user: ${SSH_USER}"
 log_debug "  SSH port: ${SSH_PORT}"
 if [[ -n "${SSH_KEY_PATH}" ]]; then
-    log_debug "  SSH authentication: Key-based (${SSH_KEY_PATH})"
+    log_debug "  SSH authentication: Key-based"
 elif [[ -n "${SSH_PASSWORD}" ]]; then
-    log_debug "  SSH authentication: Password-based (password length: ${#SSH_PASSWORD})"
+    log_debug "  SSH authentication: Password-based"
 else
     log_debug "  SSH authentication: Not configured"
 fi
@@ -255,7 +255,8 @@ ssh:
   user: "${SSH_USER}"
   port: ${SSH_PORT}
   key_path: "${SSH_KEY_PATH}"
-  password: "${SSH_PASSWORD}"
+  # Note: password is not stored in config file for security
+  # Instead, it's passed via SSH_PASSWORD environment variable if needed
   remote_config_path: "${REMOTE_CONFIG_PATH}"
 
 secrets:
@@ -322,6 +323,11 @@ log_info "Setting up environment variables..."
 export HA_API_URL="http://supervisor/core/api"
 export HA_SUPERVISOR_URL="http://supervisor"
 export HA_CONFIG_PATH="/config"
+# Export SSH password securely via environment variable (not in config file)
+if [[ -n "${SSH_PASSWORD}" ]]; then
+    export SSH_PASSWORD="${SSH_PASSWORD}"
+    log_debug "SSH_PASSWORD environment variable set (length: ${#SSH_PASSWORD})"
+fi
 
 log_debug "Environment variables set:"
 log_debug "  HA_API_URL=${HA_API_URL}"
