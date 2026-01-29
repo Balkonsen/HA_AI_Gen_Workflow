@@ -60,19 +60,32 @@ class SSHTransfer:
 
     def _get_ssh_command_base(self) -> List[str]:
         """Get base SSH command with authentication."""
-        cmd = ["ssh", "-p", str(self.port)]
+        cmd = []
+        
+        # Use sshpass for password authentication
+        if self.password and not self.key_path:
+            cmd.extend(["sshpass", "-p", self.password])
+        
+        cmd.extend(["ssh", "-p", str(self.port)])
 
         if self.key_path:
             cmd.extend(["-i", self.key_path])
-
+            # BatchMode=yes prevents password prompts when using keys
+            cmd.extend(["-o", "BatchMode=yes"])
+        
         cmd.extend(["-o", "StrictHostKeyChecking=accept-new"])
-        cmd.extend(["-o", "BatchMode=yes"])
 
         return cmd
 
     def _get_scp_command_base(self) -> List[str]:
         """Get base SCP command with authentication."""
-        cmd = ["scp", "-P", str(self.port)]
+        cmd = []
+        
+        # Use sshpass for password authentication
+        if self.password and not self.key_path:
+            cmd.extend(["sshpass", "-p", self.password])
+        
+        cmd.extend(["scp", "-P", str(self.port)])
 
         if self.key_path:
             cmd.extend(["-i", self.key_path])
@@ -364,13 +377,23 @@ class SSHTransfer:
         try:
             Path(local_path).mkdir(parents=True, exist_ok=True)
 
-            cmd = [
+            cmd = []
+            
+            # Use sshpass for password authentication
+            if self.password and not self.key_path:
+                cmd.extend(["sshpass", "-p", self.password])
+            
+            ssh_opts = f"ssh -p {self.port}"
+            if self.key_path:
+                ssh_opts += f" -i {self.key_path}"
+            
+            cmd.extend([
                 "rsync",
                 "-avz",
                 "--progress",
                 "-e",
-                f"ssh -p {self.port}" + (f" -i {self.key_path}" if self.key_path else ""),
-            ]
+                ssh_opts,
+            ])
 
             for pattern in exclude_patterns:
                 cmd.extend(["--exclude", pattern])
@@ -432,13 +455,23 @@ class SSHTransfer:
     def _rsync_upload(self, local_path: str, remote_path: str, exclude_patterns: List[str]) -> bool:
         """Upload using rsync with timeout."""
         try:
-            cmd = [
+            cmd = []
+            
+            # Use sshpass for password authentication
+            if self.password and not self.key_path:
+                cmd.extend(["sshpass", "-p", self.password])
+            
+            ssh_opts = f"ssh -p {self.port}"
+            if self.key_path:
+                ssh_opts += f" -i {self.key_path}"
+            
+            cmd.extend([
                 "rsync",
                 "-avz",
                 "--progress",
                 "-e",
-                f"ssh -p {self.port}" + (f" -i {self.key_path}" if self.key_path else ""),
-            ]
+                ssh_opts,
+            ])
 
             for pattern in exclude_patterns:
                 cmd.extend(["--exclude", pattern])
