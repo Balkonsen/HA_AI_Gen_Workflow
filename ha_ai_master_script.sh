@@ -37,35 +37,35 @@ mkdir -p "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}" "${B
 log() {
     local level=$1
     shift
-    local message="$@"
+    local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "${timestamp} [${level}] ${message}" | tee -a "${LOG_FILE}"
 }
 
 info() {
-    echo -e "${BLUE}ℹ${NC} $@"
-    log "INFO" "$@"
+    echo -e "${BLUE}ℹ${NC} $*"
+    log "INFO" "$*"
 }
 
 success() {
-    echo -e "${GREEN}✓${NC} $@"
-    log "SUCCESS" "$@"
+    echo -e "${GREEN}✓${NC} $*"
+    log "SUCCESS" "$*"
 }
 
 warn() {
-    echo -e "${YELLOW}⚠${NC} $@"
-    log "WARN" "$@"
+    echo -e "${YELLOW}⚠${NC} $*"
+    log "WARN" "$*"
 }
 
 error() {
-    echo -e "${RED}✗${NC} $@"
-    log "ERROR" "$@"
+    echo -e "${RED}✗${NC} $*"
+    log "ERROR" "$*"
 }
 
 banner() {
     echo ""
     echo "═══════════════════════════════════════════════════════════════════"
-    echo "  $@"
+    echo "  $*"
     echo "═══════════════════════════════════════════════════════════════════"
     echo ""
 }
