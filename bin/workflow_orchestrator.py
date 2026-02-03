@@ -177,35 +177,40 @@ class WorkflowOrchestrator:
             export_path: Path to sanitized export
 
         Returns:
-            Path to AI context directory
+            Path to export directory containing AI context files
         """
         print("\n🤖 Generating AI context...")
 
-        ai_context_dir = Path(self.config.get("paths.ai_context_dir"))
-        timestamp = self._get_timestamp()
-        context_dir = ai_context_dir / f"context_{timestamp}"
-        context_dir.mkdir(parents=True, exist_ok=True)
-
         # Generate context using HAContextGenerator
+        # It will create AI_CONTEXT.json and AI_PROMPT.md in the export_path
         generator = HAContextGenerator(export_path)
 
-        # Generate context file
-        context_file = context_dir / "AI_CONTEXT.md"
-        generator.generate_context_file(str(context_file))
+        try:
+            # Generate context file - returns tuple of (context_file, prompt_file) paths
+            context_file, prompt_file = generator.generate_context_file()
 
-        # Generate AI prompt
-        prompt_file = context_dir / "AI_PROMPT.md"
-        generator.generate_ai_prompt(str(prompt_file))
+            # Export secrets mapping for AI (optional, only if secrets exist)
+            secrets_info_file = os.path.join(export_path, "SECRETS_INFO.json")
+            try:
+                self.secrets_manager.export_for_ai(secrets_info_file)
+            except Exception as e:
+                print(f"  Note: Could not export secrets info: {e}")
 
-        # Export secrets mapping for AI
-        secrets_info_file = context_dir / "SECRETS_INFO.json"
-        self.secrets_manager.export_for_ai(str(secrets_info_file))
+            # Create instructions file
+            export_dir = Path(export_path)
+            self._create_ai_instructions(export_dir)
 
-        # Create instructions file
-        self._create_ai_instructions(context_dir)
+            print(f"✓ AI context generated in: {export_path}")
+            print(f"  - {os.path.basename(context_file)}")
+            print(f"  - {os.path.basename(prompt_file)}")
+            return export_path
 
-        print(f"✓ AI context generated: {context_dir}")
-        return str(context_dir)
+        except Exception as e:
+            print(f"✗ Failed to generate AI context: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return None
 
     def _create_ai_instructions(self, context_dir: Path):
         """Create AI instructions file."""
