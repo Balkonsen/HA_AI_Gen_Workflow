@@ -62,7 +62,7 @@ warning() {
 run_check() {
     local name=$1
     shift
-    local cmd="$@"
+    local cmd="$*"
     
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     print_step "$name"

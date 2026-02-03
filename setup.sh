@@ -13,15 +13,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-info() { echo -e "${BLUE}ℹ${NC} $@"; }
-success() { echo -e "${GREEN}✓${NC} $@"; }
-warn() { echo -e "${YELLOW}⚠${NC} $@"; }
-error() { echo -e "${RED}✗${NC} $@"; }
+info() { echo -e "${BLUE}ℹ${NC} $*"; }
+success() { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+error() { echo -e "${RED}✗${NC} $*"; }
 
 banner() {
     echo ""
     echo "═══════════════════════════════════════════════════════════════════"
-    echo "  $@"
+    echo "  $*"
     echo "═══════════════════════════════════════════════════════════════════"
     echo ""
 }
