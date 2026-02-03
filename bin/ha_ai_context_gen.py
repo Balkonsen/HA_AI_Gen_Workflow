@@ -288,7 +288,9 @@ class HAContextGenerator:
         integrations = self.context.get("integrations", {}).get("configured", [])
         integration_domains = [i.get("domain", "") for i in integrations]
 
-        if "media_player" in integration_domains or self.context["integrations"]["by_category"]["media"]:
+        if "media_player" in integration_domains or self.context.get("integrations", {}).get("by_category", {}).get(
+            "media", []
+        ):
             capabilities.append("media_control")
 
         if any(x in integration_domains for x in ["light", "switch"]):
