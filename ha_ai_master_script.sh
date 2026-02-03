@@ -44,22 +44,22 @@ log() {
 
 info() {
     echo -e "${BLUE}ℹ${NC} $*"
-    log "INFO" "$@"
+    log "INFO" "$*"
 }
 
 success() {
     echo -e "${GREEN}✓${NC} $*"
-    log "SUCCESS" "$@"
+    log "SUCCESS" "$*"
 }
 
 warn() {
     echo -e "${YELLOW}⚠${NC} $*"
-    log "WARN" "$@"
+    log "WARN" "$*"
 }
 
 error() {
     echo -e "${RED}✗${NC} $*"
-    log "ERROR" "$@"
+    log "ERROR" "$*"
 }
 
 banner() {
