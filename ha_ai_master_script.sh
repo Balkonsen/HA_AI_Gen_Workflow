@@ -42,8 +42,7 @@ log() {
     local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
-    # Log level filtering (optional - for now, log everything)
-    # Skip VERBOSE messages if not in verbose mode
+    # Log level filtering: skip VERBOSE messages if not in verbose mode
     if [ "$level" = "VERBOSE" ] && [ "$ENABLE_VERBOSE" = false ]; then
         return
     fi

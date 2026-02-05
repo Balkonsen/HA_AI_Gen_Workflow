@@ -123,15 +123,23 @@ missing_deps=()
 if ! command -v python3 &> /dev/null; then
     missing_deps+=("python3")
 else
-    python_version=$(python3 --version 2>&1 | awk '{print $2}')
-    success "Python 3 found: ${python_version}"
+    python_version=$(python3 --version 2>&1 | awk '{print $2}' || echo "unknown")
+    if [ "$python_version" != "unknown" ]; then
+        success "Python 3 found: ${python_version}"
+    else
+        success "Python 3 found (version detection failed)"
+    fi
 fi
 
 if ! command -v git &> /dev/null; then
     missing_deps+=("git")
 else
-    git_version=$(git --version 2>&1 | awk '{print $3}')
-    success "Git found: ${git_version}"
+    git_version=$(git --version 2>&1 | awk '{print $3}' || echo "unknown")
+    if [ "$git_version" != "unknown" ]; then
+        success "Git found: ${git_version}"
+    else
+        success "Git found (version detection failed)"
+    fi
 fi
 
 if ! command -v pip3 &> /dev/null && ! python3 -m pip --version &> /dev/null; then
@@ -295,7 +303,8 @@ if command -v shellcheck &> /dev/null; then
     
     for script in "${INSTALL_DIR}/ha_ai_master.sh" "${SCRIPT_DIR}/setup.sh"; do
         if [ -f "$script" ]; then
-            if shellcheck "$script" 2>&1 | grep -q "^In.*line"; then
+            # Run shellcheck and capture exit code
+            if ! shellcheck "$script" > /dev/null 2>&1; then
                 warn "ShellCheck found issues in $(basename "$script")"
                 if [ "$VERBOSE" = true ]; then
                     shellcheck "$script" || true

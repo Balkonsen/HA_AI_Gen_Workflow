@@ -155,16 +155,23 @@ class TestWorkflowLogger:
         logger.push_context("Context2")
         logger.info("Test with context")
 
-        content = log_file.read_text()
+        # Read first log entry
+        with open(log_file, 'r') as f:
+            content = f.read()
         log_entry = json.loads(content.strip())
         assert log_entry["context"] == ["Context1", "Context2"]
 
         logger.pop_context()
         logger.info("Test after pop")
 
-        lines = content.strip().split("\n")
-        # Note: We can't easily test the second line because we already read the file
-        # In a real scenario, we'd need to re-read
+        # Re-read file to verify second entry
+        with open(log_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Check second line has correct context (only Context1 after pop)
+        second_entry = json.loads(lines[1].strip())
+        assert second_entry["context"] == ["Context1"]
+        assert second_entry["message"] == "Test after pop"
 
     def test_set_log_level(self, tmp_path):
         """Test changing log level."""
