@@ -21,7 +21,37 @@ CONFIG_DIR="/config"
 LOG_DIR="${CONFIG_DIR}/ai_exports"
 SETUP_LOG="${LOG_DIR}/setup.log"
 
-# Ensure log directory exists
+# Parse command line arguments for verbosity and help (before creating directories)
+VERBOSE=false
+for arg in "$@"; do
+    case $arg in
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo ""
+            echo "Options:"
+            echo "  -v, --verbose    Enable verbose output"
+            echo "  -h, --help       Show this help message"
+            echo ""
+            echo "This script will:"
+            echo "  1. Create directory structure"
+            echo "  2. Check and install dependencies"
+            echo "  3. Verify Python modules"
+            echo "  4. Install Python scripts"
+            echo "  5. Install shell scripts"
+            echo "  6. Make all scripts executable"
+            echo "  7. Validate installations"
+            echo "  8. Initialize git repository"
+            echo "  9. Create documentation"
+            echo "  10. Perform final checks"
+            exit 0
+            ;;
+        -v|--verbose)
+            VERBOSE=true
+            ;;
+    esac
+done
+
+# Ensure log directory exists (after help check)
 mkdir -p "${LOG_DIR}"
 
 # Logging functions with file output
@@ -74,42 +104,6 @@ if [ "$EUID" -ne 0 ]; then
     error "Please run as root (sudo)"
     exit 1
 fi
-
-# Parse command line arguments for verbosity
-VERBOSE=false
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -v|--verbose)
-            VERBOSE=true
-            info "Verbose mode enabled"
-            shift
-            ;;
-        -h|--help)
-            echo "Usage: $0 [options]"
-            echo ""
-            echo "Options:"
-            echo "  -v, --verbose    Enable verbose output"
-            echo "  -h, --help       Show this help message"
-            echo ""
-            echo "This script will:"
-            echo "  1. Create directory structure"
-            echo "  2. Check and install dependencies"
-            echo "  3. Verify Python modules"
-            echo "  4. Install Python scripts"
-            echo "  5. Install shell scripts"
-            echo "  6. Make all scripts executable"
-            echo "  7. Validate installations"
-            echo "  8. Initialize git repository"
-            echo "  9. Create documentation"
-            exit 0
-            ;;
-        *)
-            error "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
-            ;;
-    esac
-done
 
 # Step 1: Create directory structure
 info "Step 1/7: Creating directory structure..."
