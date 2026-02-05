@@ -26,6 +26,8 @@ LOG_FILE="${EXPORT_DIR}/workflow.log"
 AUTO_MODE=false
 STRICT_MODE=true
 UPLOAD_DEBUG=false
+LOG_LEVEL="INFO"  # Default log level: DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR
+ENABLE_VERBOSE=false
 
 # Ensure directories exist
 mkdir -p "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}" "${BIN_DIR}"
@@ -39,7 +41,21 @@ log() {
     shift
     local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # Log level filtering (optional - for now, log everything)
+    # Skip VERBOSE messages if not in verbose mode
+    if [ "$level" = "VERBOSE" ] && [ "$ENABLE_VERBOSE" = false ]; then
+        return
+    fi
+    
     echo -e "${timestamp} [${level}] ${message}" | tee -a "${LOG_FILE}"
+}
+
+verbose() {
+    if [ "$ENABLE_VERBOSE" = true ]; then
+        echo -e "${BLUE}→${NC} $*"
+        log "VERBOSE" "$*"
+    fi
 }
 
 info() {
@@ -933,7 +949,21 @@ OPTIONS:
     --auto              Enable auto-mode (no confirmations)
     --no-strict         Disable strict error handling
     --upload-debug      Enable debug report upload
+    --verbose           Enable verbose logging output
+    --log-level LEVEL   Set log level (DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR)
+    --log-file FILE     Specify custom log file path (default: ${LOG_FILE})
     -h, --help          Show this help message
+
+LOGGING:
+    Default log file: ${LOG_FILE}
+    
+    Log levels (from most to least verbose):
+      DEBUG       - Detailed debugging information
+      VERBOSE     - Detailed operational information
+      INFO        - General informational messages (default)
+      CONDENSED   - Only important messages
+      WARNING     - Warning messages only
+      ERROR       - Error messages only
 
 EXAMPLES:
     # Initial setup
@@ -941,6 +971,9 @@ EXAMPLES:
 
     # Export configuration for AI
     $(basename $0) export
+
+    # Export with verbose logging
+    $(basename $0) export --verbose
 
     # Import AI-generated configs
     $(basename $0) import
@@ -951,6 +984,9 @@ EXAMPLES:
     # Fully automated workflow (CI/CD)
     $(basename $0) export --auto
     $(basename $0) import --auto
+    
+    # Export with custom log level
+    $(basename $0) export --log-level DEBUG
 
 For more information, see: ${BASE_DIR}/docs/README.md
 EOF
@@ -979,6 +1015,31 @@ main() {
                 UPLOAD_DEBUG=true
                 shift
                 ;;
+            --verbose)
+                ENABLE_VERBOSE=true
+                LOG_LEVEL="VERBOSE"
+                shift
+                ;;
+            --log-level)
+                if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                    LOG_LEVEL="$2"
+                    shift 2
+                else
+                    error "Error: --log-level requires a value (DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR)"
+                    exit 1
+                fi
+                ;;
+            --log-file)
+                if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                    LOG_FILE="$2"
+                    # Ensure log directory exists
+                    mkdir -p "$(dirname "${LOG_FILE}")"
+                    shift 2
+                else
+                    error "Error: --log-file requires a path"
+                    exit 1
+                fi
+                ;;
             -h|--help)
                 show_help
                 exit 0
@@ -991,9 +1052,15 @@ main() {
         esac
     done
     
+    # Export log level as environment variable for Python scripts
+    export HA_AI_LOG_LEVEL="${LOG_LEVEL}"
+    export HA_AI_LOG_FILE="${LOG_FILE}"
+    
     # Start logging
     log "INFO" "============================================"
     log "INFO" "HA AI Workflow started: command=${command}"
+    log "INFO" "Log level: ${LOG_LEVEL}"
+    log "INFO" "Log file: ${LOG_FILE}"
     log "INFO" "============================================"
     
     # Show banner

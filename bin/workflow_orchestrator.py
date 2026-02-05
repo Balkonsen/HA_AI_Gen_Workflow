@@ -16,6 +16,7 @@ from typing import Optional, Dict, Any
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from workflow_config import WorkflowConfig
+from workflow_logger import get_logger, configure_logger, LogLevel
 from secrets_manager import SecretsManager, SecretsSanitizer
 from ssh_transfer import HARemoteManager
 from ha_diagnostic_export import HAConfigExporter
@@ -32,6 +33,8 @@ class WorkflowOrchestrator:
         config_path: Optional[str] = None,
         ssh_timeout: Optional[int] = None,
         transfer_timeout: Optional[int] = None,
+        log_level: Optional[str] = None,
+        log_file: Optional[str] = None,
     ):
         """Initialize orchestrator.
 
@@ -39,7 +42,15 @@ class WorkflowOrchestrator:
             config_path: Optional path to configuration file
             ssh_timeout: Override SSH connection timeout from CLI
             transfer_timeout: Override file transfer timeout from CLI
+            log_level: Log level (DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR)
+            log_file: Path to log file
         """
+        # Configure logger first
+        if log_level or log_file:
+            self.logger = configure_logger(log_level=log_level, log_file=log_file)
+        else:
+            self.logger = get_logger()
+
         self.config = WorkflowConfig(config_path)
         self.secrets_manager = SecretsManager(
             secrets_dir=self.config.get("paths.secrets_dir"), label_prefix=self.config.get("secrets.label_prefix")
@@ -69,25 +80,38 @@ class WorkflowOrchestrator:
             Path to exported directory or None on failure
         """
         if not self.config.get("ssh.enabled"):
-            print("⚠ SSH not enabled. Configure SSH settings first.")
+            self.logger.warning("SSH not enabled. Configure SSH settings first.")
             return None
 
-        ssh_config = self.config.get("ssh")
+        self.logger.push_context("Remote Export")
+        try:
+            ssh_config = self.config.get("ssh")
 
-        # Apply CLI overrides for timeouts
-        if self.ssh_timeout_override:
-            ssh_config["connection_timeout"] = self.ssh_timeout_override
-        if self.transfer_timeout_override:
-            ssh_config["transfer_timeout"] = self.transfer_timeout_override
+            # Apply CLI overrides for timeouts
+            if self.ssh_timeout_override:
+                ssh_config["connection_timeout"] = self.ssh_timeout_override
+            if self.transfer_timeout_override:
+                ssh_config["transfer_timeout"] = self.transfer_timeout_override
 
-        remote_manager = HARemoteManager(ssh_config)
+            remote_manager = HARemoteManager(ssh_config)
 
-        timestamp = self._get_timestamp()
-        export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            timestamp = self._get_timestamp()
+            export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
 
-        success = remote_manager.export_config(str(export_dir), self.config.get("export.exclude_patterns", []))
+            self.logger.info(f"Starting remote export to {export_dir}")
+            success = remote_manager.export_config(str(export_dir), self.config.get("export.exclude_patterns", []))
 
-        return str(export_dir) if success else None
+            if success:
+                self.logger.success(f"Remote export completed: {export_dir}")
+            else:
+                self.logger.error("Remote export failed")
+
+            return str(export_dir) if success else None
+        except Exception as e:
+            self.logger.log_exception(e, "Remote export failed")
+            return None
+        finally:
+            self.logger.pop_context()
 
     def export_local(self, source_path: str) -> Optional[str]:
         """Export from local Home Assistant configuration.
@@ -98,25 +122,27 @@ class WorkflowOrchestrator:
         Returns:
             Path to exported directory
         """
-        timestamp = self._get_timestamp()
-        export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
-        export_dir.mkdir(parents=True, exist_ok=True)
+        self.logger.push_context("Local Export")
+        try:
+            timestamp = self._get_timestamp()
+            export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            export_dir.mkdir(parents=True, exist_ok=True)
 
-        exporter = HAConfigExporter(output_dir=str(export_dir.parent))
-        exporter.export_path = str(export_dir)
+            exporter = HAConfigExporter(output_dir=str(export_dir.parent))
+            exporter.export_path = str(export_dir)
 
-        print("\n📤 Exporting local configuration...")
-        print(f"   Source: {source_path}")
-        print(f"   Destination: {export_dir}")
+            self.logger.banner("Exporting Local Configuration")
+            self.logger.info(f"Source: {source_path}")
+            self.logger.info(f"Destination: {export_dir}")
 
-        # Copy configuration files
-        source = Path(source_path)
-        if not source.exists():
-            print(f"✗ Source path does not exist: {source_path}")
-            return None
+            # Copy configuration files
+            source = Path(source_path)
+            if not source.exists():
+                self.logger.error(f"Source path does not exist: {source_path}")
+                return None
 
-        # Export with sanitization
-        config_dir = export_dir / "config"
+            # Export with sanitization
+            config_dir = export_dir / "config"
         config_dir.mkdir(exist_ok=True)
 
         sanitizer = SecretsSanitizer(self.secrets_manager)
