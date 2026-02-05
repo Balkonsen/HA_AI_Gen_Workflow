@@ -19,6 +19,7 @@ except ImportError:
     sys.exit(1)
 
 from workflow_config import WorkflowConfig
+from workflow_logger import get_logger, configure_logger, LogLevel
 from secrets_manager import SecretsManager
 from ssh_transfer import SSHTransfer
 
@@ -33,6 +34,15 @@ def init_session_state():
         st.session_state.export_path = None
     if "context_path" not in st.session_state:
         st.session_state.context_path = None
+    if "log_level" not in st.session_state:
+        st.session_state.log_level = "INFO"
+    if "logger" not in st.session_state:
+        log_dir = st.session_state.config.get("paths.export_dir", "/config/ai_exports")
+        log_file = os.path.join(log_dir, "workflow.log")
+        st.session_state.logger = configure_logger(
+            log_level=st.session_state.log_level,
+            log_file=log_file
+        )
 
 
 def render_sidebar():
@@ -60,6 +70,9 @@ def render_sidebar():
 
     if st.sidebar.button("🔧 Settings"):
         st.session_state.step = 7
+    
+    if st.sidebar.button("📋 View Logs"):
+        st.session_state.step = 8
 
 
 def render_configuration():
@@ -464,6 +477,147 @@ def render_settings():
         st.success("✅ Settings saved!")
 
 
+def render_logs():
+    """Render log viewer page."""
+    st.header("📋 Workflow Logs")
+    st.markdown("View and manage workflow logs with different verbosity levels.")
+
+    # Log level selector
+    col1, col2, col3 = st.columns([2, 2, 1])
+
+    with col1:
+        log_level = st.selectbox(
+            "Log Level",
+            ["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR", "CRITICAL"],
+            index=2,  # Default to INFO
+            help="Select the minimum log level to display",
+        )
+        
+        if log_level != st.session_state.log_level:
+            st.session_state.log_level = log_level
+            st.session_state.logger.set_log_level(LogLevel[log_level])
+
+    with col2:
+        log_dir = st.session_state.config.get("paths.export_dir", "/config/ai_exports")
+        log_file = st.text_input("Log File Path", value=os.path.join(log_dir, "workflow.log"))
+
+    with col3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🔄 Refresh"):
+            st.rerun()
+
+    st.markdown("---")
+
+    # Display log file
+    if Path(log_file).exists():
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            st.subheader("Log Contents")
+        
+        with col2:
+            num_lines = st.number_input("Show last N lines", min_value=10, max_value=1000, value=100, step=10)
+
+        try:
+            with open(log_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                
+            # Show last N lines
+            last_lines = lines[-num_lines:] if len(lines) > num_lines else lines
+            
+            # Display in code block
+            log_content = "".join(last_lines)
+            st.code(log_content, language="log")
+            
+            # Stats
+            st.info(f"📊 Total lines: {len(lines)} | Showing: {len(last_lines)}")
+            
+            # Download button
+            st.download_button(
+                label="⬇️ Download Full Log",
+                data="".join(lines),
+                file_name="workflow.log",
+                mime="text/plain",
+            )
+
+        except Exception as e:
+            st.error(f"❌ Error reading log file: {e}")
+    else:
+        st.warning(f"⚠️ Log file not found: {log_file}")
+        st.info("Run a workflow operation to generate logs.")
+
+    st.markdown("---")
+
+    # Diagnostic report generator
+    st.subheader("🔍 Diagnostic Report")
+    st.markdown("Generate a diagnostic report for troubleshooting issues.")
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        report_path = st.text_input(
+            "Report Output Path",
+            value=os.path.join(log_dir, f"diagnostic_report_{Path(log_file).stem}.md"),
+        )
+
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("📄 Generate Report"):
+            try:
+                with st.spinner("Generating diagnostic report..."):
+                    output = st.session_state.logger.create_diagnostic_report(
+                        output_path=report_path,
+                        include_context=True
+                    )
+                st.success(f"✅ Diagnostic report created: {output}")
+                
+                # Show preview
+                if Path(output).exists():
+                    with open(output, "r", encoding="utf-8") as f:
+                        preview = f.read()
+                    with st.expander("📄 Report Preview"):
+                        st.markdown(preview)
+            except Exception as e:
+                st.error(f"❌ Error generating report: {e}")
+
+    st.markdown("---")
+
+    # Clear logs option
+    st.subheader("🗑️ Log Management")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🗑️ Clear Log File", type="secondary"):
+            if Path(log_file).exists():
+                try:
+                    with open(log_file, "w") as f:
+                        f.write("")
+                    st.success("✅ Log file cleared")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error clearing log: {e}")
+            else:
+                st.warning("⚠️ Log file does not exist")
+    
+    with col2:
+        if st.button("📁 Open Log Directory", type="secondary"):
+            st.info(f"📂 Log directory: {log_dir}")
+            try:
+                # List files in log directory
+                log_path = Path(log_dir)
+                if log_path.exists():
+                    files = list(log_path.glob("*.log"))
+                    if files:
+                        st.write("Available log files:")
+                        for file in files:
+                            st.write(f"  - {file.name}")
+                    else:
+                        st.write("No log files found")
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+
 def main():
     """Main entry point."""
     st.set_page_config(page_title="HA AI Workflow", page_icon="🏠", layout="wide")
@@ -488,6 +642,8 @@ def main():
         render_full_pipeline()
     elif step == 7:
         render_settings()
+    elif step == 8:
+        render_logs()
 
 
 if __name__ == "__main__":
