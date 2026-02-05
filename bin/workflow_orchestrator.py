@@ -143,28 +143,33 @@ class WorkflowOrchestrator:
 
             # Export with sanitization
             config_dir = export_dir / "config"
-        config_dir.mkdir(exist_ok=True)
+            config_dir.mkdir(exist_ok=True)
 
-        sanitizer = SecretsSanitizer(self.secrets_manager)
+            sanitizer = SecretsSanitizer(self.secrets_manager)
 
-        for pattern in self.config.get("export.include_patterns", ["*.yaml"]):
-            for file_path in source.glob(pattern):
-                if file_path.is_file():
-                    relative = file_path.relative_to(source)
-                    dest = config_dir / relative
-                    dest.parent.mkdir(parents=True, exist_ok=True)
+            for pattern in self.config.get("export.include_patterns", ["*.yaml"]):
+                for file_path in source.glob(pattern):
+                    if file_path.is_file():
+                        relative = file_path.relative_to(source)
+                        dest = config_dir / relative
+                        dest.parent.mkdir(parents=True, exist_ok=True)
 
-                    # Sanitize YAML files
-                    if file_path.suffix in [".yaml", ".yml"]:
-                        sanitizer.sanitize_file(str(file_path), str(dest))
-                    else:
-                        shutil.copy2(file_path, dest)
+                        # Sanitize YAML files
+                        if file_path.suffix in [".yaml", ".yml"]:
+                            sanitizer.sanitize_file(str(file_path), str(dest))
+                        else:
+                            shutil.copy2(file_path, dest)
 
-        # Save secrets
-        self.secrets_manager.save()
+            # Save secrets
+            self.secrets_manager.save()
 
-        print(f"✓ Export complete: {export_dir}")
-        return str(export_dir)
+            self.logger.success(f"Export complete: {export_dir}")
+            return str(export_dir)
+        except Exception as e:
+            self.logger.log_exception(e, "Local export failed")
+            return None
+        finally:
+            self.logger.pop_context()
 
     def sanitize_export(self, export_path: str) -> bool:
         """Sanitize an existing export directory.
