@@ -1,0 +1,14 @@
+{
+  "name": "HA AI Gen Workflow Dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "pip install -r requirements-test.txt && pip install -r requirements.txt",
+  "customizations": {
+    "codespaces": {
+      "openFiles": [".github/copilot-instructions.md"]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/dhouj/features/shellcheck:0": {}
+  }
+}
