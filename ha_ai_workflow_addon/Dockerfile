@@ -53,7 +53,7 @@ LABEL \
     io.hass.name="HA AI Gen Workflow" \
     io.hass.description="AI-powered Home Assistant configuration workflow" \
     io.hass.type="addon" \
-    io.hass.version="1.0.0" \
+    io.hass.version="1.0.4" \
     maintainer="Balkonsen"
 
 # Run the add-on

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-02-06
+
+**BREAKING CHANGE**: Removed support for 32-bit ARM (armv7) architectures
+
+### Changed
+- **Dropped armv7 (32-bit) architecture support** - Home Assistant 2026.2.0+ only supports 64-bit systems
+  - Supported architectures: amd64, aarch64 (64-bit only)
+  - Users on 32-bit systems must migrate to 64-bit OS or remain on HA 2025.12 or earlier
+
+### Fixed
+- Version synchronization across all add-on configuration files
+- Add-on update mechanism compatibility with Home Assistant 2026.2.0+
+- Ensures proper recognition and updates by Home Assistant Supervisor
+
+### Security
+- **Updated cryptography package** from 41.0.0 to 42.0.4+ to fix critical vulnerabilities:
+  - CVE-2024-0727: Bleichenbacher timing oracle attack
+  - CVE-2024-26130: NULL pointer dereference in pkcs12.serialize_key_and_certificates
+  - CVE-2023-38325: SSH certificate mishandling
+- Aligned with Home Assistant's security and support model for 2026+
+
 ## [1.0.0] - 2026-01-28
 
 ### Added

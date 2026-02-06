@@ -2,6 +2,30 @@
 
 This add-on provides a web-based graphical interface for the Home Assistant AI Generation Workflow.
 
+## System Requirements
+
+**Important**: This add-on requires **Home Assistant 2026.2.0 or later** running on **64-bit hardware**.
+
+### Supported Architectures
+- **amd64** (64-bit x86 - Intel/AMD processors)
+- **aarch64** (64-bit ARM - Raspberry Pi 3/4/5 with 64-bit OS, Home Assistant Green/Yellow)
+
+### Unsupported Architectures
+- ❌ **armv7** (32-bit ARM) - No longer supported as of Home Assistant 2026.2.0
+- ❌ **i386** (32-bit x86) - No longer supported as of Home Assistant 2026.2.0
+
+### Migration from 32-bit Systems
+
+If you are currently running Home Assistant on 32-bit hardware or OS:
+
+1. **Check Hardware Compatibility**: Most Raspberry Pi 3, 4, and 5 models support 64-bit operation
+2. **Backup Your System**: Create a full backup before migration
+3. **Install 64-bit Home Assistant OS**: Download and flash the aarch64 (for ARM) or amd64 (for x86) image
+4. **Restore Your Backup**: After installing 64-bit HA OS, restore your backup
+5. **Install This Add-on**: The add-on will now be available in the add-on store
+
+**Note**: If your hardware does not support 64-bit operation, you must remain on Home Assistant 2025.12 or earlier.
+
 ## Features
 
 - 📤 **Export Configuration** - Export your Home Assistant configuration safely

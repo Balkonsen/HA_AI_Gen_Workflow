@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.0.4] - 2026-02-06
+
+**BREAKING CHANGE**: This release removes support for 32-bit ARM (armv7) architectures to ensure compatibility with Home Assistant 2026.2.0 and later versions.
+
+### Changed
+- **Removed armv7 (32-bit ARM) architecture support** to comply with Home Assistant 2026.2.0+ requirements
+  - Home Assistant officially dropped support for 32-bit systems starting with version 2026.2.0
+  - Only 64-bit architectures are now supported: amd64 and aarch64
+  - Users on 32-bit systems (e.g., Raspberry Pi 2/3/4 running 32-bit OS) must migrate to 64-bit OS or remain on older HA versions
+
+### Fixed
+- Version consistency across all add-on files (config.yaml, Dockerfile, build.yaml)
+- Add-on update mechanism now properly recognized by Home Assistant 2026.2.0+
+
+### Security
+- **Updated cryptography package** from 41.0.0 to 42.0.4+ to fix critical vulnerabilities:
+  - CVE-2024-0727: Bleichenbacher timing oracle attack
+  - CVE-2024-26130: NULL pointer dereference in pkcs12.serialize_key_and_certificates
+  - CVE-2023-38325: SSH certificate mishandling
+
+### Migration Guide for 32-bit Users
+If you are currently using this add-on on a 32-bit system:
+1. Check if your hardware supports 64-bit operation (most Raspberry Pi 3/4/5 do)
+2. Migrate to a 64-bit Home Assistant OS image (aarch64)
+3. Restore your backup after migration
+4. The add-on will then be available for installation/update
+
+**Note**: If you cannot migrate to 64-bit, you must remain on Home Assistant 2025.12 or earlier, which is the last version supporting 32-bit systems.
+
 ## [1.0.3] - 2026-01-28 (Late afternoon)
 
 **Note**: This is the third rapid bug fix release today, addressing critical startup and UI accessibility issues discovered after initial release.

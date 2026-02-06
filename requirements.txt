@@ -11,7 +11,11 @@ requests>=2.31.0
 python-dateutil>=2.8.2
 
 # Encryption (for secrets management)
-cryptography>=41.0.0
+# Updated to 42.0.4+ to fix security vulnerabilities:
+# - CVE-2024-0727: Bleichenbacher timing oracle attack
+# - CVE-2024-26130: pkcs12.serialize_key_and_certificates NULL pointer dereference
+# - CVE-2023-38325: SSH certificate mishandling
+cryptography>=42.0.4
 
 # SSH support (for remote HA access)
 paramiko>=3.0.0
