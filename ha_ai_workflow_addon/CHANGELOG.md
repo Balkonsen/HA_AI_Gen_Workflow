@@ -14,6 +14,12 @@
 - Version consistency across all add-on files (config.yaml, Dockerfile, build.yaml)
 - Add-on update mechanism now properly recognized by Home Assistant 2026.2.0+
 
+### Security
+- **Updated cryptography package** from 41.0.0 to 42.0.4+ to fix critical vulnerabilities:
+  - CVE-2024-0727: Bleichenbacher timing oracle attack
+  - CVE-2024-26130: NULL pointer dereference in pkcs12.serialize_key_and_certificates
+  - CVE-2023-38325: SSH certificate mishandling
+
 ### Migration Guide for 32-bit Users
 If you are currently using this add-on on a 32-bit system:
 1. Check if your hardware supports 64-bit operation (most Raspberry Pi 3/4/5 do)
