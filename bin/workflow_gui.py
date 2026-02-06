@@ -4,8 +4,10 @@ HA AI Gen Workflow GUI
 Streamlit-based graphical interface for the workflow.
 """
 
+import io
 import os
 import sys
+import contextlib
 from pathlib import Path
 
 # Add bin directory to path
@@ -23,6 +25,195 @@ from workflow_logger import get_logger, configure_logger, LogLevel
 from secrets_manager import SecretsManager
 from ssh_transfer import SSHTransfer
 
+# Standard HA root directories for path verification
+STANDARD_ROOT_DIRS = [
+    "/config",
+    "/homeassistant",
+    "/usr/share/hassio",
+    os.path.expanduser("~/.homeassistant"),
+    os.path.expanduser("~/homeassistant"),
+    os.path.abspath("."),
+]
+
+
+def resolve_and_verify_path(path_str: str) -> tuple:
+    """Resolve a path and verify its status.
+
+    Args:
+        path_str: The path string to resolve and verify.
+
+    Returns:
+        Tuple of (resolved_absolute_path, exists, is_creatable, message)
+    """
+    if not path_str or not path_str.strip():
+        return "", False, False, "Path is empty"
+
+    # Expand user home and environment variables, then resolve to absolute
+    expanded = os.path.expanduser(os.path.expandvars(path_str.strip()))
+    resolved = os.path.abspath(expanded)
+
+    if os.path.exists(resolved):
+        if os.path.isdir(resolved):
+            return resolved, True, True, f"✅ Directory exists: {resolved}"
+        else:
+            return resolved, True, True, f"✅ File exists: {resolved}"
+
+    # Check if parent exists or can be created
+    parent = os.path.dirname(resolved)
+    if os.path.exists(parent):
+        return resolved, False, True, f"⚠️ Does not exist (parent exists, can be created): {resolved}"
+
+    # Walk up to find nearest existing ancestor
+    ancestor = parent
+    while ancestor and not os.path.exists(ancestor):
+        ancestor = os.path.dirname(ancestor)
+        if ancestor == os.path.dirname(ancestor):
+            break
+
+    if ancestor and os.path.exists(ancestor):
+        return resolved, False, True, f"⚠️ Does not exist (nearest ancestor: {ancestor}): {resolved}"
+
+    return resolved, False, False, f"❌ Cannot create — no valid ancestor found: {resolved}"
+
+
+def find_standard_root() -> str:
+    """Find the first available standard HA root directory.
+
+    Returns:
+        The first existing standard root directory, or current working directory.
+    """
+    for root_dir in STANDARD_ROOT_DIRS:
+        if os.path.isdir(root_dir):
+            return root_dir
+    return os.path.abspath(".")
+
+
+def list_directory_contents(dir_path: str, max_depth: int = 2) -> list:
+    """List directory contents up to a given depth.
+
+    Args:
+        dir_path: Path to directory.
+        max_depth: Maximum depth to recurse (default 2).
+
+    Returns:
+        List of (relative_path, is_dir, size) tuples.
+    """
+    entries = []
+    base = Path(dir_path)
+    if not base.is_dir():
+        return entries
+
+    try:
+        for item in sorted(base.iterdir()):
+            if item.name.startswith("."):
+                continue
+            rel = str(item.relative_to(base))
+            is_dir = item.is_dir()
+            size = item.stat().st_size if item.is_file() else 0
+            entries.append((rel, is_dir, size))
+
+            if is_dir and max_depth > 1:
+                try:
+                    for sub_item in sorted(item.iterdir()):
+                        if sub_item.name.startswith("."):
+                            continue
+                        sub_rel = str(sub_item.relative_to(base))
+                        sub_is_dir = sub_item.is_dir()
+                        sub_size = sub_item.stat().st_size if sub_item.is_file() else 0
+                        entries.append((sub_rel, sub_is_dir, sub_size))
+                except PermissionError:
+                    entries.append((rel + "/ (permission denied)", True, 0))
+    except PermissionError:
+        pass
+
+    return entries
+
+
+def capture_runtime_output(func, *args, **kwargs):
+    """Capture stdout/stderr from a function call for terminal display.
+
+    Args:
+        func: The callable to execute.
+        *args: Positional arguments for func.
+        **kwargs: Keyword arguments for func.
+
+    Returns:
+        Tuple of (result, captured_output_string)
+    """
+    stdout_capture = io.StringIO()
+    stderr_capture = io.StringIO()
+
+    with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(stderr_capture):
+        try:
+            result = func(*args, **kwargs)
+        except Exception as e:
+            stderr_capture.write(f"\nException: {type(e).__name__}: {e}\n")
+            result = None
+
+    output = stdout_capture.getvalue()
+    errors = stderr_capture.getvalue()
+    combined = output
+    if errors:
+        combined += "\n--- STDERR ---\n" + errors
+
+    return result, combined
+
+
+def render_terminal_output(output: str, title: str = "Runtime Output"):
+    """Render captured output in a terminal-like widget.
+
+    Args:
+        output: The output text to display.
+        title: Title for the terminal section.
+    """
+    if not output or not output.strip():
+        return
+
+    st.markdown(f"### 🖥️ {title}")
+    # Use a dark-themed code block for terminal appearance
+    st.code(output, language="log")
+
+
+def render_path_input_with_validation(label: str, config_key: str, config: WorkflowConfig, key_suffix: str = "") -> str:
+    """Render a path input with inline validation status.
+
+    Args:
+        label: Display label for the input.
+        config_key: Dot-notation config key (e.g., 'paths.export_dir').
+        config: WorkflowConfig instance.
+        key_suffix: Optional suffix for unique Streamlit widget keys.
+
+    Returns:
+        The resolved absolute path string.
+    """
+    current_value = config.get(config_key, "")
+    widget_key = f"path_{config_key}_{key_suffix}" if key_suffix else f"path_{config_key}"
+
+    path_value = st.text_input(label, value=current_value, key=widget_key)
+
+    resolved, exists, creatable, message = resolve_and_verify_path(path_value)
+
+    if path_value:
+        if exists:
+            st.caption(message)
+        elif creatable:
+            st.caption(message)
+            if st.button(f"📁 Create '{os.path.basename(resolved)}'", key=f"create_{widget_key}"):
+                try:
+                    Path(resolved).mkdir(parents=True, exist_ok=True)
+                    st.success(f"✅ Created: {resolved}")
+                    st.rerun()
+                except OSError as e:
+                    st.error(f"❌ Failed to create directory: {e}")
+        else:
+            st.caption(message)
+
+        config.set(config_key, resolved)
+    else:
+        st.caption("⚠️ Path is empty")
+
+    return resolved
+
 
 def init_session_state():
     """Initialize session state variables."""
@@ -36,13 +227,12 @@ def init_session_state():
         st.session_state.context_path = None
     if "log_level" not in st.session_state:
         st.session_state.log_level = "INFO"
+    if "runtime_output" not in st.session_state:
+        st.session_state.runtime_output = ""
     if "logger" not in st.session_state:
         log_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         log_file = os.path.join(log_dir, "workflow.log")
-        st.session_state.logger = configure_logger(
-            log_level=st.session_state.log_level,
-            log_file=log_file
-        )
+        st.session_state.logger = configure_logger(log_level=st.session_state.log_level, log_file=log_file)
 
 
 def render_sidebar():
@@ -70,9 +260,26 @@ def render_sidebar():
 
     if st.sidebar.button("🔧 Settings"):
         st.session_state.step = 7
-    
+
     if st.sidebar.button("📋 View Logs"):
         st.session_state.step = 8
+
+    if st.sidebar.button("📂 Path Explorer"):
+        st.session_state.step = 9
+
+    # Sidebar log level control for quick access
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🔊 Verbosity")
+    log_level = st.sidebar.selectbox(
+        "Log Level",
+        ["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR"],
+        index=["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR"].index(st.session_state.log_level),
+        key="sidebar_log_level",
+    )
+    if log_level != st.session_state.log_level:
+        st.session_state.log_level = log_level
+        st.session_state.logger.set_log_level(LogLevel[log_level])
+        st.sidebar.caption(f"Log level: {log_level}")
 
 
 def render_configuration():
@@ -81,6 +288,10 @@ def render_configuration():
     st.markdown("Configure your Home Assistant connection and workflow settings.")
 
     config = st.session_state.config
+
+    # Detect HA root directory
+    ha_root = find_standard_root()
+    st.info(f"🏠 Detected HA root: **{ha_root}**")
 
     # SSH Configuration
     st.subheader("📡 SSH Connection")
@@ -97,18 +308,15 @@ def render_configuration():
 
             ssh_user = st.text_input("SSH Username", value=config.get("ssh.user", "root"))
             config.set("ssh.user", ssh_user)
-            
+
             # Authentication method selection
             # Determine current auth method: default to "SSH Key"
             current_key = config.get("ssh.key_path", "")
             current_pass = config.get("ssh.password", "")
             default_index = 1 if (current_pass and not current_key) else 0
-            
+
             auth_method = st.radio(
-                "Authentication Method",
-                ["SSH Key", "Password"],
-                index=default_index,
-                horizontal=True
+                "Authentication Method", ["SSH Key", "Password"], index=default_index, horizontal=True
             )
 
     with col2:
@@ -146,24 +354,24 @@ def render_configuration():
 
     st.markdown("---")
 
-    # Path Configuration
-    st.subheader("📁 Local Paths")
+    # Path Configuration — inside the HA installation
+    st.subheader("📁 HA Workflow Directories")
+    st.markdown(
+        "Configure the directories used by the workflow inside your Home Assistant installation. "
+        "Paths are validated and resolved to absolute locations. "
+        "Non-existing directories can be created with a single click."
+    )
 
     col1, col2 = st.columns(2)
 
     with col1:
-        export_dir = st.text_input("Export Directory", value=config.get("paths.export_dir", "./exports"))
-        config.set("paths.export_dir", export_dir)
-
-        secrets_dir = st.text_input("Secrets Directory", value=config.get("paths.secrets_dir", "./secrets"))
-        config.set("paths.secrets_dir", secrets_dir)
+        render_path_input_with_validation("Export Directory", "paths.export_dir", config, "cfg")
+        render_path_input_with_validation("Secrets Directory", "paths.secrets_dir", config, "cfg")
+        render_path_input_with_validation("AI Context Directory", "paths.ai_context_dir", config, "cfg")
 
     with col2:
-        import_dir = st.text_input("Import Directory", value=config.get("paths.import_dir", "./imports"))
-        config.set("paths.import_dir", import_dir)
-
-        backup_dir = st.text_input("Backup Directory", value=config.get("paths.backup_dir", "./backups"))
-        config.set("paths.backup_dir", backup_dir)
+        render_path_input_with_validation("Import Directory", "paths.import_dir", config, "cfg")
+        render_path_input_with_validation("Backup Directory", "paths.backup_dir", config, "cfg")
 
     st.markdown("---")
 
@@ -204,20 +412,26 @@ def render_export():
     export_mode = st.radio("Export Mode", ["Local", "SSH Remote"], horizontal=True)
 
     if export_mode == "Local":
-        source_path = st.text_input("Home Assistant Config Path", value="/config", placeholder="/path/to/ha/config")
+        source_path = st.text_input("Home Assistant Config Path", value=find_standard_root(), placeholder="/config")
+        # Show validation for the source path
+        resolved, exists, _creatable, message = resolve_and_verify_path(source_path)
+        st.caption(message)
 
         if st.button("📤 Start Export", type="primary"):
             with st.spinner("Exporting configuration..."):
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                export_path = orchestrator.export_local(source_path)
+                export_path, output = capture_runtime_output(orchestrator.export_local, source_path)
 
+                st.session_state.runtime_output = output
                 if export_path:
                     st.session_state.export_path = export_path
                     st.success(f"✅ Export complete: {export_path}")
                 else:
                     st.error("❌ Export failed")
+
+            render_terminal_output(st.session_state.runtime_output)
 
     else:  # SSH Remote
         if not config.get("ssh.enabled"):
@@ -235,13 +449,16 @@ def render_export():
                     from workflow_orchestrator import WorkflowOrchestrator
 
                     orchestrator = WorkflowOrchestrator()
-                    export_path = orchestrator.export_from_remote()
+                    export_path, output = capture_runtime_output(orchestrator.export_from_remote)
 
+                    st.session_state.runtime_output = output
                     if export_path:
                         st.session_state.export_path = export_path
                         st.success(f"✅ Export complete: {export_path}")
                     else:
                         st.error("❌ Export failed")
+
+                render_terminal_output(st.session_state.runtime_output)
 
     if st.session_state.export_path:
         st.markdown("---")
@@ -252,8 +469,11 @@ def render_export():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                orchestrator.sanitize_export(st.session_state.export_path)
+                _result, output = capture_runtime_output(orchestrator.sanitize_export, st.session_state.export_path)
+                st.session_state.runtime_output = output
                 st.success("✅ Secrets sanitized!")
+
+            render_terminal_output(st.session_state.runtime_output)
 
         col1, col2 = st.columns(2)
         with col2:
@@ -269,6 +489,9 @@ def render_ai_context():
     export_path = st.text_input(
         "Export Path", value=st.session_state.export_path or "", placeholder="./exports/export_..."
     )
+    if export_path:
+        _resolved, _exists, _creatable, message = resolve_and_verify_path(export_path)
+        st.caption(message)
 
     st.markdown("### Context Options")
 
@@ -290,8 +513,9 @@ def render_ai_context():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                context_path = orchestrator.generate_ai_context(export_path)
+                context_path, output = capture_runtime_output(orchestrator.generate_ai_context, export_path)
 
+                st.session_state.runtime_output = output
                 if context_path:
                     st.session_state.context_path = context_path
                     st.success(f"✅ AI context generated: {context_path}")
@@ -299,10 +523,13 @@ def render_ai_context():
                     # Show generated files
                     st.markdown("### Generated Files")
                     context_dir = Path(context_path)
-                    for f in context_dir.iterdir():
-                        st.markdown(f"- `{f.name}`")
+                    if context_dir.is_dir():
+                        for f in context_dir.iterdir():
+                            st.markdown(f"- `{f.name}`")
                 else:
                     st.error("❌ Context generation failed")
+
+            render_terminal_output(st.session_state.runtime_output)
 
     if st.session_state.context_path:
         st.markdown("---")
@@ -326,6 +553,9 @@ def render_import():
         value=config.get("paths.import_dir", "./imports"),
         placeholder="./imports/...",
     )
+    if import_path:
+        _resolved, _exists, _creatable, message = resolve_and_verify_path(import_path)
+        st.caption(message)
 
     import_mode = st.radio("Import Mode", ["Local", "SSH Remote"], horizontal=True)
 
@@ -338,15 +568,18 @@ def render_import():
         auto_restore = st.checkbox("Auto-restore secrets", value=config.get("secrets.auto_restore", True))
 
     if import_mode == "Local":
-        target_path = st.text_input("Target Config Path", value="/config", placeholder="/path/to/ha/config")
+        target_path = st.text_input("Target Config Path", value=find_standard_root(), placeholder="/config")
+        _resolved, _exists, _creatable, message = resolve_and_verify_path(target_path)
+        st.caption(message)
 
         if st.button("📥 Start Import", type="primary"):
             with st.spinner("Importing configuration..."):
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                success = orchestrator.import_local(import_path, target_path, dry_run)
+                success, output = capture_runtime_output(orchestrator.import_local, import_path, target_path, dry_run)
 
+                st.session_state.runtime_output = output
                 if success:
                     if dry_run:
                         st.success("✅ Dry run complete - no changes made")
@@ -354,6 +587,8 @@ def render_import():
                         st.success("✅ Import complete!")
                 else:
                     st.error("❌ Import failed")
+
+            render_terminal_output(st.session_state.runtime_output)
 
     else:  # SSH Remote
         if not config.get("ssh.enabled"):
@@ -368,12 +603,15 @@ def render_import():
                     from workflow_orchestrator import WorkflowOrchestrator
 
                     orchestrator = WorkflowOrchestrator()
-                    success = orchestrator.import_to_remote(import_path, dry_run)
+                    success, output = capture_runtime_output(orchestrator.import_to_remote, import_path, dry_run)
 
+                    st.session_state.runtime_output = output
                     if success:
                         st.success("✅ Import complete!")
                     else:
                         st.error("❌ Import failed")
+
+                render_terminal_output(st.session_state.runtime_output)
 
     col1, col2 = st.columns(2)
     with col2:
@@ -389,6 +627,9 @@ def render_validate():
     validate_path = st.text_input(
         "Path to validate", value=st.session_state.export_path or "", placeholder="./exports/export_..."
     )
+    if validate_path:
+        _resolved, _exists, _creatable, message = resolve_and_verify_path(validate_path)
+        st.caption(message)
 
     if st.button("🔍 Run Validation", type="primary"):
         if not validate_path:
@@ -398,13 +639,14 @@ def render_validate():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                results = orchestrator.validate_export(validate_path)
+                results, output = capture_runtime_output(orchestrator.validate_export, validate_path)
 
+                st.session_state.runtime_output = output
                 if results:
                     st.success("✅ Validation complete!")
-
-                    # Display results
                     st.json(results)
+
+            render_terminal_output(st.session_state.runtime_output)
 
 
 def render_full_pipeline():
@@ -417,7 +659,9 @@ def render_full_pipeline():
     pipeline_mode = st.radio("Mode", ["Local", "SSH Remote"], horizontal=True)
 
     if pipeline_mode == "Local":
-        source_path = st.text_input("Home Assistant Config Path", value="/config")
+        source_path = st.text_input("Home Assistant Config Path", value=find_standard_root())
+        _resolved, _exists, _creatable, message = resolve_and_verify_path(source_path)
+        st.caption(message)
     else:
         source_path = config.get("ssh.remote_config_path", "/config")
         st.info(f"Will use remote path: {source_path}")
@@ -436,13 +680,16 @@ def render_full_pipeline():
 
             orchestrator = WorkflowOrchestrator()
             mode = "remote" if pipeline_mode == "SSH Remote" else "local"
-            success = orchestrator.run_full_workflow(source_path, mode)
+            success, output = capture_runtime_output(orchestrator.run_full_workflow, source_path, mode)
 
+            st.session_state.runtime_output = output
             if success:
                 st.success("✅ Pipeline complete!")
                 st.balloons()
             else:
                 st.error("❌ Pipeline failed")
+
+        render_terminal_output(st.session_state.runtime_output)
 
 
 def render_settings():
@@ -492,7 +739,7 @@ def render_logs():
             index=2,  # Default to INFO
             help="Select the minimum log level to display",
         )
-        
+
         if log_level != st.session_state.log_level:
             st.session_state.log_level = log_level
             st.session_state.logger.set_log_level(LogLevel[log_level])
@@ -511,27 +758,27 @@ def render_logs():
     # Display log file
     if Path(log_file).exists():
         col1, col2 = st.columns([3, 1])
-        
+
         with col1:
             st.subheader("Log Contents")
-        
+
         with col2:
             num_lines = st.number_input("Show last N lines", min_value=10, max_value=1000, value=100, step=10)
 
         try:
             with open(log_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                
+
             # Show last N lines
             last_lines = lines[-num_lines:] if len(lines) > num_lines else lines
-            
+
             # Display in code block
             log_content = "".join(last_lines)
             st.code(log_content, language="log")
-            
+
             # Stats
             st.info(f"📊 Total lines: {len(lines)} | Showing: {len(last_lines)}")
-            
+
             # Download button
             st.download_button(
                 label="⬇️ Download Full Log",
@@ -566,11 +813,10 @@ def render_logs():
             try:
                 with st.spinner("Generating diagnostic report..."):
                     output = st.session_state.logger.create_diagnostic_report(
-                        output_path=report_path,
-                        include_context=True
+                        output_path=report_path, include_context=True
                     )
                 st.success(f"✅ Diagnostic report created: {output}")
-                
+
                 # Show preview
                 if Path(output).exists():
                     with open(output, "r", encoding="utf-8") as f:
@@ -584,9 +830,9 @@ def render_logs():
 
     # Clear logs option
     st.subheader("🗑️ Log Management")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         if st.button("🗑️ Clear Log File", type="secondary"):
             if Path(log_file).exists():
@@ -599,7 +845,7 @@ def render_logs():
                     st.error(f"❌ Error clearing log: {e}")
             else:
                 st.warning("⚠️ Log file does not exist")
-    
+
     with col2:
         if st.button("📁 Open Log Directory", type="secondary"):
             st.info(f"📂 Log directory: {log_dir}")
@@ -616,6 +862,107 @@ def render_logs():
                         st.write("No log files found")
             except Exception as e:
                 st.error(f"Error: {e}")
+
+
+def render_path_explorer():
+    """Render a file explorer for HA installation directories."""
+    st.header("📂 HA Path Explorer")
+    st.markdown(
+        "Browse and configure directories inside your Home Assistant installation. "
+        "Use this to verify paths exist and to create missing workflow directories."
+    )
+
+    config = st.session_state.config
+
+    # Detect and show HA root
+    ha_root = find_standard_root()
+
+    st.subheader("🏠 HA Installation Root")
+    available_roots = [d for d in STANDARD_ROOT_DIRS if os.path.isdir(d)]
+    if available_roots:
+        ha_root = st.selectbox(
+            "Detected HA root directories",
+            available_roots,
+            index=0,
+            help="Standard HA directories found on this system",
+        )
+        st.success(f"✅ Using HA root: {ha_root}")
+    else:
+        ha_root = st.text_input(
+            "HA root directory (none auto-detected)",
+            value=os.path.abspath("."),
+        )
+        st.warning("⚠️ No standard HA root directory found. Using current directory.")
+
+    st.markdown("---")
+
+    # Directory browser
+    st.subheader("📁 Directory Browser")
+    browse_path = st.text_input("Browse path", value=ha_root, key="explorer_browse_path")
+
+    resolved, exists, _creatable, message = resolve_and_verify_path(browse_path)
+    st.caption(message)
+
+    if exists and os.path.isdir(resolved):
+        entries = list_directory_contents(resolved)
+        if entries:
+            for rel_path, is_dir, size in entries:
+                icon = "📁" if is_dir else "📄"
+                depth = rel_path.count(os.sep)
+                indent = "　" * depth  # Use ideographic space for indentation
+                size_str = f" ({size:,} bytes)" if not is_dir and size > 0 else ""
+                st.text(f"{indent}{icon} {rel_path}{size_str}")
+        else:
+            st.info("📭 Directory is empty")
+    elif exists:
+        st.info(f"📄 {resolved} is a file, not a directory")
+
+    st.markdown("---")
+
+    # Workflow directory status overview
+    st.subheader("📋 Workflow Directory Status")
+    st.markdown("Overview of all configured workflow directories and their status.")
+
+    path_configs = [
+        ("Export Directory", "paths.export_dir"),
+        ("Import Directory", "paths.import_dir"),
+        ("Secrets Directory", "paths.secrets_dir"),
+        ("Backup Directory", "paths.backup_dir"),
+        ("AI Context Directory", "paths.ai_context_dir"),
+    ]
+
+    all_exist = True
+    missing_dirs = []
+
+    for label, key in path_configs:
+        path_val = config.get(key, "")
+        resolved, exists, creatable, _msg = resolve_and_verify_path(path_val)
+
+        if exists:
+            st.text(f"  ✅ {label}: {resolved}")
+        elif creatable:
+            st.text(f"  ⚠️ {label}: {resolved} (missing, can be created)")
+            all_exist = False
+            missing_dirs.append((label, resolved))
+        else:
+            st.text(f"  ❌ {label}: {resolved} (cannot create)")
+            all_exist = False
+
+    if all_exist:
+        st.success("✅ All workflow directories exist and are ready.")
+    elif missing_dirs:
+        st.warning(f"⚠️ {len(missing_dirs)} director(y/ies) missing.")
+        if st.button("📁 Create All Missing Directories"):
+            created = 0
+            for label, dir_path in missing_dirs:
+                try:
+                    Path(dir_path).mkdir(parents=True, exist_ok=True)
+                    st.success(f"✅ Created: {label} → {dir_path}")
+                    created += 1
+                except OSError as e:
+                    st.error(f"❌ Failed to create {label}: {e}")
+            if created > 0:
+                st.rerun()
 
 
 def main():
@@ -644,6 +991,8 @@ def main():
         render_settings()
     elif step == 8:
         render_logs()
+    elif step == 9:
+        render_path_explorer()
 
 
 if __name__ == "__main__":
