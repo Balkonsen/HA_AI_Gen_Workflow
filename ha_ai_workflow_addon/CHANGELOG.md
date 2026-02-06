@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.5] - 2026-02-06
+
+### Fixed
+- **Docker build context alignment** — Dockerfile COPY paths now correctly reference addon-relative paths for HA builder compatibility (PR #40)
+- **Path resolution** — Replaced hardcoded `/config/ai_exports` with `os.path.abspath()` for non-container environments (PR #41)
+- **Export verifier** — Supports both v1.0 and v2.0 export formats with automatic version detection (PR #37)
+
+### Added
+- **CI/CD caching** — Docker layer caching via `--self-cache` and pip cache for faster builds (PR #43)
+- **Automated self-learning** — Post-PR analysis engine captures lessons learned and applies improvements (PR #44)
+- **Developer tooling** — Updated copilot-instructions.md with battle-tested lessons; added devcontainer (PR #42)
+
+### Changed
+- Version bump to trigger Home Assistant Supervisor update detection
+
 ## [1.0.4] - 2026-02-06
 
 **BREAKING CHANGE**: This release removes support for 32-bit ARM (armv7) architectures to ensure compatibility with Home Assistant 2026.2.0 and later versions.
