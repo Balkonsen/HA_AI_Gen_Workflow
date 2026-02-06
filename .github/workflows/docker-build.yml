@@ -120,4 +120,5 @@ jobs:
             --amd64 \
             --aarch64 \
             --target ha_ai_workflow_addon \
-            --docker-hub ghcr.io/balkonsen
+            --docker-hub ghcr.io/balkonsen \
+            --self-cache
