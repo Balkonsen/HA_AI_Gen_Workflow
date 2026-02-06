@@ -30,6 +30,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          # For PR events, checkout the target branch (e.g. main) not the merge ref,
+          # so that 'git push' pushes to the correct branch.
+          ref: ${{ github.event.pull_request.base.ref || github.ref }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -89,6 +92,7 @@ jobs:
 
       - name: Commit Lessons Learned Updates
         run: |
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref || 'main' }}"
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add lessons_learned.json || true
@@ -96,5 +100,5 @@ jobs:
             echo "No lessons learned updates to commit"
           else
             git commit -m "chore: update lessons learned from PR #${PR_NUMBER:-manual}"
-            git push origin HEAD || true
+            git push origin "HEAD:${TARGET_BRANCH}" || true
           fi

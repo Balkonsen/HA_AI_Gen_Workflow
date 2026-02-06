@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-02-06
+
+### Fixed
+- **Docker build not triggered on version bump** — Fixed `docker-build.yml` race condition where concurrent workflow runs could prevent the build from executing after PR merge (PR #46)
+- **Lessons learned pushing to wrong branch** — Fixed `lessons-learned.yml` to explicitly push to the PR target branch instead of detached HEAD, which was creating commits on unrelated branches like `v1.1b1` (PR #46)
+- **Workflow concurrency** — Added concurrency group to `docker-build.yml` to prevent race conditions between simultaneous pushes to main
+
 ## [1.0.5] - 2026-02-06
 
 ### Fixed

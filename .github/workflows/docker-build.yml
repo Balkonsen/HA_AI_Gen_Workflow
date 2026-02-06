@@ -9,6 +9,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Prevent concurrent builds on main from racing (e.g. lessons-learned push).
+# Queue new runs instead of cancelling in-progress ones.
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   packages: write
@@ -17,6 +23,8 @@ permissions:
 jobs:
   # Auto-bump patch version on pushes to main when version wasn't manually bumped.
   # This ensures HA Supervisor always detects new builds as updates.
+  # When auto-bump pushes a new commit, it sets bumped=true to skip build in THIS run;
+  # the pushed commit triggers a SECOND run that will build with the new version.
   auto-version-bump:
     name: Auto-bump Add-on Version
     runs-on: ubuntu-latest
@@ -34,9 +42,8 @@ jobs:
         id: bump
         run: |
           # Check if config.yaml version line changed in the latest commit
-          # Use --exit-code to handle edge cases where diff might fail
           if git diff HEAD~1 HEAD -- ha_ai_workflow_addon/config.yaml 2>/dev/null | grep -q '^[+-]version:'; then
-            echo "✓ Version was already bumped in this commit — skipping auto-bump"
+            echo "✓ Version was already bumped in this commit — proceeding to build"
             echo "bumped=false" >> "$GITHUB_OUTPUT"
           else
             echo "→ Version was NOT bumped — auto-incrementing patch version"
@@ -61,7 +68,7 @@ jobs:
             sed -i "s/^version: .*/version: \"${NEW_VERSION}\"/" ha_ai_workflow_addon/config.yaml
             echo "✓ Updated config.yaml to version ${NEW_VERSION}"
 
-            # Commit and push
+            # Commit and push — this triggers a second workflow run that will build
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
             git add ha_ai_workflow_addon/config.yaml
