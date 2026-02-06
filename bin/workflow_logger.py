@@ -316,8 +316,11 @@ def get_logger() -> WorkflowLogger:
     """Get or create the global logger instance."""
     global _global_logger
     if _global_logger is None:
-        # Default configuration
-        log_dir = os.environ.get("HA_AI_LOG_DIR", "/config/ai_exports")
+        # Default configuration - use environment variable, or fall back to
+        # ./exports (resolved to absolute path) instead of a hardcoded
+        # container-only path like /config/ai_exports
+        default_log_dir = os.path.abspath("./exports")
+        log_dir = os.environ.get("HA_AI_LOG_DIR", default_log_dir)
         log_file = os.path.join(log_dir, "workflow.log")
         log_level_str = os.environ.get("HA_AI_LOG_LEVEL", "INFO")
 

@@ -37,7 +37,7 @@ def init_session_state():
     if "log_level" not in st.session_state:
         st.session_state.log_level = "INFO"
     if "logger" not in st.session_state:
-        log_dir = st.session_state.config.get("paths.export_dir", "/config/ai_exports")
+        log_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         log_file = os.path.join(log_dir, "workflow.log")
         st.session_state.logger = configure_logger(
             log_level=st.session_state.log_level,
@@ -498,7 +498,7 @@ def render_logs():
             st.session_state.logger.set_log_level(LogLevel[log_level])
 
     with col2:
-        log_dir = st.session_state.config.get("paths.export_dir", "/config/ai_exports")
+        log_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         log_file = st.text_input("Log File Path", value=os.path.join(log_dir, "workflow.log"))
 
     with col3:

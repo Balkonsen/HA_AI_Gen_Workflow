@@ -120,17 +120,19 @@ class WorkflowConfig:
         return result
 
     def _expand_paths(self):
-        """Expand ~ and environment variables in paths."""
+        """Expand ~, environment variables, and resolve relative paths to absolute."""
         if "paths" in self.config:
             for key, value in self.config["paths"].items():
                 if isinstance(value, str):
-                    self.config["paths"][key] = os.path.expanduser(os.path.expandvars(value))
+                    expanded = os.path.expanduser(os.path.expandvars(value))
+                    self.config["paths"][key] = os.path.abspath(expanded)
 
         if "ssh" in self.config and "key_path" in self.config["ssh"]:
             self.config["ssh"]["key_path"] = os.path.expanduser(self.config["ssh"]["key_path"])
 
         if "secrets" in self.config and "key_file" in self.config["secrets"]:
-            self.config["secrets"]["key_file"] = os.path.expanduser(self.config["secrets"]["key_file"])
+            expanded = os.path.expanduser(os.path.expandvars(self.config["secrets"]["key_file"]))
+            self.config["secrets"]["key_file"] = os.path.abspath(expanded)
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value by dot-notation key.
