@@ -1,7 +1,7 @@
 # Makefile for HA AI Gen Workflow Development
 # Provides convenient shortcuts for common development tasks
 
-.PHONY: help install test lint format clean docker-test validate quick-validate coverage docs
+.PHONY: help install test lint format clean docker-test validate quick-validate coverage docs lessons-scan lessons-report
 
 # Default target
 help:
@@ -22,6 +22,8 @@ help:
 	@echo "  make clean           - Clean temporary files"
 	@echo "  make docs            - Build documentation"
 	@echo "  make pre-commit      - Setup pre-commit hooks"
+	@echo "  make lessons-scan    - Scan repo for anti-patterns"
+	@echo "  make lessons-report  - Show lessons learned report"
 	@echo ""
 
 # Installation
@@ -147,3 +149,12 @@ dev-setup: install pre-commit
 # CI/CD simulation
 ci: lint test security
 	@echo "✓ CI checks complete"
+
+# Lessons Learned
+lessons-scan:
+	@echo "Scanning repository for lessons learned..."
+	python bin/lessons_learned.py --scan
+
+lessons-report:
+	@echo "Generating lessons learned report..."
+	python bin/lessons_learned.py --report
