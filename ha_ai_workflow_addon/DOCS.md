@@ -8,7 +8,12 @@ This add-on provides a web-based graphical interface for the Home Assistant AI G
 
 ### Supported Architectures
 - **amd64** (64-bit x86 - Intel/AMD processors)
-- **aarch64** (64-bit ARM - Raspberry Pi 3/4/5 with 64-bit OS, Home Assistant Green/Yellow)
+- **aarch64** (64-bit ARM)
+  - ✅ **Raspberry Pi 4, 4B, 400** (with 64-bit OS)
+  - ✅ **Raspberry Pi 5** (with 64-bit OS)
+  - ✅ Raspberry Pi 3, 3B+ (with 64-bit OS)
+  - ✅ Home Assistant Green
+  - ✅ Home Assistant Yellow
 
 ### Unsupported Architectures
 - ❌ **armv7** (32-bit ARM) - No longer supported as of Home Assistant 2026.2.0

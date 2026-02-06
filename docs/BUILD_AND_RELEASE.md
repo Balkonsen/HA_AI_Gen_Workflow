@@ -18,9 +18,12 @@ The build process is automated via `.github/workflows/docker-build.yml` and uses
 ### Supported Architectures
 
 - **amd64** (64-bit x86 - Intel/AMD processors)
-- **aarch64** (64-bit ARM - Raspberry Pi 3/4/5, HA Green/Yellow)
+- **aarch64** (64-bit ARM)
+  - Raspberry Pi 4, 4B, 400, 5
+  - Raspberry Pi 3, 3B+
+  - Home Assistant Green/Yellow
 
-**Note**: As of Home Assistant 2026.2.0, 32-bit architectures (armv7, i386, armhf) are no longer supported.
+**Note**: As of Home Assistant 2026.2.0, 32-bit architectures (armv7, i386, armhf) are no longer supported. Raspberry Pi 4+ requires 64-bit Home Assistant OS.
 
 ## How It Works
 

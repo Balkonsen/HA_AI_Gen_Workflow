@@ -17,6 +17,23 @@ Transform your Home Assistant configuration management with AI assistance while 
 - 🖥️ **Web GUI** — Full graphical interface via Home Assistant sidebar
 - 📡 **SSH Support** — Connect to remote Home Assistant instances
 
+## 💻 System Requirements
+
+### Home Assistant Add-on (Recommended)
+- **Home Assistant**: 2026.2.0 or later
+- **Hardware**: 64-bit system
+  - ✅ Intel/AMD x64 computers
+  - ✅ **Raspberry Pi 4 or newer** (with 64-bit OS)
+  - ✅ Raspberry Pi 3 (with 64-bit OS)
+  - ✅ Home Assistant Green/Yellow
+  - ❌ Raspberry Pi 4 with 32-bit OS (not supported)
+
+**Note**: Raspberry Pi 4+ is fully supported when running 64-bit Home Assistant OS. If you're on 32-bit, you'll need to migrate to 64-bit OS first (see [add-on documentation](ha_ai_workflow_addon/DOCS.md#migration-from-32-bit-systems)).
+
+### Manual Installation
+- **Python**: 3.8 or later
+- **Home Assistant**: Any version with REST API access
+
 ## 🏠 Installation (Home Assistant Add-on)
 
 ### Quick Install
