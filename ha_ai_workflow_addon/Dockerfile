@@ -3,11 +3,17 @@
 #
 # Build context: ha_ai_workflow_addon/ (set by HA builder --target)
 # The workflow stages required files into this directory before building.
+#
+# Performance notes:
+# - Uses --prefer-binary to avoid compiling packages from source when
+#   pre-built musllinux wheels are available (saves 10-20+ minutes)
+# - Build deps (gcc, cargo, etc.) are installed only if wheel install fails
+# - Progress output is enabled so long installs show feedback
 
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Install system dependencies and build tools in one layer
+# Install runtime system dependencies first (these are always needed)
 RUN apk add --no-cache \
     python3 \
     py3-pip \
@@ -15,13 +21,7 @@ RUN apk add --no-cache \
     git \
     openssh-client \
     sshpass \
-    jq \
-    gcc \
-    musl-dev \
-    python3-dev \
-    libffi-dev \
-    openssl-dev \
-    cargo
+    jq
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -33,14 +33,36 @@ WORKDIR /app
 
 # Copy requirements and install Python dependencies
 # requirements.txt is staged into the build context by the CI workflow
+#
+# Strategy: try pre-built wheels first (fast, ~2-3 min), fall back to
+# source compilation only if needed (slow, 15-30 min).
 COPY requirements.txt /app/
-RUN for i in 1 2 3 4 5; do \
-        pip3 install --no-cache-dir --break-system-packages --timeout=300 -r requirements.txt && break || sleep 15; \
-    done || \
-    pip3 install --no-cache-dir --break-system-packages --timeout=300 --index-url=https://pypi.org/simple -r requirements.txt
-
-# Remove build dependencies to reduce image size
-RUN apk del --no-cache gcc musl-dev python3-dev libffi-dev openssl-dev cargo \
+RUN echo "=== Phase 1: Installing from pre-built wheels ===" \
+    && pip3 install \
+        --break-system-packages \
+        --prefer-binary \
+        --timeout=120 \
+        --progress-bar on \
+        -r requirements.txt \
+    && echo "=== All packages installed from wheels ===" \
+    || ( \
+        echo "=== Phase 2: Wheel install failed, installing build tools ===" \
+        && apk add --no-cache \
+            gcc \
+            musl-dev \
+            python3-dev \
+            libffi-dev \
+            openssl-dev \
+            cargo \
+        && echo "=== Retrying install with build tools ===" \
+        && pip3 install \
+            --break-system-packages \
+            --timeout=300 \
+            --progress-bar on \
+            -r requirements.txt \
+        && echo "=== Removing build tools ===" \
+        && apk del --no-cache gcc musl-dev python3-dev libffi-dev openssl-dev cargo \
+    ) \
     && rm -rf /root/.cache /root/.cargo /tmp/*
 
 # Copy application files (staged into build context by CI workflow)
