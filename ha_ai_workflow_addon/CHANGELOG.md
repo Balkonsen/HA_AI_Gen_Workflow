@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6] - 2026-02-06
+
+### Fixed
+- **Docker build not triggered on version bump** — Fixed `docker-build.yml` race condition where concurrent workflow runs could prevent the build from executing after PR merge (PR #46)
+- **Lessons learned pushing to wrong branch** — Fixed `lessons-learned.yml` to explicitly push to the PR target branch instead of detached HEAD (PR #46)
+- **Workflow concurrency** — Added concurrency group to prevent race conditions
+
 ## [1.0.5] - 2026-02-06
 
 ### Fixed
