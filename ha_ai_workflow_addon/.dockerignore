@@ -1,0 +1,67 @@
+# Exclude unnecessary files from Docker build context
+# This reduces the build context size sent to the Docker daemon,
+# speeding up the build process.
+
+# Version control
+.git/
+.gitignore
+
+# Documentation (not needed at runtime)
+*.md
+!CHANGELOG.md
+docs/
+IMPLEMENTATION_SUMMARY.md
+SOLUTION_SUMMARY.md
+S6_OVERLAY_FIX.md
+
+# Testing (not needed in production image)
+tests/
+.pytest_cache/
+pytest.ini
+*.test.*
+conftest.py
+requirements-test.txt
+Dockerfile.test
+docker-compose.test.yml
+
+# Development tools
+tools/
+.pre-commit-config.yaml
+.vscode/
+.devcontainer/
+Makefile
+
+# Build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+coverage.xml
+
+# Secrets and user data (never include)
+secrets/
+*.pem
+*.key
+*.crt
+ai_exports/
+ai_imports/
+
+# CI/CD
+.github/
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+*.log
+
+# Misc
+.markdown-link-check.json
+lessons_learned.json
+repository.yaml
+1.prompt.yml
+mit_license.txt

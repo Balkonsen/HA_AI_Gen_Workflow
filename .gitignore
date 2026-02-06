@@ -62,7 +62,8 @@ archives/
 validation.log
 
 # Docker
-.dockerignore
+# Note: .dockerignore files are NOT excluded — they must be committed
+# to be available during Docker builds
 
 # Git
 .git/
