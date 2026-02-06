@@ -2,6 +2,10 @@
 """
 Home Assistant Export Verification Tool
 Verifies completeness of exported configuration
+
+Supports both export formats:
+- v1.0 (legacy): config/, diagnostics/, secrets/, addons/ structure
+- v2.0 (current): ai_upload/, secrets/ structure with consolidated files
 """
 
 import os
