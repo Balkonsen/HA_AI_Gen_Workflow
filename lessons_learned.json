@@ -1,0 +1,189 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-02-06T19:11:14.969298+00:00",
+  "total_lessons": 10,
+  "lessons": [
+    {
+      "category": "build_failure",
+      "summary": "Dockerfile COPY uses repo-root paths instead of addon-relative paths",
+      "details": "Pattern 'docker_context' detected in added line: +COPY ha_ai_workflow_addon/bin/ /app/bin/",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "All Dockerfile COPY paths must be relative to ha_ai_workflow_addon/ build context",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.941270+00:00",
+      "applied": false
+    },
+    {
+      "category": "build_failure",
+      "summary": "Shell script uses bashio/s6 functions instead of pure bash",
+      "details": "Pattern 'bashio_usage' detected in added line: \"pattern\": r\"bashio::|with-contenv\\s+bashio\",",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "Use pure bash with jq for config reading, no bashio:: or s6-overlay",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.941629+00:00",
+      "applied": false
+    },
+    {
+      "category": "architecture_pattern",
+      "summary": "Reference to unsupported armv7 architecture detected",
+      "details": "Pattern 'armv7_reference' detected in added line: \"summary\": \"Reference to unsupported armv7 architecture detected\",",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "Only amd64 and aarch64 are supported; remove armv7 references",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.942037+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Bare except clause found - catches all exceptions including SystemExit",
+      "details": "Pattern 'bare_except' detected in added line: +except:",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "Use specific exception types instead of bare except",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.942617+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Function missing return type hint",
+      "details": "Pattern 'missing_type_hints' detected in added line: def __init__(self, store_path: Optional[str] = None):",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "Add return type hints to function signatures",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.943933+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Using print() instead of workflow logger",
+      "details": "Pattern 'print_instead_of_logger' detected in added line: \"summary\": \"Using print() instead of workflow logger\",",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "Use workflow_logger.get_logger() for structured logging",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.944372+00:00",
+      "applied": false
+    },
+    {
+      "category": "security_issue",
+      "summary": "Potential secret exposure in log/print statement",
+      "details": "Pattern 'secret_in_log' detected in added line: \"pattern\": r\"(?:log|print|debug|info|warning|error).*(?:password|token|secret|api_key)\",",
+      "source_pr": "44",
+      "source_files": [
+        ".github/workflows/lessons-learned.yml",
+        "CHANGELOG.md",
+        "Makefile",
+        "bin/lessons_learned.py",
+        "tests/test_lessons_learned.py"
+      ],
+      "recommendation": "Never log sensitive values; use sanitized placeholders",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.944882+00:00",
+      "applied": false
+    },
+    {
+      "category": "test_failure",
+      "summary": "Test failures detected: 4 test(s) failed",
+      "details": "Failed tests: tests/test_diagnostic_export.py::TestCreateExportStructure::test_create_export_structure, tests/test_diagnostic_export.py::TestSanitizeText::test_sanitize_email, tests/test_diagnostic_export.py::TestSanitizeText::test_sanitize_ip_address, tests/test_export_verifier.py::TestGenerateReport::test_generate_report\nError types: AssertionError",
+      "source_pr": "44",
+      "source_files": [
+        "tests/test_diagnostic_export.py",
+        "tests/test_diagnostic_export.py",
+        "tests/test_diagnostic_export.py",
+        "tests/test_export_verifier.py"
+      ],
+      "recommendation": "Review and fix failing tests before merging",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.949886+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Lint violations detected: 148 total",
+      "details": "Top violations: W293(45), F541(41), F401(20), E501(12), E402(12)",
+      "source_pr": "44",
+      "source_files": [],
+      "recommendation": "Run 'make format' to auto-fix formatting, then address remaining issues",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.952000+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Code formatting issues detected (black)",
+      "details": "Files needing reformat: /home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/ha_export_verifier.py, /home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/workflow_logger.py, /home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/workflow_gui.py, /home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/ssh_transfer.py",
+      "source_pr": "44",
+      "source_files": [
+        "/home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/ha_export_verifier.py",
+        "/home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/workflow_logger.py",
+        "/home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/workflow_gui.py",
+        "/home/runner/work/HA_AI_Gen_Workflow/HA_AI_Gen_Workflow/bin/ssh_transfer.py"
+      ],
+      "recommendation": "Run 'make format' before committing to auto-fix formatting",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-06T19:11:14.952263+00:00",
+      "applied": false
+    }
+  ]
+}
