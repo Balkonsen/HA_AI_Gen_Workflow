@@ -366,13 +366,13 @@ class TestDockerfileBuildPerformance:
         """Build dependencies (gcc, cargo) should only be installed if wheel install fails."""
         with open(DOCKERFILE, "r") as f:
             content = f.read()
-        # Build deps should not be in the initial apk add (runtime deps only)
+        # Find the first RUN apk add block — it should contain only runtime deps
         lines = content.split("\n")
         in_first_apk = False
         first_apk_block = []
         for line in lines:
             stripped = line.strip()
-            if "apk add" in stripped and "gcc" not in stripped:
+            if not in_first_apk and "apk add" in stripped:
                 in_first_apk = True
             if in_first_apk:
                 first_apk_block.append(stripped)
