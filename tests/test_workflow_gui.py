@@ -33,6 +33,7 @@ class TestResolveAndVerifyPath:
         assert resolved == ""
         assert exists is False
         assert creatable is False
+        assert "empty" in msg.lower()
 
     def test_whitespace_only_path(self):
         """Whitespace-only string treated as empty."""
@@ -134,9 +135,10 @@ class TestListDirectoryContents:
 
         assert "file.txt" in names
         assert "subdir" in names
-        # Nested file should appear at depth=2
+        # Nested file at depth 2 should appear with parent prefix
         nested_entries = [e for e in entries if "nested.txt" in e[0]]
         assert len(nested_entries) == 1
+        assert os.sep in nested_entries[0][0]  # Contains path separator showing depth
 
     def test_hidden_files_excluded(self, tmp_path):
         """Hidden files (starting with .) are excluded."""
@@ -194,8 +196,6 @@ class TestCaptureRuntimeOutput:
         """Captures stderr output from a function."""
 
         def stderr_func():
-            import sys
-
             print("Error message", file=sys.stderr)
             return "ok"
 
@@ -234,8 +234,7 @@ class TestCaptureRuntimeOutput:
 
         result, output = capture_runtime_output(quiet_func)
         assert result == "silent"
-        # Output may be empty or just whitespace
-        assert "silent" not in output  # "silent" is the return value, not printed
+        assert output.strip() == ""  # No printed output, only a return value
 
 
 @pytest.mark.unit
