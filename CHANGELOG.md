@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Docker Image Build Process** - Replaced manual Docker build with Home Assistant official builder
+  - Switched to `home-assistant/builder@2025.11.0` GitHub Action
+  - Ensures proper image tagging and metadata for Home Assistant discovery
+  - Home Assistant can now correctly detect and install add-on updates
+  - Automatic version detection from config.yaml
+  - Proper integration with Home Assistant's add-on update mechanism
+  - Documented in new `docs/BUILD_AND_RELEASE.md` guide
 - **Export Verification** - Fixed verifier to support both v1.0 and v2.0 export formats
   - v2.0 exports now correctly verified (ai_upload/, secrets/ structure)
   - Backward compatibility maintained for v1.0 exports (config/, diagnostics/ structure)
