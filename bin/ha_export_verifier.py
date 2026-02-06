@@ -17,13 +17,39 @@ class ExportVerifier:
         self.issues = []
         self.warnings = []
         self.stats = {}
+        self.export_version = self._detect_export_version()
+
+    def _detect_export_version(self):
+        """Detect export format version from METADATA.json"""
+        metadata_file = os.path.join(self.export_path, "METADATA.json")
+        if os.path.exists(metadata_file):
+            try:
+                with open(metadata_file, "r") as f:
+                    metadata = json.load(f)
+                version = metadata.get("export_version", "1.0")
+                return version
+            except:
+                pass
+        
+        # Check for new format indicators
+        if os.path.exists(os.path.join(self.export_path, "ai_upload")):
+            return "2.0"
+        
+        # Default to old format
+        return "1.0"
 
     def verify_structure(self):
-        """Verify directory structure"""
+        """Verify directory structure (supports both v1.0 and v2.0 formats)"""
         print("\n=== Verifying Export Structure ===")
 
-        required_dirs = ["config", "diagnostics", "secrets", "addons"]
-        required_files = ["METADATA.json", "README.md"]
+        if self.export_version == "2.0":
+            # New format: ai_upload/ and secrets/
+            required_dirs = ["ai_upload", "secrets"]
+            required_files = ["METADATA.json", "README.md"]
+        else:
+            # Old format: config/, diagnostics/, secrets/, addons/
+            required_dirs = ["config", "diagnostics", "secrets", "addons"]
+            required_files = ["METADATA.json", "README.md"]
 
         all_ok = True
 
@@ -48,10 +74,60 @@ class ExportVerifier:
         return all_ok
 
     def verify_entities(self):
-        """Verify entity registry export"""
+        """Verify entity registry export (supports both v1.0 and v2.0 formats)"""
         print("\n=== Verifying Entity Registry ===")
 
-        entities_file = os.path.join(self.export_path, "diagnostics", "entities_registry.json")
+        if self.export_version == "2.0":
+            # New format: entities are in ha_entities.json in ai_upload/
+            entities_file = os.path.join(self.export_path, "ai_upload", "ha_entities.json")
+            
+            if not os.path.exists(entities_file):
+                print("✗ ha_entities.json not found in ai_upload/")
+                self.issues.append("Entity file not exported")
+                return False
+
+            try:
+                with open(entities_file, "r") as f:
+                    entity_data = json.load(f)
+
+                total = entity_data.get("total_entities", 0)
+                all_ids = entity_data.get("all_entity_ids", [])
+                domains = entity_data.get("entities_by_domain", {})
+
+                print(f"✓ Entity data exported successfully")
+                print(f"  Total entities: {total}")
+                print(f"  Entity IDs: {len(all_ids)}")
+                print(f"  Entity domains: {len(domains)}")
+
+                # Store stats
+                self.stats["entities"] = {
+                    "total": total, 
+                    "domains": len(domains),
+                    "ids_count": len(all_ids)
+                }
+
+                # Show domain breakdown
+                if domains:
+                    print(f"\n  Entity breakdown:")
+                    # Sort by count (domains might be dict of counts or dict of lists)
+                    sorted_domains = []
+                    for domain, value in domains.items():
+                        count = value if isinstance(value, int) else len(value) if isinstance(value, list) else value.get("count", 0)
+                        sorted_domains.append((domain, count))
+                    sorted_domains.sort(key=lambda x: x[1], reverse=True)
+                    
+                    for domain, count in sorted_domains[:10]:
+                        print(f"    - {domain}: {count}")
+
+                return True
+
+            except Exception as e:
+                print(f"✗ Error reading entity data: {e}")
+                self.issues.append(f"Entity data parse error: {e}")
+                return False
+        else:
+            # Old format: diagnostics/entities_registry.json
+            entities_file = os.path.join(self.export_path, "diagnostics", "entities_registry.json")
 
         if not os.path.exists(entities_file):
             print("✗ entities_registry.json not found")
@@ -102,8 +178,13 @@ class ExportVerifier:
             return False
 
     def verify_devices(self):
-        """Verify device registry export"""
+        """Verify device registry export (v1.0 only, embedded in v2.0)"""
         print("\n=== Verifying Device Registry ===")
+
+        if self.export_version == "2.0":
+            # In v2.0, device info is embedded in ha_context.md, not separate file
+            print("ℹ Device info embedded in ha_context.md (v2.0 format)")
+            return True
 
         devices_file = os.path.join(self.export_path, "diagnostics", "devices_registry.json")
 
@@ -145,9 +226,36 @@ class ExportVerifier:
             return False
 
     def verify_config_files(self):
-        """Verify configuration files"""
+        """Verify configuration files (supports both v1.0 and v2.0 formats)"""
         print("\n=== Verifying Configuration Files ===")
 
+        if self.export_version == "2.0":
+            # New format: config is in ha_config.yaml in ai_upload/
+            config_file = os.path.join(self.export_path, "ai_upload", "ha_config.yaml")
+            
+            if not os.path.exists(config_file):
+                print("✗ ha_config.yaml not found in ai_upload/")
+                self.issues.append("Configuration file missing")
+                return False
+
+            try:
+                size = os.path.getsize(config_file)
+                print(f"✓ ha_config.yaml exists ({size} bytes)")
+                
+                # Check for context file too
+                context_file = os.path.join(self.export_path, "ai_upload", "ha_context.md")
+                if os.path.exists(context_file):
+                    context_size = os.path.getsize(context_file)
+                    print(f"✓ ha_context.md exists ({context_size} bytes)")
+                
+                self.stats["config_files"] = {"yaml": 1, "has_context": os.path.exists(context_file)}
+                return True
+            except Exception as e:
+                print(f"✗ Error checking config files: {e}")
+                self.issues.append(f"Config file error: {e}")
+                return False
+
+        # Old format: config/ directory
         config_dir = os.path.join(self.export_path, "config")
 
         if not os.path.exists(config_dir):
@@ -238,8 +346,13 @@ class ExportVerifier:
             return False
 
     def verify_addons(self):
-        """Verify add-on configurations"""
+        """Verify add-on configurations (v1.0 only, embedded in v2.0)"""
         print("\n=== Verifying Add-on Configurations ===")
+
+        if self.export_version == "2.0":
+            # In v2.0, addon info is embedded in ha_context.md
+            print("ℹ Add-on info embedded in ha_context.md (v2.0 format)")
+            return True
 
         addons_file = os.path.join(self.export_path, "addons", "addons_summary.json")
 
@@ -278,8 +391,13 @@ class ExportVerifier:
             return False
 
     def verify_integrations(self):
-        """Verify integrations export"""
+        """Verify integrations export (v1.0 only, embedded in v2.0)"""
         print("\n=== Verifying Integrations ===")
+
+        if self.export_version == "2.0":
+            # In v2.0, integration info is embedded in ha_context.md
+            print("ℹ Integration info embedded in ha_context.md (v2.0 format)")
+            return True
 
         integrations_file = os.path.join(self.export_path, "diagnostics", "integrations.json")
 
@@ -321,9 +439,13 @@ class ExportVerifier:
         print("Verification Summary")
         print("=" * 70)
 
+        print(f"\nℹ Export Format: v{self.export_version}")
         print(f"\n📊 Export Statistics:")
         if "entities" in self.stats:
-            print(f"  Entities: {self.stats['entities']['total']} ({self.stats['entities']['active']} active)")
+            if "active" in self.stats["entities"]:
+                print(f"  Entities: {self.stats['entities']['total']} ({self.stats['entities']['active']} active)")
+            else:
+                print(f"  Entities: {self.stats['entities']['total']}")
         if "devices" in self.stats:
             print(f"  Devices: {self.stats['devices']['total']}")
         if "integrations" in self.stats:
@@ -332,9 +454,12 @@ class ExportVerifier:
         if "addons" in self.stats:
             print(f"  Add-ons: {self.stats['addons']['total']}")
         if "config_files" in self.stats:
-            print(
-                f"  Config Files: {self.stats['config_files']['yaml']} YAML, {self.stats['config_files']['json']} JSON"
-            )
+            if "json" in self.stats['config_files']:
+                print(
+                    f"  Config Files: {self.stats['config_files']['yaml']} YAML, {self.stats['config_files']['json']} JSON"
+                )
+            else:
+                print(f"  Config Files: {self.stats['config_files']['yaml']} YAML")
         if "secrets" in self.stats:
             print(f"  Secrets Replaced: {self.stats['secrets']['total']}")
 
@@ -368,6 +493,7 @@ class ExportVerifier:
         print("Home Assistant Export Verification Tool")
         print("=" * 70)
         print(f"\nVerifying: {self.export_path}")
+        print(f"Export Format: v{self.export_version}")
 
         checks = [
             self.verify_structure(),
