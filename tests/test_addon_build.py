@@ -147,13 +147,18 @@ class TestDockerfile:
         """Dockerfile COPY paths must not reference ha_ai_workflow_addon/ (build context IS that dir)."""
         with open(DOCKERFILE, "r") as f:
             content = f.read()
-        # Ignore comments
-        lines = [line for line in content.split("\n") if not line.strip().startswith("#")]
-        code_content = "\n".join(lines)
-        assert "ha_ai_workflow_addon/" not in code_content, (
-            "Dockerfile should not reference ha_ai_workflow_addon/ in COPY commands - "
-            "the HA builder uses that directory as the build context"
-        )
+        # Check only COPY/ADD instruction lines (not comments)
+        for line in content.split("\n"):
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue
+            # Remove inline comments
+            code_part = stripped.split("#")[0].strip()
+            if code_part.upper().startswith(("COPY ", "ADD ")):
+                assert "ha_ai_workflow_addon/" not in code_part, (
+                    f"Dockerfile should not reference ha_ai_workflow_addon/ in COPY/ADD commands - "
+                    f"the HA builder uses that directory as the build context. Line: {stripped}"
+                )
 
     def test_dockerfile_copies_run_sh(self):
         """Dockerfile must copy run.sh."""
@@ -302,6 +307,8 @@ class TestBuildWorkflow:
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
         for arch in config.get("arch", []):
-            assert f"--{arch}" in content, (
+            # Match --arch as a standalone flag (word boundary via whitespace/newline)
+            pattern = rf"--{re.escape(arch)}(\s|\\|$)"
+            assert re.search(pattern, content), (
                 f"Workflow should build for '{arch}' as declared in config.yaml"
             )
