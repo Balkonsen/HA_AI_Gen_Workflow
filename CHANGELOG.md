@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Lessons Learned Engine** — Automated self-learning improvement loop (`bin/lessons_learned.py`)
+  - Analyzes PR diffs, test results, and lint output for patterns and anti-patterns
+  - Captures structured lessons learned in `lessons_learned.json`
+  - Validates repository against known lessons to detect regressions
+  - Applies feasible improvements automatically (idempotent updates to docs/config)
+  - CLI interface with `--scan`, `--report`, and post-PR analysis modes
+- **Lessons Learned CI Workflow** — `.github/workflows/lessons-learned.yml`
+  - Runs automatically after each merged PR on main/develop branches
+  - Collects PR diff, test output, and lint results for analysis
+  - Commits updated lessons back to the repository
+  - Supports manual dispatch with scan-only mode
+- **Comprehensive test suite** for lessons learned module (36 unit tests)
+
 ### Fixed
 - **Export Verification** - Fixed verifier to support both v1.0 and v2.0 export formats
   - v2.0 exports now correctly verified (ai_upload/, secrets/ structure)
