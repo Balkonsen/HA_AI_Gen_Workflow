@@ -20,6 +20,7 @@ ADDON_DIR = os.path.join(REPO_ROOT, "ha_ai_workflow_addon")
 CONFIG_YAML = os.path.join(ADDON_DIR, "config.yaml")
 BUILD_YAML = os.path.join(ADDON_DIR, "build.yaml")
 DOCKERFILE = os.path.join(ADDON_DIR, "Dockerfile")
+DOCKERIGNORE = os.path.join(ADDON_DIR, ".dockerignore")
 RUN_SH = os.path.join(ADDON_DIR, "run.sh")
 REPO_YAML = os.path.join(REPO_ROOT, "repository.yaml")
 WORKFLOW_FILE = os.path.join(REPO_ROOT, ".github", "workflows", "docker-build.yml")
@@ -312,3 +313,82 @@ class TestBuildWorkflow:
             assert re.search(pattern, content), (
                 f"Workflow should build for '{arch}' as declared in config.yaml"
             )
+
+
+@pytest.mark.unit
+class TestDockerignore:
+    """Tests for ha_ai_workflow_addon/.dockerignore"""
+
+    def test_dockerignore_exists(self):
+        """.dockerignore must exist in the add-on directory to reduce build context size."""
+        assert os.path.isfile(DOCKERIGNORE), f".dockerignore not found at {DOCKERIGNORE}"
+
+    def test_dockerignore_excludes_git(self):
+        """.dockerignore must exclude .git/ to avoid bloating the build context."""
+        with open(DOCKERIGNORE, "r") as f:
+            content = f.read()
+        assert ".git" in content, ".dockerignore should exclude .git directory"
+
+    def test_dockerignore_excludes_tests(self):
+        """.dockerignore must exclude tests/ (not needed at runtime)."""
+        with open(DOCKERIGNORE, "r") as f:
+            content = f.read()
+        assert "tests/" in content, ".dockerignore should exclude tests directory"
+
+    def test_dockerignore_excludes_docs(self):
+        """.dockerignore must exclude docs/ (not needed at runtime)."""
+        with open(DOCKERIGNORE, "r") as f:
+            content = f.read()
+        assert "docs/" in content, ".dockerignore should exclude docs directory"
+
+
+@pytest.mark.unit
+class TestDockerfileBuildPerformance:
+    """Tests for Dockerfile build performance optimizations."""
+
+    def test_dockerfile_uses_prefer_binary(self):
+        """Dockerfile should use --prefer-binary to avoid compiling from source."""
+        with open(DOCKERFILE, "r") as f:
+            content = f.read()
+        assert "--prefer-binary" in content, (
+            "Dockerfile should use --prefer-binary for pip install to use pre-built wheels"
+        )
+
+    def test_dockerfile_has_progress_output(self):
+        """Dockerfile pip install should show progress for user feedback."""
+        with open(DOCKERFILE, "r") as f:
+            content = f.read()
+        assert "--progress-bar" in content, (
+            "Dockerfile should enable pip progress bar for install feedback"
+        )
+
+    def test_dockerfile_build_deps_conditional(self):
+        """Build dependencies (gcc, cargo) should only be installed if wheel install fails."""
+        with open(DOCKERFILE, "r") as f:
+            content = f.read()
+        # Build deps should not be in the initial apk add (runtime deps only)
+        lines = content.split("\n")
+        in_first_apk = False
+        first_apk_block = []
+        for line in lines:
+            stripped = line.strip()
+            if "apk add" in stripped and "gcc" not in stripped:
+                in_first_apk = True
+            if in_first_apk:
+                first_apk_block.append(stripped)
+                if not stripped.endswith("\\"):
+                    break
+        first_apk_content = " ".join(first_apk_block)
+        assert "gcc" not in first_apk_content, (
+            "First apk add block should not include gcc (build dep) - it should be runtime deps only"
+        )
+
+    def test_requirements_no_rpds_py_pin(self):
+        """requirements.txt should not pin rpds-py (unnecessary with modern Alpine)."""
+        req_file = os.path.join(REPO_ROOT, "requirements.txt")
+        with open(req_file, "r") as f:
+            content = f.read()
+        assert "rpds-py" not in content, (
+            "requirements.txt should not pin rpds-py - modern Alpine base images "
+            "have a compatible Cargo and pre-built musllinux wheels are available"
+        )

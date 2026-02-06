@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Faster Docker builds** — Dockerfile now uses `--prefer-binary` to install pre-built musllinux wheels instead of compiling from source, reducing install time from ~20-30 minutes to ~2-3 minutes
+- **Build deps installed conditionally** — gcc, cargo, and other build tools are only installed if pre-built wheel installation fails, keeping the image smaller
+- **Upgraded base images** — Updated from `alpine3.18` / Python 3.11 to `alpine3.21` / Python 3.13 for better wheel compatibility and modern toolchain
+- **Removed `rpds-py` pin** — No longer needed with modern Alpine base images that ship Cargo 1.78+ and have pre-built wheels available
+- **Install progress feedback** — pip install now shows progress bar (`--progress-bar on`) so users can see activity during long installs
+
+### Added
+- **`.dockerignore` for build context** — Excludes `.git/`, `tests/`, `docs/`, and other non-runtime files from Docker build context, reducing build context size
+- **Build performance tests** — New test class `TestDockerfileBuildPerformance` validates Dockerfile optimization patterns
+- **`.dockerignore` tests** — New test class `TestDockerignore` validates required exclusion patterns
+
 ## [1.0.6] - 2026-02-06
 
 ### Fixed
