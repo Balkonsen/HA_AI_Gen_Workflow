@@ -15,13 +15,12 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASE_DIR="/usr/local/ha-ai-workflow"
-CONFIG_DIR="/config"
+BASE_DIR="${HA_INSTALL_DIR:-/usr/local/ha-ai-workflow}"
+CONFIG_DIR="${HA_CONFIG_DIR:-${HA_CONFIG_PATH:-/config}}"
 EXPORT_DIR="${CONFIG_DIR}/ai_exports"
 SECRETS_DIR="${EXPORT_DIR}/secrets"
 ARCHIVES_DIR="${EXPORT_DIR}/archives"
 IMPORT_DIR="${CONFIG_DIR}/ai_imports/pending"
-BIN_DIR="${BASE_DIR}/bin"
 LOG_FILE="${EXPORT_DIR}/workflow.log"
 AUTO_MODE=false
 STRICT_MODE=true
@@ -29,8 +28,30 @@ UPLOAD_DEBUG=false
 LOG_LEVEL="INFO"  # Default log level: DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR
 ENABLE_VERBOSE=false
 
-# Ensure directories exist
-mkdir -p "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}" "${BIN_DIR}"
+# Source saved environment variables (e.g. SUPERVISOR_TOKEN) if available
+for env_file in "${BASE_DIR}/.env" "${SCRIPT_DIR}/.env"; do
+    if [ -f "${env_file}" ]; then
+        # shellcheck disable=SC1090
+        . "${env_file}"
+        break
+    fi
+done
+
+# Resolve BIN_DIR: prefer BASE_DIR/bin, fall back to SCRIPT_DIR/bin
+if [ -d "${BASE_DIR}/bin" ] && [ -f "${BASE_DIR}/bin/ha_diagnostic_export.py" ]; then
+    BIN_DIR="${BASE_DIR}/bin"
+elif [ -d "${SCRIPT_DIR}/bin" ] && [ -f "${SCRIPT_DIR}/bin/ha_diagnostic_export.py" ]; then
+    BIN_DIR="${SCRIPT_DIR}/bin"
+else
+    BIN_DIR="${BASE_DIR}/bin"
+fi
+
+# Ensure output directories exist
+for _dir in "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}"; do
+    if ! mkdir -p "${_dir}" 2>/dev/null; then
+        echo -e "${YELLOW}⚠${NC} Could not create directory: ${_dir}" >&2
+    fi
+done
 
 ###############################################################################
 # Utility Functions
@@ -259,7 +280,7 @@ run_export() {
     
     # Step 1: Run diagnostic export
     info "Step 1/5: Running diagnostic export..."
-    if ! python3 "${BIN_DIR}/ha_diagnostic_export.py" --output-dir "/tmp" --name "${export_name}"; then
+    if ! python3 "${BIN_DIR}/ha_diagnostic_export.py" --output-dir "/tmp" --name "${export_name}" --config-dir "${CONFIG_DIR}"; then
         error "Export failed"
         return 1
     fi
@@ -953,6 +974,11 @@ OPTIONS:
     --log-file FILE     Specify custom log file path (default: ${LOG_FILE})
     -h, --help          Show this help message
 
+ENVIRONMENT VARIABLES:
+    HA_CONFIG_DIR       Home Assistant config directory (default: /config)
+    HA_INSTALL_DIR      Installation directory (default: /usr/local/ha-ai-workflow)
+    SUPERVISOR_TOKEN    HA Supervisor API token (auto-set in add-on containers)
+
 LOGGING:
     Default log file: ${LOG_FILE}
     
@@ -986,6 +1012,9 @@ EXAMPLES:
     
     # Export with custom log level
     $(basename $0) export --log-level DEBUG
+
+    # Use custom config directory
+    HA_CONFIG_DIR=/home/user/ha-config $(basename $0) export
 
 For more information, see: ${BASE_DIR}/docs/README.md
 EOF

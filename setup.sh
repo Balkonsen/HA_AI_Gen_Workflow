@@ -16,8 +16,8 @@ NC='\033[0m'
 
 # Script Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="/usr/local/ha-ai-workflow"
-CONFIG_DIR="/config"
+INSTALL_DIR="${HA_INSTALL_DIR:-/usr/local/ha-ai-workflow}"
+CONFIG_DIR="${HA_CONFIG_DIR:-${HA_CONFIG_PATH:-/config}}"
 LOG_DIR="${CONFIG_DIR}/ai_exports"
 SETUP_LOG="${LOG_DIR}/setup.log"
 
@@ -106,7 +106,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Step 1: Create directory structure
-info "Step 1/7: Creating directory structure..."
+info "Step 1/11: Creating directory structure..."
 mkdir -p "${INSTALL_DIR}/bin"
 mkdir -p "${INSTALL_DIR}/docs"
 mkdir -p "${INSTALL_DIR}/templates"
@@ -116,7 +116,7 @@ mkdir -p "${CONFIG_DIR}/ai_imports/pending"
 success "Directories created"
 
 # Step 2: Check dependencies
-info "Step 2/10: Checking system dependencies..."
+info "Step 2/11: Checking system dependencies..."
 
 missing_deps=()
 
@@ -168,7 +168,7 @@ fi
 success "System dependencies OK"
 
 # Step 3: Install Python dependencies
-info "Step 3/10: Installing Python dependencies..."
+info "Step 3/11: Installing Python dependencies..."
 
 # Read requirements.txt and install all dependencies
 if [ -f "${SCRIPT_DIR}/requirements.txt" ]; then
@@ -220,7 +220,7 @@ python3 -c "import cryptography" 2>/dev/null && success "cryptography import OK"
 success "Python dependencies verified"
 
 # Step 4: Download/copy Python scripts
-info "Step 4/10: Installing Python scripts..."
+info "Step 4/11: Installing Python scripts..."
 
 scripts=(
     "workflow_logger.py"
@@ -276,7 +276,7 @@ if [ "$VERBOSE" = true ]; then
 fi
 
 # Step 5: Install master script
-info "Step 5/10: Installing shell scripts..."
+info "Step 5/11: Installing shell scripts..."
 
 if [ -f "${SCRIPT_DIR}/ha_ai_master_script.sh" ]; then
     cp "${SCRIPT_DIR}/ha_ai_master_script.sh" "${INSTALL_DIR}/ha_ai_master.sh"
@@ -327,8 +327,53 @@ else
     info "Skipping shell script validation (shellcheck not installed)"
 fi
 
-# Step 6: Initialize git repository
-info "Step 6/10: Initializing git repository..."
+# Step 6: Configure HA API token
+info "Step 6/11: Configuring Home Assistant API access..."
+
+ENV_FILE="${INSTALL_DIR}/.env"
+
+# Check if SUPERVISOR_TOKEN is already set (add-on environment)
+if [ -n "${SUPERVISOR_TOKEN:-}" ]; then
+    success "SUPERVISOR_TOKEN already set (add-on environment detected)"
+elif [ -f "${ENV_FILE}" ] && grep -q "SUPERVISOR_TOKEN=" "${ENV_FILE}" 2>/dev/null; then
+    existing_token=$(grep "SUPERVISOR_TOKEN=" "${ENV_FILE}" | cut -d= -f2-)
+    if [ -n "${existing_token}" ]; then
+        success "Existing token found in ${ENV_FILE}"
+        info "To update, re-run setup or edit ${ENV_FILE}"
+    fi
+else
+    echo ""
+    echo "  A Home Assistant Long-Lived Access Token enables the workflow to"
+    echo "  read entities, devices, and add-ons via the HA REST API."
+    echo ""
+    echo "  To create one: HA → Profile → Security → Long-Lived Access Tokens"
+    echo ""
+    echo "  In add-on mode this is NOT needed (SUPERVISOR_TOKEN is auto-injected)."
+    echo ""
+    read -r -p "  Enter HA Long-Lived Access Token (or press Enter to skip): " ha_token
+
+    if [ -n "${ha_token}" ]; then
+        # Write token to env file (readable only by root)
+        # Preserve existing content, remove old SUPERVISOR_TOKEN line
+        if [ -f "${ENV_FILE}" ]; then
+            grep -v "^SUPERVISOR_TOKEN=" "${ENV_FILE}" > "${ENV_FILE}.tmp" 2>/dev/null
+            mv "${ENV_FILE}.tmp" "${ENV_FILE}"
+        else
+            touch "${ENV_FILE}"
+        fi
+        echo "SUPERVISOR_TOKEN=${ha_token}" >> "${ENV_FILE}"
+        chmod 600 "${ENV_FILE}"
+        success "Token saved to ${ENV_FILE} (permissions: 600)"
+    else
+        info "Skipping token configuration"
+        info "You can set it later via:"
+        info "  - GUI: Configuration → HA API Token"
+        info "  - CLI: echo 'SUPERVISOR_TOKEN=your_token' >> ${ENV_FILE}"
+    fi
+fi
+
+# Step 7: Initialize git repository
+info "Step 7/11: Initializing git repository..."
 
 cd "${CONFIG_DIR}"
 
@@ -375,7 +420,7 @@ EOF
 fi
 
 # Step 7: Create documentation
-info "Step 7/10: Creating documentation..."
+info "Step 8/11: Creating documentation..."
 
 cat > "${INSTALL_DIR}/docs/QUICKSTART.md" << 'EOF'
 # Quick Start Guide
@@ -498,7 +543,7 @@ EOF
 success "Documentation created"
 
 # Step 8: Run validation tests
-info "Step 8/10: Running validation tests..."
+info "Step 9/11: Running validation tests..."
 
 # Test Python imports from installed location
 test_failed=0
@@ -539,7 +584,7 @@ fi
 success "Validation tests passed"
 
 # Step 9: Test basic functionality
-info "Step 9/10: Testing basic functionality..."
+info "Step 10/11: Testing basic functionality..."
 
 # Test logger creation
 if python3 -c "import sys; sys.path.insert(0, '${INSTALL_DIR}/bin'); from workflow_logger import configure_logger; logger = configure_logger('INFO', '${LOG_DIR}/test.log'); logger.info('Test message'); logger.success('Test successful')" 2>/dev/null; then
@@ -580,7 +625,7 @@ fi
 success "Basic functionality tests passed"
 
 # Step 10: Perform final checks
-info "Step 10/10: Performing final checks..."
+info "Step 11/11: Performing final checks..."
 
 # Check directory structure
 required_dirs=(

@@ -26,7 +26,9 @@ RUN apk add --no-cache \
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/bin
+    PYTHONPATH=/app/bin \
+    HA_CONFIG_DIR=/config \
+    HA_INSTALL_DIR=/app
 
 # Create app directory
 WORKDIR /app
@@ -69,6 +71,11 @@ RUN echo "=== Phase 1: Installing from pre-built wheels ===" \
 COPY bin/ /app/bin/
 COPY config/ /app/config/
 COPY templates/ /app/templates/
+
+# Copy master script and create ha-ai-workflow CLI command
+COPY ha_ai_master_script.sh /app/bin/ha_ai_master_script.sh
+RUN chmod +x /app/bin/ha_ai_master_script.sh \
+    && ln -sf /app/bin/ha_ai_master_script.sh /usr/local/bin/ha-ai-workflow
 
 # Copy add-on run script (lives in the build context natively)
 COPY run.sh /run.sh

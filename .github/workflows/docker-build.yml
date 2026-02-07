@@ -180,6 +180,7 @@ jobs:
           cp -r bin/ ha_ai_workflow_addon/bin/
           cp -r config/ ha_ai_workflow_addon/config/
           cp -r templates/ ha_ai_workflow_addon/templates/
+          cp ha_ai_master_script.sh ha_ai_workflow_addon/
           echo "✓ Files staged successfully"
           echo "Build context contents:"
           ls -la ha_ai_workflow_addon/

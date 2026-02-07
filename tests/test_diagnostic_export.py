@@ -34,6 +34,26 @@ class TestHAConfigExporter:
         
         assert exporter.output_dir == '/tmp/ha_export'
     
+    def test_init_custom_config_dir(self, temp_dir):
+        """Test initialization with custom config_dir"""
+        exporter = HAConfigExporter(output_dir=temp_dir, config_dir="/custom/config")
+        
+        assert exporter.config_dir == "/custom/config"
+        assert exporter.config_paths["config"] == "/custom/config"
+    
+    def test_update_paths_after_name_change(self, temp_dir):
+        """Test that _update_paths correctly updates all derived paths"""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        original_ai_path = exporter.ai_upload_path
+        
+        exporter.export_name = "custom_export_name"
+        exporter._update_paths()
+        
+        assert exporter.export_path == os.path.join(temp_dir, "custom_export_name")
+        assert exporter.ai_upload_path == os.path.join(temp_dir, "custom_export_name", "ai_upload")
+        assert exporter.secrets_path == os.path.join(temp_dir, "custom_export_name", "secrets")
+        assert exporter.ai_upload_path != original_ai_path
+    
     def test_sensitive_patterns_defined(self, temp_dir):
         """Test that sensitive patterns are properly defined"""
         exporter = HAConfigExporter(output_dir=temp_dir)
@@ -58,9 +78,7 @@ class TestCreateExportStructure:
         
         export_path = Path(exporter.export_path)
         assert export_path.exists()
-        assert (export_path / 'config').exists()
-        assert (export_path / 'diagnostics').exists()
-        assert (export_path / 'addons').exists()
+        assert (export_path / 'ai_upload').exists()
         assert (export_path / 'secrets').exists()
 
 
