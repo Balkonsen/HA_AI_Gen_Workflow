@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.11] - 2026-02-07
-
 ### Changed
 - **Faster Docker builds** — Dockerfile now uses `--prefer-binary` to install pre-built musllinux wheels instead of compiling from source, reducing install time from ~20-30 minutes to ~2-3 minutes
 - **Build deps installed conditionally** — gcc, cargo, and other build tools are only installed if pre-built wheel installation fails, keeping the image smaller

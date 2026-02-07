@@ -9,8 +9,10 @@ import os
 from pathlib import Path
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, Any, Callable
 import json
+import functools
+import time
 
 
 class LogLevel(Enum):
@@ -28,7 +30,7 @@ class LogLevel(Enum):
 class WorkflowLogger:
     """
     Centralized logger for HA AI Gen Workflow.
-    
+
     Supports:
     - Multiple log levels (debug, verbose, info, condensed, warning, error, critical)
     - File output with optional rotation
@@ -306,6 +308,149 @@ class WorkflowLogger:
         except Exception as e:
             self.error(f"Failed to create diagnostic report: {e}")
             raise
+
+    # -------------------------------------------------------------------------
+    # Enhanced Debug Methods
+    # -------------------------------------------------------------------------
+
+    def debug_var(self, var_name: str, var_value: Any):
+        """Log a variable name and value at DEBUG level.
+
+        Args:
+            var_name: Name of the variable
+            var_value: Value of the variable
+        """
+        if self.log_level.value <= LogLevel.DEBUG.value:
+            # Format value based on type
+            if isinstance(var_value, (dict, list)):
+                try:
+                    formatted_value = json.dumps(var_value, indent=2, default=str)
+                except Exception:
+                    formatted_value = str(var_value)
+            else:
+                formatted_value = repr(var_value)
+
+            self.debug(f"Variable: {var_name} = {formatted_value}")
+
+    def debug_call(self, func_name: str, args: tuple = (), kwargs: dict = None):
+        """Log a function call with its arguments at DEBUG level.
+
+        Args:
+            func_name: Name of the function being called
+            args: Positional arguments
+            kwargs: Keyword arguments
+        """
+        if self.log_level.value <= LogLevel.DEBUG.value:
+            args_str = ", ".join(repr(a) for a in args)
+            kwargs_str = ", ".join(f"{k}={repr(v)}" for k, v in (kwargs or {}).items())
+            all_args = ", ".join(filter(None, [args_str, kwargs_str]))
+            self.debug(f"Calling: {func_name}({all_args})")
+
+    def debug_return(self, func_name: str, return_value: Any):
+        """Log a function return value at DEBUG level.
+
+        Args:
+            func_name: Name of the function returning
+            return_value: The return value
+        """
+        if self.log_level.value <= LogLevel.DEBUG.value:
+            if isinstance(return_value, (dict, list)):
+                try:
+                    formatted_value = json.dumps(return_value, indent=2, default=str)
+                except Exception:
+                    formatted_value = str(return_value)
+            else:
+                formatted_value = repr(return_value)
+
+            self.debug(f"Returned from {func_name}: {formatted_value}")
+
+    def debug_enter(self, func_name: str, args: tuple = (), kwargs: dict = None):
+        """Log entering a function at DEBUG level.
+
+        Args:
+            func_name: Name of the function
+            args: Positional arguments
+            kwargs: Keyword arguments
+        """
+        if self.log_level.value <= LogLevel.DEBUG.value:
+            args_str = ", ".join(repr(a) for a in args)
+            kwargs_str = ", ".join(f"{k}={repr(v)}" for k, v in (kwargs or {}).items())
+            all_args = ", ".join(filter(None, [args_str, kwargs_str]))
+            self.debug(f"→ Entering: {func_name}({all_args})")
+            self.push_context(func_name)
+
+    def debug_exit(self, func_name: str, return_value: Any = None):
+        """Log exiting a function at DEBUG level.
+
+        Args:
+            func_name: Name of the function
+            return_value: Optional return value to log
+        """
+        if self.log_level.value <= LogLevel.DEBUG.value:
+            if return_value is not None:
+                self.debug(f"← Exiting: {func_name} -> {repr(return_value)}")
+            else:
+                self.debug(f"← Exiting: {func_name}")
+            self.pop_context()
+
+    def debug_stack(self):
+        """Log the current call stack at DEBUG level."""
+        if self.log_level.value <= LogLevel.DEBUG.value:
+            import traceback
+
+            stack = traceback.format_stack()[:-1]  # Exclude this function
+            self.debug("Call stack:")
+            for line in stack:
+                self._write_to_file(f"  {line.rstrip()}")
+
+
+def trace_calls(logger: Optional[WorkflowLogger] = None):
+    """Decorator to trace function calls, arguments, and return values at DEBUG level.
+
+    Usage:
+        @trace_calls()
+        def my_function(arg1, arg2):
+            return result
+
+    Args:
+        logger: Optional logger instance. If None, uses global logger.
+    """
+
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            _logger = logger or get_logger()
+
+            # Only trace if debug level is enabled
+            if _logger.log_level.value > LogLevel.DEBUG.value:
+                return func(*args, **kwargs)
+
+            func_name = f"{func.__module__}.{func.__qualname__}"
+
+            # Log function entry
+            _logger.debug_enter(func_name, args, kwargs)
+
+            try:
+                # Execute function with timing
+                start_time = time.time()
+                result = func(*args, **kwargs)
+                elapsed = time.time() - start_time
+
+                # Log function exit with timing
+                _logger.debug(f"← Exiting: {func_name} (took {elapsed:.3f}s)")
+                _logger.debug_return(func_name, result)
+                _logger.pop_context()
+
+                return result
+            except Exception as e:
+                # Log exception
+                _logger.debug(f"✗ Exception in {func_name}: {type(e).__name__}: {e}")
+                _logger.pop_context()
+                raise
+
+        return wrapper
+
+    return decorator
 
 
 # Global logger instance (can be configured by importing scripts)

@@ -69,16 +69,26 @@ log() {
     local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
-    # Log level filtering: skip VERBOSE messages if not in verbose mode
+    # Log level filtering: skip VERBOSE and DEBUG messages if not enabled
     if [ "$level" = "VERBOSE" ] && [ "$ENABLE_VERBOSE" = false ]; then
+        return
+    fi
+    if [ "$level" = "DEBUG" ] && [ "$LOG_LEVEL" != "DEBUG" ]; then
         return
     fi
     
     echo -e "${timestamp} [${level}] ${message}" | tee -a "${LOG_FILE}"
 }
 
+debug() {
+    if [ "$LOG_LEVEL" = "DEBUG" ]; then
+        echo -e "${BLUE}🔍${NC} $*"
+        log "DEBUG" "$*"
+    fi
+}
+
 verbose() {
-    if [ "$ENABLE_VERBOSE" = true ]; then
+    if [ "$ENABLE_VERBOSE" = true ] || [ "$LOG_LEVEL" = "DEBUG" ]; then
         echo -e "${BLUE}→${NC} $*"
         log "VERBOSE" "$*"
     fi
@@ -284,10 +294,20 @@ run_export() {
     local export_name="ha_export_${timestamp}"
     local temp_export_dir="/tmp/${export_name}"
     
+    debug "Export configuration:"
+    debug "  - BIN_DIR: ${BIN_DIR}"
+    debug "  - CONFIG_DIR: ${CONFIG_DIR}"
+    debug "  - EXPORT_DIR: ${EXPORT_DIR}"
+    debug "  - Export name: ${export_name}"
+    debug "  - Temp directory: ${temp_export_dir}"
+    
     # Step 1: Run diagnostic export
     info "Step 1/5: Running diagnostic export..."
+    debug "Calling: python3 ${BIN_DIR}/ha_diagnostic_export.py --output-dir /tmp --name ${export_name} --config-dir ${CONFIG_DIR}"
+    
     if ! python3 "${BIN_DIR}/ha_diagnostic_export.py" --output-dir "/tmp" --name "${export_name}" --config-dir "${CONFIG_DIR}"; then
         error "Export failed"
+        debug "Export command failed with exit code: $?"
         return 1
     fi
     success "Export completed"
@@ -295,13 +315,20 @@ run_export() {
     # Step 2: Verify export
     info "Step 2/5: Verifying export completeness..."
     local tarball="/tmp/${export_name}.tar.gz"
+    debug "Looking for tarball: ${tarball}"
+    
     if [ ! -f "${tarball}" ]; then
         error "Export tarball not found: ${tarball}"
+        debug "Contents of /tmp directory:"
+        debug "$(ls -lah /tmp/ 2>&1)"
         return 1
     fi
+    debug "Tarball found: $(ls -lh ${tarball})"
     
+    debug "Calling: python3 ${BIN_DIR}/ha_export_verifier.py ${tarball}"
     if ! python3 "${BIN_DIR}/ha_export_verifier.py" "${tarball}"; then
         error "Export verification failed"
+        debug "Verifier exit code: $?"
         return 1
     fi
     success "Export verified"

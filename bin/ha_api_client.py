@@ -85,7 +85,28 @@ class HomeAssistantAPI:
         except requests.exceptions.Timeout:
             _LOGGER.error("API request timed out: %s", url)
         except requests.exceptions.HTTPError as err:
-            _LOGGER.error("API request failed: %s - %s", url, err)
+            # Provide specific error messages for common HTTP status codes
+            if hasattr(err.response, 'status_code'):
+                status = err.response.status_code
+                if status == 401:
+                    _LOGGER.error(
+                        "API authentication failed (401 Unauthorized): SUPERVISOR_TOKEN is invalid or expired.\n"
+                        "  To fix:\n"
+                        "  1. Generate a new Long-Lived Access Token in Home Assistant:\n"
+                        "     Profile → Security → Long-Lived Access Tokens → Create Token\n"
+                        "  2. Update the token:\n"
+                        "     - In GUI: Configuration → HA API Token\n"
+                        "     - Or set SUPERVISOR_TOKEN environment variable\n"
+                        "     - Or edit .env file with: SUPERVISOR_TOKEN=your_new_token"
+                    )
+                elif status == 403:
+                    _LOGGER.error("API access forbidden (403): Token may lack required permissions")
+                elif status == 404:
+                    _LOGGER.error("API endpoint not found (404): %s - Check Home Assistant version", url)
+                else:
+                    _LOGGER.error("API request failed with status %d: %s - %s", status, url, err)
+            else:
+                _LOGGER.error("API request failed: %s - %s", url, err)
         except requests.exceptions.RequestException as err:
             _LOGGER.error("API request error: %s - %s", url, err)
         except ValueError as err:
@@ -180,7 +201,11 @@ class HomeAssistantAPI:
             Tuple of (success, message)
         """
         if not self._token:
-            return False, "SUPERVISOR_TOKEN not available"
+            return False, (
+                "SUPERVISOR_TOKEN not available. Please set it:\n"
+                "  1. Create Long-Lived Access Token in HA: Profile → Security → Create Token\n"
+                "  2. Set token via GUI Configuration or SUPERVISOR_TOKEN environment variable"
+            )
 
         try:
             response = requests.get(
@@ -189,10 +214,28 @@ class HomeAssistantAPI:
                 timeout=10,
             )
             if response.status_code == 200:
-                return True, "Connection successful"
-            return False, f"API returned status {response.status_code}"
+                return True, "✓ Connection successful"
+            elif response.status_code == 401:
+                return False, (
+                    "❌ Authentication failed (401 Unauthorized)\n"
+                    "  SUPERVISOR_TOKEN is invalid or expired.\n"
+                    "  Please generate a new Long-Lived Access Token:\n"
+                    "  1. In Home Assistant: Profile → Security → Long-Lived Access Tokens\n"
+                    "  2. Create new token and copy it\n"
+                    "  3. Update via GUI Configuration or set SUPERVISOR_TOKEN environment variable"
+                )
+            elif response.status_code == 403:
+                return False, "❌ Access forbidden (403) - Token may lack required permissions"
+            elif response.status_code == 404:
+                return False, "❌ API endpoint not found (404) - Check Home Assistant version compatibility"
+            else:
+                return False, f"❌ API returned status {response.status_code}"
+        except requests.exceptions.Timeout:
+            return False, "❌ Connection timeout - Check if Home Assistant is running"
+        except requests.exceptions.ConnectionError as err:
+            return False, f"❌ Connection failed - Cannot reach Home Assistant: {err}"
         except requests.exceptions.RequestException as err:
-            return False, f"Connection failed: {err}"
+            return False, f"❌ Connection failed: {err}"
 
 
 # Singleton instance for easy access
