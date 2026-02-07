@@ -28,6 +28,9 @@ from pathlib import Path
 from typing import Dict, List, Any, Tuple, Optional
 import shutil
 
+# Script version - increment when making incompatible changes
+SCRIPT_VERSION = "2.0.0"  # v2.0: Added --config-dir support
+
 # Maximum file size for AI upload (in bytes) - 10MB default
 MAX_AI_FILE_SIZE = 10 * 1024 * 1024
 
@@ -1171,13 +1174,22 @@ These files are sanitized and safe to upload to AI assistants.
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Export Home Assistant configuration with sanitization")
+    parser = argparse.ArgumentParser(
+        description="Export Home Assistant configuration with sanitization",
+        epilog=f"Version: {SCRIPT_VERSION}"
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {SCRIPT_VERSION}")
     parser.add_argument("--output-dir", default="/tmp/ha_export", help="Output directory for export")
     parser.add_argument("--name", help="Custom export name")
     parser.add_argument("--config-dir", default=None, help="HA config directory (default: $HA_CONFIG_DIR or /config)")
     parser.add_argument("--quiet", action="store_true", help="Minimize output")
 
     args = parser.parse_args()
+
+    # Show version info at start
+    if not args.quiet:
+        print(f"HA Diagnostic Export v{SCRIPT_VERSION}")
+        print()
 
     config_dir = args.config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
 

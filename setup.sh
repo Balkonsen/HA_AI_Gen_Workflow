@@ -328,6 +328,7 @@ else
 fi
 
 # Step 6: Configure HA API token
+banner "Home Assistant API Configuration"
 info "Step 6/11: Configuring Home Assistant API access..."
 
 ENV_FILE="${INSTALL_DIR}/.env"
@@ -343,14 +344,29 @@ elif [ -f "${ENV_FILE}" ] && grep -q "SUPERVISOR_TOKEN=" "${ENV_FILE}" 2>/dev/nu
     fi
 else
     echo ""
-    echo "  A Home Assistant Long-Lived Access Token enables the workflow to"
-    echo "  read entities, devices, and add-ons via the HA REST API."
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║  HOME ASSISTANT API TOKEN REQUIRED                             ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
     echo ""
-    echo "  To create one: HA → Profile → Security → Long-Lived Access Tokens"
+    echo "  ℹ️  A Home Assistant Long-Lived Access Token is required to:"
+    echo "     • Read entities, devices, and add-ons via the HA REST API"
+    echo "     • Enable full automation features"
+    echo "     • Test API connectivity"
     echo ""
-    echo "  In add-on mode this is NOT needed (SUPERVISOR_TOKEN is auto-injected)."
+    echo "  📝 How to create a token:"
+    echo "     1. Open Home Assistant web interface"
+    echo "     2. Click your profile (bottom left)"
+    echo "     3. Scroll to 'Long-Lived Access Tokens'"
+    echo "     4. Click 'Create Token'"
+    echo "     5. Give it a name (e.g., 'HA AI Workflow')"
+    echo "     6. Copy the generated token"
     echo ""
-    read -r -p "  Enter HA Long-Lived Access Token (or press Enter to skip): " ha_token
+    echo "  ⚠️  NOTE: In add-on mode, this is NOT needed"
+    echo "     (SUPERVISOR_TOKEN is automatically injected)"
+    echo ""
+    warn "Without a token, API features will not work!"
+    echo ""
+    read -r -p "  ➤ Enter your HA Long-Lived Access Token (or press Enter to skip): " ha_token
 
     if [ -n "${ha_token}" ]; then
         # Write token to env file (readable only by root)
@@ -363,12 +379,17 @@ else
         fi
         echo "SUPERVISOR_TOKEN=${ha_token}" >> "${ENV_FILE}"
         chmod 600 "${ENV_FILE}"
-        success "Token saved to ${ENV_FILE} (permissions: 600)"
+        success "✓ Token saved to ${ENV_FILE} (permissions: 600)"
+        success "✓ API access configured successfully"
     else
-        info "Skipping token configuration"
-        info "You can set it later via:"
-        info "  - GUI: Configuration → HA API Token"
-        info "  - CLI: echo 'SUPERVISOR_TOKEN=your_token' >> ${ENV_FILE}"
+        warn "⚠️  Token configuration skipped"
+        warn "⚠️  API features will NOT work until you configure a token"
+        echo ""
+        echo "  You can set it later via:"
+        echo "    • GUI: Configuration → HA API Token"
+        echo "    • CLI: echo 'SUPERVISOR_TOKEN=your_token' >> ${ENV_FILE}"
+        echo "    • Or re-run: sudo ${SCRIPT_DIR}/setup.sh"
+        echo ""
     fi
 fi
 
