@@ -230,8 +230,11 @@ def init_session_state():
     if "runtime_output" not in st.session_state:
         st.session_state.runtime_output = ""
     if "logger" not in st.session_state:
-        log_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
-        log_file = os.path.join(log_dir, "workflow.log")
+        # Determine base storage path for logs
+        export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
+        base_dir = os.path.dirname(export_dir)
+        log_file = os.path.join(base_dir, "workflow.log")
+        Path(base_dir).mkdir(parents=True, exist_ok=True)
         st.session_state.logger = configure_logger(log_level=st.session_state.log_level, log_file=log_file)
 
 
@@ -280,6 +283,11 @@ def render_sidebar():
         st.session_state.log_level = log_level
         st.session_state.logger.set_log_level(LogLevel[log_level])
         st.sidebar.caption(f"Log level: {log_level}")
+
+    # CLI hint
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 💻 Command Line")
+    st.sidebar.code("ha-ai-workflow export\nha-ai-workflow import\nha-ai-workflow status\nha-ai-workflow --help", language="bash")
 
 
 def render_configuration():
@@ -354,24 +362,58 @@ def render_configuration():
 
     st.markdown("---")
 
-    # Path Configuration — inside the HA installation
-    st.subheader("📁 HA Workflow Directories")
+    # Path Configuration — single base storage path
+    st.subheader("📁 Workflow Storage Path")
     st.markdown(
-        "Configure the directories used by the workflow inside your Home Assistant installation. "
-        "Paths are validated and resolved to absolute locations. "
-        "Non-existing directories can be created with a single click."
+        "Configure the base directory for all workflow data. "
+        "Exports, imports, secrets, backups, and logs will be stored in sub-directories here."
     )
 
-    col1, col2 = st.columns(2)
+    # Derive current base path from export_dir (strip trailing /exports if present)
+    current_export = config.get("paths.export_dir", "")
+    if current_export.endswith("/exports"):
+        default_base = current_export[: -len("/exports")]
+    elif current_export.endswith("/ai_exports"):
+        default_base = current_export[: -len("/ai_exports")]
+    else:
+        default_base = os.path.dirname(current_export) if current_export else os.path.abspath("./ha_workflow")
 
-    with col1:
-        render_path_input_with_validation("Export Directory", "paths.export_dir", config, "cfg")
-        render_path_input_with_validation("Secrets Directory", "paths.secrets_dir", config, "cfg")
-        render_path_input_with_validation("AI Context Directory", "paths.ai_context_dir", config, "cfg")
+    base_path = st.text_input(
+        "Storage Base Path",
+        value=default_base,
+        placeholder="/config/ai_workflow",
+        key="storage_base_path",
+        help="All workflow directories (exports, imports, secrets, backups, logs) will be created here.",
+    )
+    resolved_base, base_exists, base_creatable, base_message = resolve_and_verify_path(base_path)
+    st.caption(base_message)
 
-    with col2:
-        render_path_input_with_validation("Import Directory", "paths.import_dir", config, "cfg")
-        render_path_input_with_validation("Backup Directory", "paths.backup_dir", config, "cfg")
+    if resolved_base:
+        # Derive and set all sub-paths from the base
+        config.set("paths.export_dir", os.path.join(resolved_base, "exports"))
+        config.set("paths.import_dir", os.path.join(resolved_base, "imports"))
+        config.set("paths.secrets_dir", os.path.join(resolved_base, "secrets"))
+        config.set("paths.backup_dir", os.path.join(resolved_base, "backups"))
+        config.set("paths.ai_context_dir", os.path.join(resolved_base, "ai_context"))
+
+        # Show derived paths
+        with st.expander("📂 Derived sub-directories", expanded=False):
+            st.text(f"  Exports:    {os.path.join(resolved_base, 'exports')}")
+            st.text(f"  Imports:    {os.path.join(resolved_base, 'imports')}")
+            st.text(f"  Secrets:    {os.path.join(resolved_base, 'secrets')}")
+            st.text(f"  Backups:    {os.path.join(resolved_base, 'backups')}")
+            st.text(f"  AI Context: {os.path.join(resolved_base, 'ai_context')}")
+            st.text(f"  Logs:       {os.path.join(resolved_base, 'workflow.log')}")
+
+        if not base_exists and base_creatable:
+            if st.button("📁 Create Storage Directory"):
+                try:
+                    for sub in ["exports", "imports", "secrets", "backups", "ai_context"]:
+                        Path(os.path.join(resolved_base, sub)).mkdir(parents=True, exist_ok=True)
+                    st.success(f"✅ Created storage directory: {resolved_base}")
+                    st.rerun()
+                except OSError as e:
+                    st.error(f"❌ Failed to create directory: {e}")
 
     st.markdown("---")
 
@@ -745,7 +787,8 @@ def render_logs():
             st.session_state.logger.set_log_level(LogLevel[log_level])
 
     with col2:
-        log_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
+        export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
+        log_dir = os.path.dirname(export_dir)
         log_file = st.text_input("Log File Path", value=os.path.join(log_dir, "workflow.log"))
 
     with col3:

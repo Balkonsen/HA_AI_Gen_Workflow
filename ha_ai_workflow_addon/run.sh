@@ -322,7 +322,9 @@ fi
 log_info "Setting up environment variables..."
 export HA_API_URL="http://supervisor/core/api"
 export HA_SUPERVISOR_URL="http://supervisor"
+export HA_CONFIG_DIR="/config"
 export HA_CONFIG_PATH="/config"
+export HA_INSTALL_DIR="/app"
 # Export SSH password securely via environment variable (not in config file)
 if [[ -n "${SSH_PASSWORD}" ]]; then
     export SSH_PASSWORD="${SSH_PASSWORD}"
@@ -332,7 +334,18 @@ fi
 log_debug "Environment variables set:"
 log_debug "  HA_API_URL=${HA_API_URL}"
 log_debug "  HA_SUPERVISOR_URL=${HA_SUPERVISOR_URL}"
-log_debug "  HA_CONFIG_PATH=${HA_CONFIG_PATH}"
+log_debug "  HA_CONFIG_DIR=${HA_CONFIG_DIR}"
+
+# Install ha-ai-workflow CLI command if master script exists
+if [[ -f "/app/bin/ha_ai_master_script.sh" ]]; then
+    chmod +x /app/bin/ha_ai_master_script.sh
+    ln -sf /app/bin/ha_ai_master_script.sh /usr/local/bin/ha-ai-workflow
+    log_info "ha-ai-workflow CLI command installed"
+elif [[ -f "/app/ha_ai_master.sh" ]]; then
+    chmod +x /app/ha_ai_master.sh
+    ln -sf /app/ha_ai_master.sh /usr/local/bin/ha-ai-workflow
+    log_info "ha-ai-workflow CLI command installed"
+fi
 
 # Failsafe: Check if Streamlit is available
 log_info "Verifying Streamlit installation..."

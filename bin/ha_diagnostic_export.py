@@ -35,7 +35,7 @@ MAX_AI_FILE_SIZE = 10 * 1024 * 1024
 class HAConfigExporter:
     def __init__(self, output_dir="/tmp/ha_export", config_dir=None):
         self.output_dir = output_dir
-        self.config_dir = config_dir or os.environ.get("HA_CONFIG_DIR", "/config")
+        self.config_dir = config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
         self.secrets_map = {}
         self.secret_counter = 0
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -172,6 +172,38 @@ class HAConfigExporter:
             print(f"✓ Collected {len(addon_data['installed_addons'])} add-ons via API")
             return True
         return False
+
+    def _export_entity_states_via_api(self):
+        """Fallback: export entity states via HA API /api/states."""
+        try:
+            import requests
+
+            url = "http://supervisor/core/api/states"
+            headers = {
+                "Authorization": f"Bearer {self.api_token}",
+                "Content-Type": "application/json",
+            }
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code != 200:
+                print(f"  API returned status {response.status_code}")
+                return False
+
+            states = response.json()
+            state_values = {}
+            for state in states:
+                entity_id = state.get("entity_id", "")
+                if entity_id:
+                    state_values[entity_id] = {
+                        "state": state.get("state", ""),
+                        "attributes": state.get("attributes", {}),
+                    }
+
+            self.entities_data["entity_states"] = state_values
+            print(f"✓ Collected {len(state_values)} entity states via API")
+            return True
+        except Exception as e:
+            print(f"  Error fetching entity states via API: {e}")
+            return False
 
     def run_command(self, cmd, shell=True):
         """Run shell command and return output"""
@@ -314,6 +346,12 @@ class HAConfigExporter:
                 print(f"  - Domains: {len(self.entities_data['entities_by_domain'])}")
 
                 return True
+            except PermissionError:
+                print("  ⚠ Permission denied reading entity registry")
+                if self.api_token:
+                    return self._export_entities_via_api()
+                print("    Set SUPERVISOR_TOKEN for API fallback")
+                return False
             except Exception as e:
                 print(f"  Error exporting entity registry: {e}")
                 return False
@@ -364,11 +402,18 @@ class HAConfigExporter:
 
                 print(f"✓ Collected {states_data['total_states']} entity states")
                 return True
+            except PermissionError:
+                print("  ⚠ Permission denied reading entity states file")
+                print("    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN")
             except Exception as e:
                 print(f"  Error exporting entity states: {e}")
                 return False
+
+        # Fallback to API if file not available and token is set
+        if self.api_token:
+            return self._export_entity_states_via_api()
         else:
-            print("  Entity states file not found")
+            print("  Entity states file not found (set SUPERVISOR_TOKEN for API fallback)")
             return False
 
     def export_device_registry(self):
@@ -422,11 +467,18 @@ class HAConfigExporter:
                 print(f"  - Integrations: {len(self.devices_data['devices_by_integration'])}")
 
                 return True
+            except PermissionError:
+                print("  ⚠ Permission denied reading device registry")
+                print("    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN")
+                return False
             except Exception as e:
                 print(f"  Error exporting device registry: {e}")
                 return False
         else:
-            print("  Device registry not found")
+            if self.api_token:
+                print("  Device registry not found, no device API available in HA REST API")
+            else:
+                print("  Device registry not found (set SUPERVISOR_TOKEN for API fallback)")
             return False
 
     def export_config_directory(self):
@@ -1127,7 +1179,7 @@ def main():
 
     args = parser.parse_args()
 
-    config_dir = args.config_dir or os.environ.get("HA_CONFIG_DIR", "/config")
+    config_dir = args.config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
 
     if os.geteuid() != 0 and not args.quiet:
         print("⚠️  Warning: Running without root privileges")
@@ -1140,6 +1192,17 @@ def main():
         print("  This script must be run on a Home Assistant host")
         print("  Set HA_CONFIG_DIR or use --config-dir to specify the path")
         sys.exit(1)
+
+    # Check .storage readability
+    storage_dir = os.path.join(config_dir, ".storage")
+    if os.path.exists(storage_dir) and not os.access(storage_dir, os.R_OK):
+        if not args.quiet:
+            print(f"⚠️  Warning: Cannot read {storage_dir} (permission denied)")
+            if os.environ.get("SUPERVISOR_TOKEN"):
+                print("   Will use SUPERVISOR_TOKEN API fallback for entity/device data")
+            else:
+                print("   Set SUPERVISOR_TOKEN environment variable for API fallback")
+            print()
 
     # Create exporter with args
     output_dir = args.output_dir
