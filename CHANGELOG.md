@@ -7,35 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Enhanced debug logging** — Added comprehensive debug features to `workflow_logger.py`:
-  - `debug_var()` — Log variables with formatted values (JSON for dicts/lists)
-  - `debug_call()` — Log function calls with arguments
-  - `debug_return()` — Log function return values
-  - `debug_enter()`/`debug_exit()` — Track function entry/exit with context stack
-  - `debug_stack()` — Display full call stack
-  - `@trace_calls()` decorator — Automatic function tracing with timing
-- **Version tracking** — Added version info to `ha_diagnostic_export.py` (v2.0.0) with `--version` flag
-- **Debug mode in master script** — Added `debug()` function with detailed variable logging for export workflow
-
-### Improved
-- **API error handling** — Enhanced `ha_api_client.py` with specific error messages:
-  - 401 Unauthorized: Clear remediation steps for invalid/expired tokens
-  - 403 Forbidden: Token permission issues
-  - 404 Not Found: API compatibility warnings
-  - Connection errors: Specific error types (timeout, connection, etc.)
-- **Setup token prompt** — Made SUPERVISOR_TOKEN configuration highly visible in `setup.sh`:
-  - Prominent box border and emoji icons
-  - Step-by-step token creation instructions
-  - Clear warnings when skipping configuration
-  - Shows consequences of missing token
-- **Setup symlink verification** — Added verification and fallback instructions when `ha-ai-workflow` command is not in PATH
-- **Master script DEBUG mode** — Shows configuration variables, command calls, exit codes, and directory contents on errors
-
-### Fixed
-- **--config-dir argument** — Confirmed proper support in `ha_diagnostic_export.py` (was already present, error was from old installed version)
-- **PATH issues** — Setup now detects and provides instructions when `/usr/local/bin` is not in PATH
-
 ### Changed
 - **Faster Docker builds** — Dockerfile now uses `--prefer-binary` to install pre-built musllinux wheels instead of compiling from source, reducing install time from ~20-30 minutes to ~2-3 minutes
 - **Build deps installed conditionally** — gcc, cargo, and other build tools are only installed if pre-built wheel installation fails, keeping the image smaller

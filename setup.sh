@@ -279,27 +279,7 @@ fi
 info "Step 5/11: Installing shell scripts..."
 
 if [ -f "${SCRIPT_DIR}/ha_ai_master_script.sh" ]; then
-    cp "${SCRIPT_DIR}/ha_ai_master_script.sh" "${INSTALL_DIR}/ha_ai_master.sh"
-    chmod +x "${INSTALL_DIR}/ha_ai_master.sh"
-    
-    # Create symlink with error handling
-    if ln -sf "${INSTALL_DIR}/ha_ai_master.sh" /usr/local/bin/ha-ai-workflow 2>/dev/null; then
-        success "Master script installed"
-        success "Symlink created: /usr/local/bin/ha-ai-workflow"
-        
-        # Verify the symlink works
-        if command -v ha-ai-workflow &> /dev/null; then
-            success "✓ Command 'ha-ai-workflow' is available"
-        else
-            warn "⚠️  Symlink created but 'ha-ai-workflow' not found in PATH"
-            warn "   You may need to add /usr/local/bin to your PATH"
-            warn "   Or use the full path: ${INSTALL_DIR}/ha_ai_master.sh"
-        fi
-    else
-        error "Failed to create symlink in /usr/local/bin"
-        warn "This may be due to permission issues or directory not existing"
-        warn "You can manually create the symlink or use: ${INSTALL_DIR}/ha_ai_master.sh"
-    fi
+
 else
     error "Master script not found: ${SCRIPT_DIR}/ha_ai_master_script.sh"
     error "Cannot continue without the master script"
@@ -634,18 +614,24 @@ fi
 
 # Test that ha-ai-workflow command is available
 if command -v ha-ai-workflow &> /dev/null; then
-    success "ha-ai-workflow command available"
+    # Test actual execution, not just PATH presence
+    if ha-ai-workflow --help &> /dev/null; then
+        success "ha-ai-workflow command available and functional"
+    else
+        error "ha-ai-workflow command found but fails to execute"
+        ((test_failed++))
+    fi
 else
     error "ha-ai-workflow command not found in PATH"
     ((test_failed++))
 fi
 
 # Test master script can be executed
-if [ -x "${INSTALL_DIR}/ha_ai_master.sh" ]; then
+if [ -x "${INSTALL_DIR}/ha_ai_master_script.sh" ]; then
     success "Master script is executable"
     
     # Try to get help (this should not fail)
-    if "${INSTALL_DIR}/ha_ai_master.sh" --help &> /dev/null; then
+    if "${INSTALL_DIR}/ha_ai_master_script.sh" --help &> /dev/null; then
         success "Master script help command works"
     else
         warn "Master script help command had issues"
