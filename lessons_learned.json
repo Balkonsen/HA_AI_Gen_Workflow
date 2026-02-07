@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "last_updated": "2026-02-07T20:18:05.434345+00:00",
-  "total_lessons": 13,
+  "last_updated": "2026-02-07T20:51:43.055569+00:00",
+  "total_lessons": 14,
   "lessons": [
     {
       "category": "build_failure",
@@ -226,6 +226,19 @@
       "fix_target": null,
       "fix_content": null,
       "timestamp": "2026-02-07T20:18:05.417958+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Lint violations detected: 130 total",
+      "details": "Top violations: F541(41), W293(30), F401(19), E501(13), E402(12)",
+      "source_pr": "51",
+      "source_files": [],
+      "recommendation": "Run 'make format' to auto-fix formatting, then address remaining issues",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-07T20:51:43.035780+00:00",
       "applied": false
     }
   ]
