@@ -16,8 +16,8 @@ NC='\033[0m'
 
 # Script Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="/usr/local/ha-ai-workflow"
-CONFIG_DIR="/config"
+INSTALL_DIR="${HA_INSTALL_DIR:-/usr/local/ha-ai-workflow}"
+CONFIG_DIR="${HA_CONFIG_DIR:-/config}"
 LOG_DIR="${CONFIG_DIR}/ai_exports"
 SETUP_LOG="${LOG_DIR}/setup.log"
 

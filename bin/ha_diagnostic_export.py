@@ -33,17 +33,14 @@ MAX_AI_FILE_SIZE = 10 * 1024 * 1024
 
 
 class HAConfigExporter:
-    def __init__(self, output_dir="/tmp/ha_export"):
+    def __init__(self, output_dir="/tmp/ha_export", config_dir=None):
         self.output_dir = output_dir
+        self.config_dir = config_dir or os.environ.get("HA_CONFIG_DIR", "/config")
         self.secrets_map = {}
         self.secret_counter = 0
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.export_name = f"ha_config_export_{self.timestamp}"
-        self.export_path = os.path.join(output_dir, self.export_name)
-
-        # AI upload and secrets paths (strict separation)
-        self.ai_upload_path = os.path.join(self.export_path, "ai_upload")
-        self.secrets_path = os.path.join(self.export_path, "secrets")
+        self._update_paths()
 
         # Collected data for AI context generation
         self.entities_data = {}
@@ -53,6 +50,9 @@ class HAConfigExporter:
         self.integrations_data = {}
         self.system_info = {}
         self.config_files = {}
+
+        # HA API token for fallback data retrieval
+        self.api_token = os.environ.get("SUPERVISOR_TOKEN", "")
 
         # Patterns to identify sensitive data
         self.sensitive_patterns = {
@@ -70,12 +70,18 @@ class HAConfigExporter:
             "username": r'username["\']?\s*[:=]\s*["\']?([^"\'}\s,]+)',
         }
 
-        # HA paths to export
+        # HA paths to export (use config_dir for dynamic resolution)
         self.config_paths = {
-            "config": "/config",
-            "addons": "/data/addons",
-            "supervisor": "/data/supervisor",
+            "config": self.config_dir,
+            "addons": os.environ.get("HA_ADDONS_DIR", "/data/addons"),
+            "supervisor": os.environ.get("HA_SUPERVISOR_DIR", "/data/supervisor"),
         }
+
+    def _update_paths(self):
+        """Update derived paths from export_name. Must be called after changing export_name."""
+        self.export_path = os.path.join(self.output_dir, self.export_name)
+        self.ai_upload_path = os.path.join(self.export_path, "ai_upload")
+        self.secrets_path = os.path.join(self.export_path, "secrets")
 
     def create_export_structure(self):
         """Create export directory structure with strict AI/Secrets separation"""
@@ -91,6 +97,81 @@ class HAConfigExporter:
         # Create .gitignore in secrets folder
         with open(os.path.join(self.secrets_path, ".gitignore"), "w") as f:
             f.write("# Never commit secrets\n*\n!.gitignore\n")
+
+    def _api_request(self, endpoint):
+        """Make an authenticated request to the HA Supervisor API."""
+        if not self.api_token:
+            return None
+        try:
+            url = f"http://supervisor{endpoint}"
+            headers = {
+                "Authorization": f"Bearer {self.api_token}",
+                "Content-Type": "application/json",
+            }
+            import requests
+
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code == 200:
+                return response.json()
+        except Exception:
+            pass
+        return None
+
+    def _export_entities_via_api(self):
+        """Fallback: export entity data via HA API /api/states."""
+        try:
+            import requests
+
+            url = "http://supervisor/core/api/states"
+            headers = {
+                "Authorization": f"Bearer {self.api_token}",
+                "Content-Type": "application/json",
+            }
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code != 200:
+                print(f"  API returned status {response.status_code}")
+                return False
+
+            states = response.json()
+            self.entities_data["total_entities"] = len(states)
+            for state in states:
+                entity_id = state.get("entity_id", "")
+                domain = entity_id.split(".")[0] if "." in entity_id else "unknown"
+                self.entities_data["all_entity_ids"].append(entity_id)
+                if domain not in self.entities_data["entities_by_domain"]:
+                    self.entities_data["entities_by_domain"][domain] = []
+                self.entities_data["entities_by_domain"][domain].append(entity_id)
+                self.entities_data["entity_details"].append({
+                    "entity_id": entity_id,
+                    "domain": domain,
+                    "platform": "unknown",
+                    "name": state.get("attributes", {}).get("friendly_name"),
+                    "disabled": False,
+                })
+
+            print(f"✓ Collected {len(states)} entities via API")
+            print(f"  - Domains: {len(self.entities_data['entities_by_domain'])}")
+            return True
+        except Exception as e:
+            print(f"  Error fetching entities via API: {e}")
+            return False
+
+    def _export_addons_via_api(self):
+        """Fallback: export add-on data via Supervisor API."""
+        addon_data = {"installed_addons": []}
+        result = self._api_request("/addons")
+        if result and "data" in result and "addons" in result["data"]:
+            for addon in result["data"]["addons"]:
+                addon_data["installed_addons"].append({
+                    "slug": addon.get("slug", ""),
+                    "name": addon.get("name", ""),
+                    "version": addon.get("version", ""),
+                    "state": addon.get("state", ""),
+                })
+            self.integrations_data["addons"] = addon_data
+            print(f"✓ Collected {len(addon_data['installed_addons'])} add-ons via API")
+            return True
+        return False
 
     def run_command(self, cmd, shell=True):
         """Run shell command and return output"""
@@ -170,7 +251,7 @@ class HAConfigExporter:
     def export_entities_registry(self):
         """Export entities from core.entity_registry - stores in memory for AI context"""
         print("\n=== Exporting Entity Registry ===")
-        entity_registry_path = "/config/.storage/core.entity_registry"
+        entity_registry_path = os.path.join(self.config_dir, ".storage", "core.entity_registry")
 
         self.entities_data = {
             "total_entities": 0,
@@ -236,14 +317,16 @@ class HAConfigExporter:
             except Exception as e:
                 print(f"  Error exporting entity registry: {e}")
                 return False
+        elif self.api_token:
+            return self._export_entities_via_api()
         else:
-            print("  Entity registry not found")
+            print("  Entity registry not found (set SUPERVISOR_TOKEN for API fallback)")
             return False
 
     def export_entity_states(self):
         """Export current entity states from core.restore_state"""
         print("\n=== Exporting Entity States ===")
-        restore_state_path = "/config/.storage/core.restore_state"
+        restore_state_path = os.path.join(self.config_dir, ".storage", "core.restore_state")
 
         states_data = {"total_states": 0, "states_by_domain": {}, "state_values": {}}  # entity_id -> state value
 
@@ -291,7 +374,7 @@ class HAConfigExporter:
     def export_device_registry(self):
         """Export devices from core.device_registry - stores in memory for AI context"""
         print("\n=== Exporting Device Registry ===")
-        device_registry_path = "/config/.storage/core.device_registry"
+        device_registry_path = os.path.join(self.config_dir, ".storage", "core.device_registry")
 
         self.devices_data = {
             "total_devices": 0,
@@ -349,7 +432,7 @@ class HAConfigExporter:
     def export_config_directory(self):
         """Export main configuration directory - collects automations/scripts for AI context"""
         print("\n=== Exporting Configuration Files ===")
-        config_dir = "/config"
+        config_dir = self.config_dir
 
         # Files to exclude
         exclude_patterns = [
@@ -469,7 +552,7 @@ class HAConfigExporter:
             "installed_addons": [],
         }
 
-        # Get list of installed add-ons via API
+        # Get list of installed add-ons via CLI
         stdout, _, _ = self.run_command("ha addons --raw-json 2>/dev/null || echo '{}'")
         try:
             addons_info = json.loads(stdout) if stdout.strip() else {}
@@ -483,8 +566,13 @@ class HAConfigExporter:
                             "state": addon.get("state", ""),
                         }
                     )
-        except:
+        except Exception:
             pass
+
+        # Fallback to API if CLI returned no add-ons
+        if not addon_data["installed_addons"] and self.api_token:
+            if self._export_addons_via_api():
+                return
 
         self.integrations_data["addons"] = addon_data
         print(f"✓ Collected {len(addon_data['installed_addons'])} add-on configurations")
@@ -499,24 +587,35 @@ class HAConfigExporter:
             "installation_type": "unknown",
         }
 
-        # Get HA version
+        # Get HA version via CLI
         stdout, _, code = self.run_command("ha core info --raw-json")
         if code == 0:
             try:
                 info = json.loads(stdout)
                 self.system_info["ha_version"] = info.get("data", {}).get("version", "unknown")
-            except:
+            except Exception:
                 pass
 
-        # Get supervisor version
+        # Get supervisor version via CLI
         stdout, _, code = self.run_command("ha supervisor info --raw-json")
         if code == 0:
             try:
                 info = json.loads(stdout)
                 self.system_info["supervisor_version"] = info.get("data", {}).get("version", "unknown")
                 self.system_info["installation_type"] = "Home Assistant OS/Supervised"
-            except:
+            except Exception:
                 pass
+
+        # Fallback to API if CLI did not provide info
+        if self.system_info["ha_version"] == "unknown" and self.api_token:
+            result = self._api_request("/core/info")
+            if result and "data" in result:
+                self.system_info["ha_version"] = result["data"].get("version", "unknown")
+        if self.system_info["supervisor_version"] == "unknown" and self.api_token:
+            result = self._api_request("/supervisor/info")
+            if result and "data" in result:
+                self.system_info["supervisor_version"] = result["data"].get("version", "unknown")
+                self.system_info["installation_type"] = "Home Assistant OS/Supervised"
 
         print(f"✓ Collected system info (HA {self.system_info['ha_version']})")
 
@@ -525,7 +624,7 @@ class HAConfigExporter:
         print("\n=== Exporting Integrations Information ===")
 
         # Check .storage for integration configs
-        storage_path = "/config/.storage"
+        storage_path = os.path.join(self.config_dir, ".storage")
         if os.path.exists(storage_path):
             core_config_entries = os.path.join(storage_path, "core.config_entries")
             if os.path.exists(core_config_entries):
@@ -1023,30 +1122,31 @@ def main():
     parser = argparse.ArgumentParser(description="Export Home Assistant configuration with sanitization")
     parser.add_argument("--output-dir", default="/tmp/ha_export", help="Output directory for export")
     parser.add_argument("--name", help="Custom export name")
+    parser.add_argument("--config-dir", default=None, help="HA config directory (default: $HA_CONFIG_DIR or /config)")
     parser.add_argument("--quiet", action="store_true", help="Minimize output")
 
     args = parser.parse_args()
+
+    config_dir = args.config_dir or os.environ.get("HA_CONFIG_DIR", "/config")
 
     if os.geteuid() != 0 and not args.quiet:
         print("⚠️  Warning: Running without root privileges")
         print("   Some system information may not be accessible")
         print()
 
-    # Check if /config exists
-    if not os.path.exists("/config"):
-        print("✗ Error: /config directory not found")
+    # Check if config directory exists
+    if not os.path.exists(config_dir):
+        print(f"✗ Error: Config directory not found: {config_dir}")
         print("  This script must be run on a Home Assistant host")
+        print("  Set HA_CONFIG_DIR or use --config-dir to specify the path")
         sys.exit(1)
 
-    # Create custom exporter with args
+    # Create exporter with args
     output_dir = args.output_dir
+    exporter = HAConfigExporter(output_dir=output_dir, config_dir=config_dir)
     if args.name:
-        # Use custom name for export
-        exporter = HAConfigExporter(output_dir=output_dir)
         exporter.export_name = args.name
-        exporter.export_path = os.path.join(output_dir, args.name)
-    else:
-        exporter = HAConfigExporter(output_dir=output_dir)
+        exporter._update_paths()
 
     result = exporter.run()
 
