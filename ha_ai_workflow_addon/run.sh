@@ -190,6 +190,13 @@ test_ha_api() {
     
     log_debug "Testing Home Assistant API connectivity..."
     
+    # Validate token exists first
+    if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
+        log_error "SUPERVISOR_TOKEN is not set - API features will be disabled"
+        log_error "HA API calls require a valid token to function"
+        return 1
+    fi
+    
     while [[ ${retry_count} -lt ${max_retries} ]]; do
         response=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
@@ -209,7 +216,8 @@ test_ha_api() {
         fi
     done
     
-    log_warning "Home Assistant API returned status: ${response} after ${max_retries} attempts"
+    log_error "Home Assistant API test failed with status: ${response} after ${max_retries} attempts"
+    log_error "Please verify SUPERVISOR_TOKEN is valid and Home Assistant is accessible"
     return 1
 }
 
@@ -218,8 +226,21 @@ if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
     if test_ha_api; then
         log_info "API connectivity check passed"
     else
-        log_warning "API test failed - continuing anyway as this is not critical"
-        log_info "The add-on will function but some features may be limited"
+        log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        log_error "  ⚠️  SUPERVISOR_TOKEN is set but API test FAILED"
+        log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        log_error ""
+        log_error "This means API-dependent features will NOT work:"
+        log_error "  • Entity and device information retrieval"
+        log_error "  • Automation context analysis"
+        log_error "  • Direct Home Assistant integration"
+        log_error ""
+        log_error "Possible causes:"
+        log_error "  1. Token is invalid or expired"
+        log_error "  2. Home Assistant API is not accessible"
+        log_error "  3. Network connectivity issues"
+        log_error ""
+        log_warning "Continuing with limited functionality..."
     fi
 else
     log_debug "Skipping API test - no SUPERVISOR_TOKEN available"
