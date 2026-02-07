@@ -362,6 +362,77 @@ def render_configuration():
 
     st.markdown("---")
 
+    # HA API Token Configuration
+    st.subheader("🔑 Home Assistant API Token")
+    st.markdown(
+        "A **Long-Lived Access Token** enables the workflow to read entities, devices, and add-ons "
+        "directly from the HA API — even when `.storage` files are not accessible. "
+        "In add-on mode, the `SUPERVISOR_TOKEN` is set automatically."
+    )
+
+    current_token = os.environ.get("SUPERVISOR_TOKEN", "")
+    token_status = "✅ Token is set" if current_token else "⚠️ No token configured"
+    st.caption(token_status)
+
+    ha_token = st.text_input(
+        "Long-Lived Access Token",
+        value=current_token,
+        type="password",
+        placeholder="Paste token from HA → Profile → Long-Lived Access Tokens",
+        key="ha_api_token",
+        help="Generate at: HA → Profile → Security → Long-Lived Access Tokens. "
+             "Leave empty in add-on mode (SUPERVISOR_TOKEN is auto-injected).",
+    )
+
+    col_token1, col_token2 = st.columns(2)
+
+    with col_token1:
+        if ha_token and st.button("🔗 Test API Connection"):
+            with st.spinner("Testing HA API..."):
+                try:
+                    import requests
+                    api_url = os.environ.get("HA_API_URL", "http://supervisor/core/api")
+                    headers = {"Authorization": f"Bearer {ha_token}", "Content-Type": "application/json"}
+                    response = requests.get(f"{api_url}/config", headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        ha_config = response.json()
+                        st.success(f"✅ Connected to HA {ha_config.get('version', 'unknown')}")
+                    else:
+                        st.error(f"❌ API returned status {response.status_code}")
+                except Exception as e:
+                    st.error(f"❌ Connection failed: {e}")
+
+    with col_token2:
+        if ha_token and st.button("💾 Save Token"):
+            os.environ["SUPERVISOR_TOKEN"] = ha_token
+            # Persist to env file for CLI usage
+            env_file = os.path.join(
+                os.environ.get("HA_INSTALL_DIR", "/usr/local/ha-ai-workflow"),
+                ".env"
+            )
+            try:
+                # Read existing env file, update SUPERVISOR_TOKEN line
+                env_lines = []
+                if os.path.exists(env_file):
+                    with open(env_file, "r") as f:
+                        env_lines = [
+                            line for line in f.readlines()
+                            if not line.startswith("SUPERVISOR_TOKEN=")
+                        ]
+                env_lines.append(f"SUPERVISOR_TOKEN={ha_token}\n")
+                with open(env_file, "w") as f:
+                    f.writelines(env_lines)
+                os.chmod(env_file, 0o600)
+                st.success(f"✅ Token saved to environment and {env_file}")
+            except OSError:
+                st.warning("⚠️ Token set for this session only (could not write env file)")
+                st.info("Token is active for the current session.")
+
+    if ha_token and ha_token != current_token:
+        os.environ["SUPERVISOR_TOKEN"] = ha_token
+
+    st.markdown("---")
+
     # Path Configuration — single base storage path
     st.subheader("📁 Workflow Storage Path")
     st.markdown(

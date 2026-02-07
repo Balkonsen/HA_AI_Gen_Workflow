@@ -28,6 +28,15 @@ UPLOAD_DEBUG=false
 LOG_LEVEL="INFO"  # Default log level: DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR
 ENABLE_VERBOSE=false
 
+# Source saved environment variables (e.g. SUPERVISOR_TOKEN) if available
+for env_file in "${BASE_DIR}/.env" "${SCRIPT_DIR}/.env"; do
+    if [ -f "${env_file}" ]; then
+        # shellcheck disable=SC1090
+        . "${env_file}"
+        break
+    fi
+done
+
 # Resolve BIN_DIR: prefer BASE_DIR/bin, fall back to SCRIPT_DIR/bin
 if [ -d "${BASE_DIR}/bin" ] && [ -f "${BASE_DIR}/bin/ha_diagnostic_export.py" ]; then
     BIN_DIR="${BASE_DIR}/bin"

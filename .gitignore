@@ -76,6 +76,7 @@ validation.log
 secrets/secrets_vault.enc
 secrets/.encryption_key
 secrets/secrets_mapping.json
+.env
 
 # Workflow directories (contain user-specific data)
 exports/
