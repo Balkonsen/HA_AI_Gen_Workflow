@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "last_updated": "2026-02-06T21:30:21.551182+00:00",
-  "total_lessons": 11,
+  "last_updated": "2026-02-07T20:18:05.434345+00:00",
+  "total_lessons": 13,
   "lessons": [
     {
       "category": "build_failure",
@@ -196,6 +196,36 @@
       "fix_target": null,
       "fix_content": null,
       "timestamp": "2026-02-06T21:04:42.370623+00:00",
+      "applied": false
+    },
+    {
+      "category": "test_failure",
+      "summary": "Test failures detected: 3 test(s) failed",
+      "details": "Failed tests: tests/test_diagnostic_export.py::TestSanitizeText::test_sanitize_email, tests/test_diagnostic_export.py::TestSanitizeText::test_sanitize_ip_address, tests/test_export_verifier.py::TestGenerateReport::test_generate_report\nError types: AssertionError",
+      "source_pr": "52",
+      "source_files": [
+        "tests/test_diagnostic_export.py",
+        "tests/test_diagnostic_export.py",
+        "tests/test_export_verifier.py"
+      ],
+      "recommendation": "Review and fix failing tests before merging",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-07T20:18:05.416352+00:00",
+      "applied": false
+    },
+    {
+      "category": "lint_issue",
+      "summary": "Lint violations detected: 132 total",
+      "details": "Top violations: F541(41), W293(31), F401(20), E501(13), E402(12)",
+      "source_pr": "52",
+      "source_files": [],
+      "recommendation": "Run 'make format' to auto-fix formatting, then address remaining issues",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-02-07T20:18:05.417958+00:00",
       "applied": false
     }
   ]
