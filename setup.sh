@@ -354,12 +354,12 @@ else
 
     if [ -n "${ha_token}" ]; then
         # Write token to env file (readable only by root)
-        touch "${ENV_FILE}"
-        chmod 600 "${ENV_FILE}"
-        # Remove any existing SUPERVISOR_TOKEN line
+        # Preserve existing content, remove old SUPERVISOR_TOKEN line
         if [ -f "${ENV_FILE}" ]; then
-            grep -v "^SUPERVISOR_TOKEN=" "${ENV_FILE}" > "${ENV_FILE}.tmp" 2>/dev/null || true
+            grep -v "^SUPERVISOR_TOKEN=" "${ENV_FILE}" > "${ENV_FILE}.tmp" 2>/dev/null
             mv "${ENV_FILE}.tmp" "${ENV_FILE}"
+        else
+            touch "${ENV_FILE}"
         fi
         echo "SUPERVISOR_TOKEN=${ha_token}" >> "${ENV_FILE}"
         chmod 600 "${ENV_FILE}"

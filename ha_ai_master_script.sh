@@ -47,7 +47,11 @@ else
 fi
 
 # Ensure output directories exist
-mkdir -p "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}" 2>/dev/null || true
+for _dir in "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}"; do
+    if ! mkdir -p "${_dir}" 2>/dev/null; then
+        echo -e "${YELLOW}⚠${NC} Could not create directory: ${_dir}" >&2
+    fi
+done
 
 ###############################################################################
 # Utility Functions
