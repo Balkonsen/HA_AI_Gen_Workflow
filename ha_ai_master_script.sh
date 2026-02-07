@@ -29,7 +29,8 @@ LOG_LEVEL="INFO"  # Default log level: DEBUG, VERBOSE, INFO, CONDENSED, WARNING,
 ENABLE_VERBOSE=false
 
 # Source saved environment variables (e.g. SUPERVISOR_TOKEN) if available
-for env_file in "${BASE_DIR}/.env" "${SCRIPT_DIR}/.env"; do
+# Check multiple possible locations for compatibility with different installation modes
+for env_file in "${BASE_DIR}/.env" "${SCRIPT_DIR}/.env" "/usr/local/ha-ai-workflow/.env" "${HOME}/.ha-ai-workflow.env"; do
     if [ -f "${env_file}" ]; then
         # shellcheck disable=SC1090
         . "${env_file}"
@@ -43,7 +44,12 @@ if [ -d "${BASE_DIR}/bin" ] && [ -f "${BASE_DIR}/bin/ha_diagnostic_export.py" ];
 elif [ -d "${SCRIPT_DIR}/bin" ] && [ -f "${SCRIPT_DIR}/bin/ha_diagnostic_export.py" ]; then
     BIN_DIR="${SCRIPT_DIR}/bin"
 else
-    BIN_DIR="${BASE_DIR}/bin"
+    echo -e "${RED}✗${NC} ERROR: Cannot locate bin directory with required Python scripts" >&2
+    echo "  Searched locations:" >&2
+    echo "    - ${BASE_DIR}/bin" >&2
+    echo "    - ${SCRIPT_DIR}/bin" >&2
+    echo "  Required file: ha_diagnostic_export.py" >&2
+    exit 1
 fi
 
 # Ensure output directories exist
