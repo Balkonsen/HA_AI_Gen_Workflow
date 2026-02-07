@@ -281,11 +281,28 @@ info "Step 5/11: Installing shell scripts..."
 if [ -f "${SCRIPT_DIR}/ha_ai_master_script.sh" ]; then
     cp "${SCRIPT_DIR}/ha_ai_master_script.sh" "${INSTALL_DIR}/ha_ai_master.sh"
     chmod +x "${INSTALL_DIR}/ha_ai_master.sh"
-    ln -sf "${INSTALL_DIR}/ha_ai_master.sh" /usr/local/bin/ha-ai-workflow
-    success "Master script installed"
-    success "Symlink created: /usr/local/bin/ha-ai-workflow"
+    
+    # Create symlink with error handling
+    if ln -sf "${INSTALL_DIR}/ha_ai_master.sh" /usr/local/bin/ha-ai-workflow 2>/dev/null; then
+        success "Master script installed"
+        success "Symlink created: /usr/local/bin/ha-ai-workflow"
+        
+        # Verify the symlink works
+        if command -v ha-ai-workflow &> /dev/null; then
+            success "✓ Command 'ha-ai-workflow' is available"
+        else
+            warn "⚠️  Symlink created but 'ha-ai-workflow' not found in PATH"
+            warn "   You may need to add /usr/local/bin to your PATH"
+            warn "   Or use the full path: ${INSTALL_DIR}/ha_ai_master.sh"
+        fi
+    else
+        error "Failed to create symlink in /usr/local/bin"
+        warn "This may be due to permission issues or directory not existing"
+        warn "You can manually create the symlink or use: ${INSTALL_DIR}/ha_ai_master.sh"
+    fi
 else
-    error "Master script not found"
+    error "Master script not found: ${SCRIPT_DIR}/ha_ai_master_script.sh"
+    error "Cannot continue without the master script"
     exit 1
 fi
 
@@ -697,7 +714,28 @@ echo ""
 echo "📁 Installation directory: ${INSTALL_DIR}"
 echo "📁 Config directory: ${CONFIG_DIR}"
 echo "📁 Log directory: ${LOG_DIR}"
-echo "🔧 Command: ha-ai-workflow"
+echo ""
+
+# Verify command availability and provide clear guidance
+if command -v ha-ai-workflow &> /dev/null; then
+    echo "🔧 Command: ha-ai-workflow ✓ Available"
+else
+    echo "🔧 Command: ha-ai-workflow ⚠️  Not in PATH"
+    echo ""
+    echo "   ⚠️  The 'ha-ai-workflow' command was not found in your PATH."
+    echo "   This is likely because /usr/local/bin is not in your PATH."
+    echo ""
+    echo "   You have two options:"
+    echo ""
+    echo "   Option 1: Add /usr/local/bin to PATH (recommended)"
+    echo "     echo 'export PATH=\"/usr/local/bin:\$PATH\"' >> ~/.bashrc"
+    echo "     source ~/.bashrc"
+    echo ""
+    echo "   Option 2: Use the full path to the script"
+    echo "     ${INSTALL_DIR}/ha_ai_master.sh export"
+    echo ""
+fi
+
 echo "📋 Setup log: ${SETUP_LOG}"
 echo ""
 echo "📖 Documentation:"
@@ -706,8 +744,15 @@ echo "   Troubleshooting: ${INSTALL_DIR}/docs/TROUBLESHOOTING.md"
 echo ""
 echo "🚀 Next Steps:"
 echo ""
-echo "   1. Run your first export:"
-echo "      ha-ai-workflow export"
+
+if command -v ha-ai-workflow &> /dev/null; then
+    echo "   1. Run your first export:"
+    echo "      ha-ai-workflow export"
+else
+    echo "   1. Run your first export (using full path):"
+    echo "      ${INSTALL_DIR}/ha_ai_master.sh export"
+fi
+
 echo ""
 echo "   2. Review the AI prompt:"
 echo "      cat /config/ai_exports/ha_export_*/AI_PROMPT.md"
@@ -716,12 +761,26 @@ echo "   3. Share with AI and get help!"
 echo ""
 echo "   4. Place AI files in /config/ai_imports/pending/"
 echo ""
-echo "   5. Import changes:"
-echo "      ha-ai-workflow import"
+
+if command -v ha-ai-workflow &> /dev/null; then
+    echo "   5. Import changes:"
+    echo "      ha-ai-workflow import"
+else
+    echo "   5. Import changes (using full path):"
+    echo "      ${INSTALL_DIR}/ha_ai_master.sh import"
+fi
+
 echo ""
 echo "💡 Pro tips:"
-echo "   - Use 'ha-ai-workflow --help' for all options"
-echo "   - Enable verbose logging: ha-ai-workflow export --verbose"
+
+if command -v ha-ai-workflow &> /dev/null; then
+    echo "   - Use 'ha-ai-workflow --help' for all options"
+    echo "   - Enable verbose logging: ha-ai-workflow export --verbose"
+else
+    echo "   - Use '${INSTALL_DIR}/ha_ai_master.sh --help' for all options"
+    echo "   - Enable verbose logging: ${INSTALL_DIR}/ha_ai_master.sh export --verbose"
+fi
+
 echo "   - View logs: cat ${LOG_DIR}/workflow.log"
 echo "   - Generate diagnostic report on errors for troubleshooting"
 echo ""
