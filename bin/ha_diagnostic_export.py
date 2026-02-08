@@ -144,13 +144,15 @@ class HAConfigExporter:
                 if domain not in self.entities_data["entities_by_domain"]:
                     self.entities_data["entities_by_domain"][domain] = []
                 self.entities_data["entities_by_domain"][domain].append(entity_id)
-                self.entities_data["entity_details"].append({
-                    "entity_id": entity_id,
-                    "domain": domain,
-                    "platform": "unknown",
-                    "name": state.get("attributes", {}).get("friendly_name"),
-                    "disabled": False,
-                })
+                self.entities_data["entity_details"].append(
+                    {
+                        "entity_id": entity_id,
+                        "domain": domain,
+                        "platform": "unknown",
+                        "name": state.get("attributes", {}).get("friendly_name"),
+                        "disabled": False,
+                    }
+                )
 
             print(f"✓ Collected {len(states)} entities via API")
             print(f"  - Domains: {len(self.entities_data['entities_by_domain'])}")
@@ -165,12 +167,14 @@ class HAConfigExporter:
         result = self._api_request("/addons")
         if result and "data" in result and "addons" in result["data"]:
             for addon in result["data"]["addons"]:
-                addon_data["installed_addons"].append({
-                    "slug": addon.get("slug", ""),
-                    "name": addon.get("name", ""),
-                    "version": addon.get("version", ""),
-                    "state": addon.get("state", ""),
-                })
+                addon_data["installed_addons"].append(
+                    {
+                        "slug": addon.get("slug", ""),
+                        "name": addon.get("name", ""),
+                        "version": addon.get("version", ""),
+                        "state": addon.get("state", ""),
+                    }
+                )
             self.integrations_data["addons"] = addon_data
             print(f"✓ Collected {len(addon_data['installed_addons'])} add-ons via API")
             return True
@@ -211,7 +215,9 @@ class HAConfigExporter:
     def run_command(self, cmd, shell=True):
         """Run shell command and return output"""
         try:
-            result = subprocess.run(cmd, shell=shell, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(
+                cmd, shell=shell, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
+            )
             return result.stdout, result.stderr, result.returncode
         except Exception as e:
             return "", str(e), 1
@@ -1175,8 +1181,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Export Home Assistant configuration with sanitization",
-        epilog=f"Version: {SCRIPT_VERSION}"
+        description="Export Home Assistant configuration with sanitization", epilog=f"Version: {SCRIPT_VERSION}"
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {SCRIPT_VERSION}")
     parser.add_argument("--output-dir", default="/tmp/ha_export", help="Output directory for export")
