@@ -158,6 +158,28 @@ generator.generate_context_file(str(context_file))
 - Redirect stderr on glob patterns AFTER the loop: `done 2>/dev/null`
 - Use `shlex.quote()` in Python when constructing shell commands
 
+### 11. Setup and Installation Simplicity (Through 1.0.5) (PR #52)
+**CRITICAL:** Keep setup.sh and ha_ai_master_script.sh simple. Complex solutions break.
+
+**The pattern that worked through 1.0.5:**
+- **Don't rename files** - `ha_ai_master_script.sh` stays `ha_ai_master_script.sh`
+- **Predictable paths** - One install dir: `/usr/local/ha-ai-workflow/`
+- **Clear errors** - Exit with helpful message if path/file not found
+- **Test execution** - Verify command runs, not just that symlink exists
+- **Simple .env loading** - Check 2-3 obvious locations, then stop
+
+```bash
+# ✅ GOOD - Simple and clear (1.0.5 style)
+ln -sf /usr/local/ha-ai-workflow/ha_ai_master_script.sh /usr/local/bin/ha-ai-workflow
+
+# ❌ BAD - Renaming causes confusion
+cp ha_ai_master_script.sh ha_ai_master.sh  # Don't!
+```
+
+**See:** `docs/SETUP_COMMAND_GUIDE.md` for complete examples of what worked.
+
+**Rule:** Before changing setup scripts, check if it worked in 1.0.5. If yes, don't change it.
+
 ## Coding Conventions
 
 ### Python Style
