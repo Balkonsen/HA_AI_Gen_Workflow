@@ -513,7 +513,9 @@ class TestUnicodeHandling:
         success, message = ssh.test_connection()
         
         assert success is False
-        assert "…" in message or "authentication" in message  # Should handle Unicode or replacement
+        # Verify the error message contains expected content (Unicode preserved or replaced)
+        assert "Connection failed" in message or "failed" in message.lower()
+        assert len(message) > 0  # Message should not be empty
         
     @patch('subprocess.run')
     def test_unicode_in_stdout(self, mock_run):
@@ -530,8 +532,9 @@ class TestUnicodeHandling:
         success, stdout, stderr = ssh.execute_command("test command")
         
         assert success is True
-        # Output should contain the Unicode characters or their replacements
-        assert len(stdout) > 0
+        # Verify output contains expected content (Unicode preserved or replaced)
+        assert "Success" in stdout or "Connected" in stdout
+        assert len(stdout) >= 50  # Should have substantial content
         
     @patch('subprocess.run')
     def test_utf8_encoding_parameter(self, mock_run):
@@ -563,5 +566,7 @@ class TestUnicodeHandling:
         success, stdout, stderr = ssh.execute_command("echo test")
         
         assert success is True
-        assert len(stdout) > 0  # Should successfully decode mixed content
+        # Verify content has ASCII text and reasonable length for Unicode content
+        assert "ASCII text" in stdout
+        assert len(stdout) >= 40  # Should contain substantial content including Unicode
 
