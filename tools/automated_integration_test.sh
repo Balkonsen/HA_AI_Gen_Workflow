@@ -386,9 +386,7 @@ test_installation() {
     # Copy repository to test location
     info "Copying repository files..."
     log_command "cp -r ${REPO_ROOT}/* ${TEST_INSTALL_DIR}/"
-    cp -r "${REPO_ROOT}"/* "${TEST_INSTALL_DIR}/" 2>&1 | tee -a "${REPORT_FILE}"
-    
-    if [ $? -eq 0 ]; then
+    if cp -r "${REPO_ROOT}"/* "${TEST_INSTALL_DIR}/" 2>&1 | tee -a "${REPORT_FILE}"; then
         test_pass "Repository files copied successfully"
     else
         test_fail "Failed to copy repository files"
@@ -413,7 +411,8 @@ test_dependencies() {
     
     # Check Python
     if command -v python3 &> /dev/null; then
-        local py_version=$(python3 --version 2>&1 | awk '{print $2}')
+        local py_version
+        py_version=$(python3 --version 2>&1 | awk '{print $2}')
         test_pass "Python 3 available: ${py_version}"
     else
         test_fail "Python 3 not found"
@@ -422,7 +421,8 @@ test_dependencies() {
     
     # Check Git
     if command -v git &> /dev/null; then
-        local git_version=$(git --version 2>&1 | awk '{print $3}')
+        local git_version
+        git_version=$(git --version 2>&1 | awk '{print $3}')
         test_pass "Git available: ${git_version}"
     else
         test_fail "Git not found"
@@ -431,7 +431,8 @@ test_dependencies() {
     
     # Check pip
     if command -v pip3 &> /dev/null || python3 -m pip --version &> /dev/null; then
-        local pip_version=$(python3 -m pip --version 2>&1 | awk '{print $2}')
+        local pip_version
+        pip_version=$(python3 -m pip --version 2>&1 | awk '{print $2}')
         test_pass "pip available: ${pip_version}"
     else
         warn "pip not found (may cause installation issues)"
