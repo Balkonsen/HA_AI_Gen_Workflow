@@ -70,12 +70,39 @@ COPY ha_ai_workflow_addon/run.sh /run.sh
 ```
 The CI workflow stages repo-root files (bin/, config/, templates/, requirements.txt) INTO `ha_ai_workflow_addon/` before build.
 
-### 2. Version Synchronization (PR #36)
+### 2. Version and CHANGELOG Synchronization (PR #36, #52)
+**CRITICAL RULE:** When bumping version, ALWAYS update CHANGELOG.md in the same commit/PR.
+
 Version MUST be identical across ALL files:
 - `ha_ai_workflow_addon/config.yaml` (source of truth)
 - `ha_ai_workflow_addon/build.yaml`
 - Dockerfile labels
-When bumping version, update ALL locations. The CI extracts version from config.yaml.
+
+**CHANGELOG.md Update Process (worked perfectly through 1.0.6):**
+1. When you bump version in `config.yaml`, immediately add a new section to `CHANGELOG.md`
+2. Place it right after `## [Unreleased]`
+3. Use format: `## [X.X.X] - YYYY-MM-DD`
+4. Document actual changes with categories: Fixed/Added/Changed/Removed/Security
+5. Include PR numbers and bold descriptions
+6. See `docs/VERSION_CHANGELOG_GUIDE.md` for examples
+
+**Example:**
+```markdown
+## [1.0.15] - 2026-02-08
+
+### Fixed
+- **Docker build issue** — Fixed context paths (PR #XX)
+
+### Added
+- **New feature** — Description of feature (PR #XX)
+```
+
+**DO NOT:**
+- ❌ Bump version without updating CHANGELOG
+- ❌ Use vague entries like "version bump" or "updates"
+- ❌ Skip PR numbers or descriptions
+
+The CI extracts version from config.yaml. Human-written CHANGELOG entries are mandatory.
 
 ### 3. NO bashio or s6-overlay in run.sh (PR #26, #27)
 The run.sh script must use pure bash — no `bashio::` functions, no `#!/usr/bin/with-contenv bashio`. Config reading uses `jq` with `--arg` for safe parameter passing from `/data/options.json`.
