@@ -529,20 +529,19 @@ test_export_with_token() {
     
     # Run export with verbose logging
     log_to_report ""
-    log_to_report "Running export with verbose debug logging..."
+    log_to_report "Running export with debug logging..."
     log_to_report '```'
     
     local export_output
     local python_script="${REPO_ROOT}/bin/ha_diagnostic_export.py"
-    local python_args="--config-dir ${TEST_CONFIG_DIR} --export-dir ${export_dir} --verbose"
+    local python_args="--config-dir ${TEST_CONFIG_DIR} --output-dir ${export_dir}"
     
     log_python_call "${python_script}" "${python_args}"
     
     set +e  # Don't exit on error for this test
     export_output=$(python3 "${python_script}" \
         --config-dir "${TEST_CONFIG_DIR}" \
-        --export-dir "${export_dir}" \
-        --verbose \
+        --output-dir "${export_dir}" \
         2>&1)
     local export_exit_code=$?
     set -e
