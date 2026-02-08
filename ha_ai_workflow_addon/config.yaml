@@ -1,5 +1,5 @@
 name: HA AI Gen Workflow
-version: "1.0.16"
+version: "1.0.17"
 slug: ha_ai_gen_workflow
 description: >-
   Automated export, AI-powered development, and git-versioned import workflow
