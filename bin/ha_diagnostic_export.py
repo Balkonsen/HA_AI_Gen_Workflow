@@ -36,7 +36,7 @@ MAX_AI_FILE_SIZE = 10 * 1024 * 1024
 
 
 class HAConfigExporter:
-    def __init__(self, output_dir="/tmp/ha_export", config_dir=None):
+    def __init__(self, output_dir="/tmp/ha_export", config_dir=None, ha_url=None):
         self.output_dir = output_dir
         self.config_dir = config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
         self.secrets_map = {}
@@ -54,8 +54,20 @@ class HAConfigExporter:
         self.system_info = {}
         self.config_files = {}
 
-        # HA API token for fallback data retrieval
+        # HA API configuration for fallback data retrieval
         self.api_token = os.environ.get("SUPERVISOR_TOKEN", "")
+        self.ha_url = ha_url or os.environ.get("HA_URL")
+
+        # Determine API mode: external (standalone) or internal (add-on)
+        self._is_external_mode = bool(self.ha_url)
+        if self._is_external_mode:
+            # External mode: Use HA URL with /api/hassio prefix
+            self._api_base_url = f"{self.ha_url}/api"
+            self._supervisor_base_url = f"{self.ha_url}/api/hassio"
+        else:
+            # Internal mode: Use supervisor endpoints (add-on)
+            self._api_base_url = "http://supervisor/core/api"
+            self._supervisor_base_url = "http://supervisor"
 
         # Patterns to identify sensitive data
         self.sensitive_patterns = {
@@ -102,11 +114,19 @@ class HAConfigExporter:
             f.write("# Never commit secrets\n*\n!.gitignore\n")
 
     def _api_request(self, endpoint):
-        """Make an authenticated request to the HA Supervisor API."""
+        """Make an authenticated request to the HA Supervisor API.
+
+        Args:
+            endpoint: API endpoint path (e.g., '/addons', '/supervisor/info')
+
+        Returns:
+            JSON response or None on error
+        """
         if not self.api_token:
             return None
         try:
-            url = f"http://supervisor{endpoint}"
+            # Use appropriate base URL based on mode (external vs internal)
+            url = f"{self._supervisor_base_url}{endpoint}"
             headers = {
                 "Authorization": f"Bearer {self.api_token}",
                 "Content-Type": "application/json",
@@ -125,7 +145,7 @@ class HAConfigExporter:
         try:
             import requests
 
-            url = "http://supervisor/core/api/states"
+            url = f"{self._api_base_url}/states"
             headers = {
                 "Authorization": f"Bearer {self.api_token}",
                 "Content-Type": "application/json",
@@ -185,7 +205,7 @@ class HAConfigExporter:
         try:
             import requests
 
-            url = "http://supervisor/core/api/states"
+            url = f"{self._api_base_url}/states"
             headers = {
                 "Authorization": f"Bearer {self.api_token}",
                 "Content-Type": "application/json",
