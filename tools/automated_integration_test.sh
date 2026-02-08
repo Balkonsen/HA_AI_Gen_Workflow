@@ -15,13 +15,19 @@
 # - All 7 fixes from Option A implementation
 #
 # Usage:
-#   ./automated_integration_test.sh [--skip-install] [--report-file PATH]
+#   ./automated_integration_test.sh [--skip-install] [--report-file PATH] [--trace]
 #
 # Options:
 #   --skip-install    Skip installation steps (test existing installation)
 #   --report-file     Custom report file path (default: /tmp/ha_workflow_test_report.md)
 #   --auto-token      Use environment SUPERVISOR_TOKEN without prompting
+#   --trace           Enable verbose function call tracing with timestamps
 #   --help            Show this help message
+#
+# Logging:
+#   All operations are logged with timestamps and traced for debugging.
+#   Function entry/exit, shell commands, and Python calls are logged in detail.
+#   Use --trace for real-time function call visibility during execution.
 #
 ###############################################################################
 
@@ -46,6 +52,7 @@ TEST_INSTALL_DIR="/tmp/ha-ai-workflow-test-${TEST_TIMESTAMP}"
 TEST_CONFIG_DIR="/tmp/ha-test-config-${TEST_TIMESTAMP}"
 SKIP_INSTALL=false
 AUTO_TOKEN=false
+TRACE_FUNCTIONS=false  # Enable verbose function tracing
 
 # Test results tracking
 TOTAL_TESTS=0
@@ -68,8 +75,15 @@ while [[ $# -gt 0 ]]; do
             AUTO_TOKEN=true
             shift
             ;;
+        --trace)
+            TRACE_FUNCTIONS=true
+            shift
+            ;;
         --help|-h)
             head -n 30 "$0" | grep "^#" | sed 's/^# \?//'
+            echo ""
+            echo "Additional Options:"
+            echo "  --trace           Enable verbose function call tracing"
             exit 0
             ;;
         *)
@@ -84,12 +98,48 @@ done
 # Logging Functions
 ###############################################################################
 
+# Get timestamp for logging
+get_timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+}
+
 log_to_report() {
-    echo "$*" >> "${REPORT_FILE}"
+    echo "[$(get_timestamp)] $*" >> "${REPORT_FILE}"
 }
 
 log_both() {
-    echo "$*" | tee -a "${REPORT_FILE}"
+    echo "[$(get_timestamp)] $*" | tee -a "${REPORT_FILE}"
+}
+
+# Function call tracing
+log_function_entry() {
+    local func_name="$1"
+    shift
+    local args="$*"
+    log_to_report "[TRACE] >>> ENTER: ${func_name}(${args})"
+    if [ "${TRACE_FUNCTIONS:-false}" = true ]; then
+        echo -e "${MAGENTA}→ ${func_name}${NC}" >&2
+    fi
+}
+
+log_function_exit() {
+    local func_name="$1"
+    local exit_code="${2:-0}"
+    log_to_report "[TRACE] <<< EXIT: ${func_name} (exit_code=${exit_code})"
+}
+
+# Shell command logging
+log_command() {
+    local cmd="$*"
+    log_to_report "[CMD] Executing: ${cmd}"
+}
+
+# Python script logging
+log_python_call() {
+    local script="$1"
+    shift
+    local args="$*"
+    log_to_report "[PYTHON] Calling: ${script} ${args}"
 }
 
 section() {
@@ -140,14 +190,17 @@ test_start() {
     local test_name="$*"
     ((TOTAL_TESTS++))
     info "TEST ${TOTAL_TESTS}: ${test_name}"
+    log_to_report "[TEST_START] ${test_name}"
 }
 
 test_pass() {
     success "PASSED: $*"
+    log_to_report "[TEST_PASS] $*"
 }
 
 test_fail() {
     error "FAILED: $*"
+    log_to_report "[TEST_FAIL] $*"
 }
 
 ###############################################################################
@@ -155,12 +208,14 @@ test_fail() {
 ###############################################################################
 
 test_repository_access() {
+    log_function_entry "test_repository_access"
     test_start "Repository Access and Structure"
     
     if [ -d "${REPO_ROOT}/.git" ]; then
         test_pass "Repository .git directory exists"
     else
         test_fail "Repository .git directory not found"
+        log_function_exit "test_repository_access" 1
         return 1
     fi
     
@@ -186,6 +241,7 @@ test_repository_access() {
     log_to_report ""
     log_to_report "Git Status:"
     log_to_report '```'
+    log_command "cd ${REPO_ROOT} && git status --short"
     cd "${REPO_ROOT}" && git status --short 2>&1 | tee -a "${REPORT_FILE}"
     log_to_report '```'
     log_to_report ""
@@ -194,6 +250,7 @@ test_repository_access() {
     log_to_report "Current Branch: $(cd "${REPO_ROOT}" && git branch --show-current)"
     log_to_report "Latest Commit: $(cd "${REPO_ROOT}" && git log -1 --oneline)"
     log_to_report ""
+    log_function_exit "test_repository_access" 0
 }
 
 test_file_naming_fix() {
@@ -307,15 +364,20 @@ test_python_version_in_ci() {
 }
 
 test_installation() {
+    log_function_entry "test_installation" "SKIP_INSTALL=${SKIP_INSTALL}"
+    
     if [ "${SKIP_INSTALL}" = true ]; then
         info "Skipping installation tests (--skip-install flag set)"
+        log_function_exit "test_installation" 0
         return 0
     fi
     
     test_start "Package Installation"
     
     # Create test directories
+    log_command "mkdir -p ${TEST_INSTALL_DIR}"
     mkdir -p "${TEST_INSTALL_DIR}"
+    log_command "mkdir -p ${TEST_CONFIG_DIR}"
     mkdir -p "${TEST_CONFIG_DIR}"
     
     info "Test installation directory: ${TEST_INSTALL_DIR}"
@@ -323,20 +385,23 @@ test_installation() {
     
     # Copy repository to test location
     info "Copying repository files..."
-    cp -r "${REPO_ROOT}"/* "${TEST_INSTALL_DIR}/" 2>&1 | tee -a "${REPORT_FILE}"
-    
-    if [ $? -eq 0 ]; then
+    log_command "cp -r ${REPO_ROOT}/* ${TEST_INSTALL_DIR}/"
+    if cp -r "${REPO_ROOT}"/* "${TEST_INSTALL_DIR}/" 2>&1 | tee -a "${REPORT_FILE}"; then
         test_pass "Repository files copied successfully"
     else
         test_fail "Failed to copy repository files"
+        log_function_exit "test_installation" 1
         return 1
     fi
     
     # Make scripts executable
+    log_command "chmod +x ${TEST_INSTALL_DIR}/setup.sh"
     chmod +x "${TEST_INSTALL_DIR}/setup.sh"
+    log_command "chmod +x ${TEST_INSTALL_DIR}/ha_ai_master_script.sh"
     chmod +x "${TEST_INSTALL_DIR}/ha_ai_master_script.sh"
     
     test_pass "Scripts made executable"
+    log_function_exit "test_installation" 0
 }
 
 test_dependencies() {
@@ -346,7 +411,8 @@ test_dependencies() {
     
     # Check Python
     if command -v python3 &> /dev/null; then
-        local py_version=$(python3 --version 2>&1 | awk '{print $2}')
+        local py_version
+        py_version=$(python3 --version 2>&1 | awk '{print $2}')
         test_pass "Python 3 available: ${py_version}"
     else
         test_fail "Python 3 not found"
@@ -355,7 +421,8 @@ test_dependencies() {
     
     # Check Git
     if command -v git &> /dev/null; then
-        local git_version=$(git --version 2>&1 | awk '{print $3}')
+        local git_version
+        git_version=$(git --version 2>&1 | awk '{print $3}')
         test_pass "Git available: ${git_version}"
     else
         test_fail "Git not found"
@@ -364,7 +431,8 @@ test_dependencies() {
     
     # Check pip
     if command -v pip3 &> /dev/null || python3 -m pip --version &> /dev/null; then
-        local pip_version=$(python3 -m pip --version 2>&1 | awk '{print $2}')
+        local pip_version
+        pip_version=$(python3 -m pip --version 2>&1 | awk '{print $2}')
         test_pass "pip available: ${pip_version}"
     else
         warn "pip not found (may cause installation issues)"
@@ -433,15 +501,18 @@ test_master_script_execution() {
 test_export_with_token() {
     local supervisor_token="$1"
     
+    log_function_entry "test_export_with_token" "token_length=${#supervisor_token}"
     test_start "Full Export with SUPERVISOR_TOKEN"
     
     if [ -z "${supervisor_token}" ]; then
         warn "No SUPERVISOR_TOKEN provided, skipping API-dependent tests"
+        log_function_exit "test_export_with_token" 0
         return 0
     fi
     
     # Create temporary export directory
     local export_dir="/tmp/ha-test-export-${TEST_TIMESTAMP}"
+    log_command "mkdir -p ${export_dir}"
     mkdir -p "${export_dir}"
     
     info "Export directory: ${export_dir}"
@@ -452,14 +523,23 @@ test_export_with_token() {
     export HA_CONFIG_DIR="${TEST_CONFIG_DIR}"
     export HA_INSTALL_DIR="${TEST_INSTALL_DIR}"
     
+    log_to_report "[ENV] SUPERVISOR_TOKEN=<redacted>"
+    log_to_report "[ENV] HA_CONFIG_DIR=${HA_CONFIG_DIR}"
+    log_to_report "[ENV] HA_INSTALL_DIR=${HA_INSTALL_DIR}"
+    
     # Run export with verbose logging
     log_to_report ""
     log_to_report "Running export with verbose debug logging..."
     log_to_report '```'
     
     local export_output
+    local python_script="${REPO_ROOT}/bin/ha_diagnostic_export.py"
+    local python_args="--config-dir ${TEST_CONFIG_DIR} --export-dir ${export_dir} --verbose"
+    
+    log_python_call "${python_script}" "${python_args}"
+    
     set +e  # Don't exit on error for this test
-    export_output=$(python3 "${REPO_ROOT}/bin/ha_diagnostic_export.py" \
+    export_output=$(python3 "${python_script}" \
         --config-dir "${TEST_CONFIG_DIR}" \
         --export-dir "${export_dir}" \
         --verbose \
@@ -470,6 +550,7 @@ test_export_with_token() {
     echo "${export_output}" | tee -a "${REPORT_FILE}"
     log_to_report '```'
     log_to_report ""
+    log_to_report "[PYTHON_EXIT] Exit code: ${export_exit_code}"
     
     if [ ${export_exit_code} -eq 0 ]; then
         test_pass "Export completed successfully"
@@ -479,6 +560,7 @@ test_export_with_token() {
     
     # Check export output
     if [ -d "${export_dir}" ]; then
+        log_command "find ${export_dir} -type f | wc -l"
         local file_count=$(find "${export_dir}" -type f 2>/dev/null | wc -l)
         if [ ${file_count} -gt 0 ]; then
             test_pass "Export created ${file_count} files"
@@ -486,6 +568,7 @@ test_export_with_token() {
             log_to_report ""
             log_to_report "Export contents:"
             log_to_report '```'
+            log_command "ls -lhR ${export_dir}"
             ls -lhR "${export_dir}" 2>&1 | tee -a "${REPORT_FILE}"
             log_to_report '```'
             log_to_report ""
@@ -496,6 +579,7 @@ test_export_with_token() {
     
     # Cleanup
     unset SUPERVISOR_TOKEN
+    log_function_exit "test_export_with_token" ${export_exit_code}
 }
 
 ###############################################################################
@@ -516,6 +600,7 @@ main() {
 
 - Skip Installation: ${SKIP_INSTALL}
 - Auto Token: ${AUTO_TOKEN}
+- Function Tracing: ${TRACE_FUNCTIONS}
 - Test Install Dir: ${TEST_INSTALL_DIR}
 - Test Config Dir: ${TEST_CONFIG_DIR}
 
@@ -530,6 +615,9 @@ EOF
     info "Starting comprehensive integration test suite..."
     info "Report file: ${REPORT_FILE}"
     info "Timestamp: ${TEST_TIMESTAMP}"
+    if [ "${TRACE_FUNCTIONS}" = true ]; then
+        info "Function tracing: ENABLED (verbose mode)"
+    fi
     echo ""
     
     # Phase 1: Repository and Code Analysis
@@ -579,8 +667,9 @@ EOF
         echo ""
         echo "This token will be used ONLY for this test and will NOT be saved."
         echo ""
-        echo -e "${YELLOW}Press Enter to skip API testing, or paste your token:${NC}"
-        read -r -s supervisor_token
+        echo -e "${YELLOW}IMPORTANT: The token will be visible when you type/paste it.${NC}"
+        echo -e "${YELLOW}Press Enter to skip API testing, or paste your token and press Enter:${NC}"
+        read -r supervisor_token
         echo ""
         
         if [ -n "${supervisor_token}" ]; then

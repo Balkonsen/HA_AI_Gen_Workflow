@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.14] - 2026-02-08
+
+### Fixed
+- **Token input in automated test script** — Changed `read -r -s` to `read -r` to enable copy-paste functionality during token input (PR #52)
+- **Test script logging** — Added comprehensive logging with timestamps, function tracing, command logging, and Python call tracking (PR #52)
+
+### Added
+- **Function tracing in test script** — New `--trace` flag enables real-time function call visibility
+- **Detailed test execution logs** — All shell commands and Python script calls are now logged with timestamps
+- **CHANGELOG synchronization** — Added missing version entries from 1.0.7 to 1.0.14
+
+## [1.0.13] - 2026-02-08
+
+### Changed
+- Version bump for testing and validation
+
+## [1.0.12] - 2026-02-07
+
+### Changed
+- Version bump for lessons learned integration
+
+## [1.0.11] - 2026-02-07
+
 ### Changed
 - **Faster Docker builds** — Dockerfile now uses `--prefer-binary` to install pre-built musllinux wheels instead of compiling from source, reducing install time from ~20-30 minutes to ~2-3 minutes
 - **Build deps installed conditionally** — gcc, cargo, and other build tools are only installed if pre-built wheel installation fails, keeping the image smaller
@@ -18,6 +41,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`.dockerignore` for build context** — Excludes `.git/`, `tests/`, `docs/`, and other non-runtime files from Docker build context, reducing build context size
 - **Build performance tests** — New test class `TestDockerfileBuildPerformance` validates Dockerfile optimization patterns
 - **`.dockerignore` tests** — New test class `TestDockerignore` validates required exclusion patterns
+
+## [1.0.10] - 2026-02-07
+
+### Changed
+- Version bump for CI/CD pipeline improvements
+
+## [1.0.9] - 2026-02-07
+
+### Changed
+- Version bump for build optimization testing
+
+## [1.0.8] - 2026-02-07
+
+### Changed
+- Version bump for documentation updates
+
+## [1.0.7] - 2026-02-06
+
+### Changed
+- Version bump for workflow stabilization
 
 ## [1.0.6] - 2026-02-06
 
