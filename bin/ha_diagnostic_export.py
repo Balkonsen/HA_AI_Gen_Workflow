@@ -35,6 +35,27 @@ SCRIPT_VERSION = "2.0.0"  # v2.0: Added --config-dir support
 MAX_AI_FILE_SIZE = 10 * 1024 * 1024
 
 
+def _load_supervisor_token_from_env_file() -> str:
+    """Load SUPERVISOR_TOKEN from common .env locations."""
+    candidates = [
+        os.path.join(os.environ.get("HA_INSTALL_DIR", ""), ".env"),
+        os.path.join(os.getcwd(), ".env"),
+        "/usr/local/ha-ai-workflow/.env",
+        os.path.expanduser("~/.ha-ai-workflow.env"),
+    ]
+    for env_file in candidates:
+        if not env_file or not os.path.exists(env_file):
+            continue
+        try:
+            with open(env_file, "r", encoding="utf-8") as handle:
+                for line in handle:
+                    if line.startswith("SUPERVISOR_TOKEN="):
+                        return line.split("=", 1)[1].strip().strip('"').strip("'")
+        except OSError:
+            continue
+    return ""
+
+
 class HAConfigExporter:
     def __init__(self, output_dir="/tmp/ha_export", config_dir=None, ha_url=None):
         self.output_dir = output_dir
@@ -55,7 +76,7 @@ class HAConfigExporter:
         self.config_files = {}
 
         # HA API configuration for fallback data retrieval
-        self.api_token = os.environ.get("SUPERVISOR_TOKEN", "")
+        self.api_token = os.environ.get("SUPERVISOR_TOKEN") or _load_supervisor_token_from_env_file()
         self.ha_url = ha_url or os.environ.get("HA_URL")
 
         # Determine API mode: external (standalone) or internal (add-on)
