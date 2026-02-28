@@ -493,3 +493,80 @@ class TestTimeoutConfiguration:
         ssh.execute_command("long_command", timeout=200)
         
         assert mock_run.call_args.kwargs['timeout'] == 200
+
+
+class TestUnicodeHandling:
+    """Tests for Unicode character handling in subprocess calls."""
+    
+    @patch('subprocess.run')
+    def test_unicode_in_error_message(self, mock_run):
+        """Test that Unicode characters in error messages are handled correctly."""
+        # Simulate error message with Unicode ellipsis character (…)
+        unicode_error = "Connection failed… authentication required"
+        mock_run.return_value = Mock(
+            returncode=1,
+            stdout="",
+            stderr=unicode_error
+        )
+        
+        ssh = SSHTransfer(host="test.host.com")
+        success, message = ssh.test_connection()
+        
+        assert success is False
+        # Verify the error message contains expected content (Unicode preserved or replaced)
+        assert "Connection failed" in message or "failed" in message.lower()
+        assert len(message) > 0  # Message should not be empty
+        
+    @patch('subprocess.run')
+    def test_unicode_in_stdout(self, mock_run):
+        """Test that Unicode characters in stdout are handled correctly."""
+        # Simulate output with various Unicode characters
+        unicode_output = "✓ Success: Connected… status: ready → configured ⚠ Warning"
+        mock_run.return_value = Mock(
+            returncode=0,
+            stdout=unicode_output,
+            stderr=""
+        )
+        
+        ssh = SSHTransfer(host="test.host.com")
+        success, stdout, stderr = ssh.execute_command("test command")
+        
+        assert success is True
+        # Verify output contains expected content (Unicode preserved or replaced)
+        assert "Success" in stdout or "Connected" in stdout
+        assert len(stdout) >= 50  # Should have substantial content
+        
+    @patch('subprocess.run')
+    def test_utf8_encoding_parameter(self, mock_run):
+        """Test that subprocess.run is called with UTF-8 encoding."""
+        mock_run.return_value = Mock(returncode=0, stdout="Success", stderr="")
+        
+        ssh = SSHTransfer(host="test.host.com")
+        ssh.test_connection()
+        
+        # Verify that encoding='utf-8' is passed to subprocess.run
+        call_kwargs = mock_run.call_args.kwargs
+        assert 'encoding' in call_kwargs
+        assert call_kwargs['encoding'] == 'utf-8'
+        assert 'errors' in call_kwargs
+        assert call_kwargs['errors'] == 'replace'
+        
+    @patch('subprocess.run')
+    def test_mixed_unicode_ascii_content(self, mock_run):
+        """Test handling of mixed Unicode and ASCII content."""
+        # Mix of ASCII and Unicode characters
+        mixed_content = "ASCII text with emoji 🔐 and symbols: €£¥ → ← ↑ ↓"
+        mock_run.return_value = Mock(
+            returncode=0,
+            stdout=mixed_content,
+            stderr=""
+        )
+        
+        ssh = SSHTransfer(host="test.host.com")
+        success, stdout, stderr = ssh.execute_command("echo test")
+        
+        assert success is True
+        # Verify content has ASCII text and reasonable length for Unicode content
+        assert "ASCII text" in stdout
+        assert len(stdout) >= 40  # Should contain substantial content including Unicode
+

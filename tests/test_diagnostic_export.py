@@ -6,6 +6,7 @@ import pytest
 import json
 import re
 from pathlib import Path
+from unittest.mock import patch
 import sys
 import os
 
@@ -40,6 +41,41 @@ class TestHAConfigExporter:
         
         assert exporter.config_dir == "/custom/config"
         assert exporter.config_paths["config"] == "/custom/config"
+    
+    def test_init_internal_mode(self, temp_dir):
+        """Test initialization in internal mode (add-on)"""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        
+        assert exporter._is_external_mode is False
+        assert exporter._api_base_url == "http://supervisor/core/api"
+        assert exporter._supervisor_base_url == "http://supervisor"
+    
+    def test_init_external_mode(self, temp_dir):
+        """Test initialization in external mode (standalone)"""
+        exporter = HAConfigExporter(output_dir=temp_dir, ha_url="http://192.168.1.100:8123")
+        
+        assert exporter._is_external_mode is True
+        assert exporter._api_base_url == "http://192.168.1.100:8123/api"
+        assert exporter._supervisor_base_url == "http://192.168.1.100:8123/api/hassio"
+    
+    def test_init_external_mode_from_env(self, temp_dir):
+        """Test initialization in external mode from HA_URL environment variable"""
+        with patch.dict(os.environ, {"HA_URL": "http://homeassistant.local:8123"}):
+            exporter = HAConfigExporter(output_dir=temp_dir)
+            
+            assert exporter._is_external_mode is True
+            assert exporter._api_base_url == "http://homeassistant.local:8123/api"
+            assert exporter._supervisor_base_url == "http://homeassistant.local:8123/api/hassio"
+    
+    def test_init_loads_token_from_env_file(self, temp_dir):
+        """Test initialization loads SUPERVISOR_TOKEN from .env file when not in environment."""
+        env_file = Path(temp_dir) / ".env"
+        env_file.write_text('SUPERVISOR_TOKEN="saved_token"\n', encoding="utf-8")
+        
+        with patch.dict(os.environ, {"HA_INSTALL_DIR": temp_dir}, clear=True):
+            exporter = HAConfigExporter(output_dir=temp_dir)
+        
+        assert exporter.api_token == "saved_token"
     
     def test_update_paths_after_name_change(self, temp_dir):
         """Test that _update_paths correctly updates all derived paths"""

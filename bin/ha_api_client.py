@@ -25,17 +25,32 @@ SUPERVISOR_URL = os.environ.get("HA_SUPERVISOR_URL", "http://supervisor")
 
 
 class HomeAssistantAPI:
-    """Client for interacting with Home Assistant API from an add-on."""
+    """Client for interacting with Home Assistant API from an add-on or external connection."""
 
-    def __init__(self, token: str | None = None):
+    def __init__(self, token: str | None = None, ha_url: str | None = None):
         """Initialize the HA API client.
 
         Args:
-            token: Optional SUPERVISOR_TOKEN. If not provided, reads from environment.
+            token: Optional SUPERVISOR_TOKEN or long-lived access token. If not provided, reads from environment.
+            ha_url: Optional Home Assistant URL for external mode (e.g., 'http://192.168.1.100:8123').
+                   If not provided, uses internal supervisor endpoints (add-on mode).
         """
         self._token = token or os.environ.get("SUPERVISOR_TOKEN")
-        self._api_url = HA_API_URL
-        self._supervisor_url = SUPERVISOR_URL
+        self._external_ha_url = ha_url or os.environ.get("HA_URL")
+
+        # Determine if we're in external mode (standalone) or internal mode (add-on)
+        self._is_external_mode = bool(self._external_ha_url)
+
+        if self._is_external_mode:
+            # External mode: Connect to HA via HTTP/HTTPS (standalone usage)
+            self._api_url = f"{self._external_ha_url}/api"
+            self._supervisor_url = f"{self._external_ha_url}/api/hassio"
+            _LOGGER.info(f"Running in external mode, connecting to: {self._external_ha_url}")
+        else:
+            # Internal mode: Use supervisor endpoints (add-on usage)
+            self._api_url = HA_API_URL
+            self._supervisor_url = SUPERVISOR_URL
+            _LOGGER.debug("Running in internal mode (add-on)")
 
         if not self._token:
             _LOGGER.warning("SUPERVISOR_TOKEN not available. " "HA API calls will fail unless running as an add-on.")
@@ -86,7 +101,7 @@ class HomeAssistantAPI:
             _LOGGER.error("API request timed out: %s", url)
         except requests.exceptions.HTTPError as err:
             # Provide specific error messages for common HTTP status codes
-            if hasattr(err.response, 'status_code'):
+            if hasattr(err.response, "status_code"):
                 status = err.response.status_code
                 if status == 401:
                     _LOGGER.error(

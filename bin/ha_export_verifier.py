@@ -34,11 +34,11 @@ class ExportVerifier:
                 return version
             except:
                 pass
-        
+
         # Check for new format indicators
         if os.path.exists(os.path.join(self.export_path, "ai_upload")):
             return "2.0"
-        
+
         # Default to old format
         return "1.0"
 
@@ -84,7 +84,7 @@ class ExportVerifier:
         if self.export_version == "2.0":
             # New format: entities are in ha_entities.json in ai_upload/
             entities_file = os.path.join(self.export_path, "ai_upload", "ha_entities.json")
-            
+
             if not os.path.exists(entities_file):
                 print("✗ ha_entities.json not found in ai_upload/")
                 self.issues.append("Entity file not exported")
@@ -104,11 +104,7 @@ class ExportVerifier:
                 print(f"  Entity domains: {len(domains)}")
 
                 # Store stats
-                self.stats["entities"] = {
-                    "total": total, 
-                    "domains": len(domains),
-                    "ids_count": len(all_ids)
-                }
+                self.stats["entities"] = {"total": total, "domains": len(domains), "ids_count": len(all_ids)}
 
                 # Show domain breakdown
                 if domains:
@@ -116,10 +112,14 @@ class ExportVerifier:
                     # Sort by count (domains might be dict of counts or dict of lists)
                     sorted_domains = []
                     for domain, value in domains.items():
-                        count = value if isinstance(value, int) else len(value) if isinstance(value, list) else value.get("count", 0)
+                        count = (
+                            value
+                            if isinstance(value, int)
+                            else len(value) if isinstance(value, list) else value.get("count", 0)
+                        )
                         sorted_domains.append((domain, count))
                     sorted_domains.sort(key=lambda x: x[1], reverse=True)
-                    
+
                     for domain, count in sorted_domains[:10]:
                         print(f"    - {domain}: {count}")
 
@@ -236,7 +236,7 @@ class ExportVerifier:
         if self.export_version == "2.0":
             # New format: config is in ha_config.yaml in ai_upload/
             config_file = os.path.join(self.export_path, "ai_upload", "ha_config.yaml")
-            
+
             if not os.path.exists(config_file):
                 print("✗ ha_config.yaml not found in ai_upload/")
                 self.issues.append("Configuration file missing")
@@ -245,13 +245,13 @@ class ExportVerifier:
             try:
                 size = os.path.getsize(config_file)
                 print(f"✓ ha_config.yaml exists ({size} bytes)")
-                
+
                 # Check for context file too
                 context_file = os.path.join(self.export_path, "ai_upload", "ha_context.md")
                 if os.path.exists(context_file):
                     context_size = os.path.getsize(context_file)
                     print(f"✓ ha_context.md exists ({context_size} bytes)")
-                
+
                 self.stats["config_files"] = {"yaml": 1, "has_context": os.path.exists(context_file)}
                 return True
             except Exception as e:
@@ -458,7 +458,7 @@ class ExportVerifier:
         if "addons" in self.stats:
             print(f"  Add-ons: {self.stats['addons']['total']}")
         if "config_files" in self.stats:
-            if "json" in self.stats['config_files']:
+            if "json" in self.stats["config_files"]:
                 print(
                     f"  Config Files: {self.stats['config_files']['yaml']} YAML, {self.stats['config_files']['json']} JSON"
                 )
@@ -489,7 +489,13 @@ class ExportVerifier:
             print("\nPlease re-run the export script to fix issues.")
         print("=" * 70)
 
-        return len(self.issues) == 0
+        return {
+            "success": len(self.issues) == 0,
+            "export_version": self.export_version,
+            "stats": self.stats,
+            "issues": self.issues,
+            "warnings": self.warnings,
+        }
 
     def run(self):
         """Run all verification checks"""
@@ -509,7 +515,8 @@ class ExportVerifier:
             self.verify_addons(),
         ]
 
-        return self.generate_report()
+        report = self.generate_report()
+        return report.get("success", False)
 
 
 def main():
