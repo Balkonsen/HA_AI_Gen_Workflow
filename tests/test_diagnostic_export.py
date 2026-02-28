@@ -67,6 +67,16 @@ class TestHAConfigExporter:
             assert exporter._api_base_url == "http://homeassistant.local:8123/api"
             assert exporter._supervisor_base_url == "http://homeassistant.local:8123/api/hassio"
     
+    def test_init_loads_token_from_env_file(self, temp_dir):
+        """Test initialization loads SUPERVISOR_TOKEN from .env file when not in environment."""
+        env_file = Path(temp_dir) / ".env"
+        env_file.write_text('SUPERVISOR_TOKEN="saved_token"\n', encoding="utf-8")
+        
+        with patch.dict(os.environ, {"HA_INSTALL_DIR": temp_dir}, clear=True):
+            exporter = HAConfigExporter(output_dir=temp_dir)
+        
+        assert exporter.api_token == "saved_token"
+    
     def test_update_paths_after_name_change(self, temp_dir):
         """Test that _update_paths correctly updates all derived paths"""
         exporter = HAConfigExporter(output_dir=temp_dir)
