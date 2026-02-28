@@ -263,15 +263,17 @@ class HAConfigExporter:
         for secret_type, pattern in self.sensitive_patterns.items():
             matches = re.finditer(pattern, sanitized, re.IGNORECASE)
             for match in matches:
-                if match.groups():
-                    original_value = match.group(1) if len(match.groups()) > 0 else match.group(0)
-                    # Skip obvious placeholders and examples
-                    if any(x in original_value.lower() for x in ["example", "placeholder", "xxx", "***"]):
-                        continue
-                    if len(original_value) < 3:  # Skip very short matches
-                        continue
-                    placeholder = self.generate_secret_placeholder(secret_type, original_value)
-                    sanitized = sanitized.replace(original_value, placeholder)
+                original_value = match.group(1) if match.groups() else match.group(0)
+                # Skip obvious placeholders and examples
+                skip_tokens = ["placeholder", "xxx", "***"]
+                if secret_type != "email":
+                    skip_tokens.append("example")
+                if any(x in original_value.lower() for x in skip_tokens):
+                    continue
+                if len(original_value) < 3:  # Skip very short matches
+                    continue
+                placeholder = self.generate_secret_placeholder(secret_type, original_value)
+                sanitized = sanitized.replace(original_value, placeholder)
 
         return sanitized
 
