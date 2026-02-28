@@ -125,10 +125,10 @@ pytest tests/ -vv --tb=long --log-cli-level=DEBUG 2>&1 | head -200
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Or use the project logger
+# Or use the project logger — note: logger takes a single pre-formatted string
 from workflow_logger import get_logger
 logger = get_logger()
-logger.debug("State: %s", repr(variable))
+logger.debug(f"State: {repr(variable)}")   # use f-strings, not % formatting
 ```
 
 ```bash
@@ -261,13 +261,15 @@ This section covers the token/secret patterns used throughout the codebase.
 User config / secrets.yaml
         │
         ▼
-SecretsManager.sanitize_file_content()    ← replaces values with HA_SECRET_XXXX labels
+SecretsSanitizer.sanitize_yaml_content()  ← replaces values with HA_SECRET_XXXX labels
+  (or SecretsSanitizer.sanitize_file()    ← file-level variant)
         │
         ▼
 AI upload (no real secrets exposed)
         │
         ▼
-SecretsManager.restore_secrets()          ← restores original values from vault
+SecretsManager.restore_secrets_in_text()  ← restores original values from vault
+  (or SecretsManager.restore_secrets_in_file() ← file-level variant)
         │
         ▼
 HA import (real values back in place)
@@ -294,29 +296,40 @@ recovered = f.decrypt(token)
 ### HA API Token Pattern
 
 ```python
-# bin/ha_api_client.py pattern
+# bin/ha_api_client.py — actual class: HomeAssistantAPI
+import os
 import requests
 
-class HAApiClient:
-    def __init__(self, base_url: str, token: str):
-        self.base_url = base_url.rstrip("/")
-        self._session = requests.Session()
-        self._session.headers.update({
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        })
+class HomeAssistantAPI:
+    def __init__(self, token: str | None = None, ha_url: str | None = None):
+        # token priority: constructor arg → SUPERVISOR_TOKEN env var
+        self._token = token or os.environ.get("SUPERVISOR_TOKEN")
+        # URL priority: constructor arg → HA_URL env var → internal supervisor endpoint
+        self._external_ha_url = ha_url or os.environ.get("HA_URL")
+        self._is_external_mode = bool(self._external_ha_url)
+        self._api_url = (
+            f"{self._external_ha_url}/api" if self._is_external_mode
+            else os.environ.get("HA_API_URL", "http://supervisor/core/api")
+        )
 
-    def get_states(self) -> list:
-        resp = self._session.get(f"{self.base_url}/api/states", timeout=30)
+    def _get_headers(self) -> dict:
+        return {
+            "Authorization": f"Bearer {self._token}",
+            "Content-Type": "application/json",
+        }
+
+    def get_states(self) -> list | None:
+        resp = requests.get(f"{self._api_url}/states",
+                            headers=self._get_headers(), timeout=30)
         resp.raise_for_status()
         return resp.json()
 ```
 
-**Token sources in priority order:**
-1. `SUPERVISOR_TOKEN` env var (inside HA Docker container)
-2. `HA_TOKEN` env var (external access)
-3. `config/workflow_config.yaml` → `ha_api.token`
-4. `/data/options.json` → `ha_token` (add-on mode)
+**Token resolution in priority order:**
+1. Explicit `token=` argument passed to `HomeAssistantAPI()`
+2. `SUPERVISOR_TOKEN` env var — injected automatically inside HA add-on containers
+3. `HA_URL` env var for the URL (external/standalone mode); `HA_API_URL` for internal override
+4. GUI Configuration page — saves token into `SUPERVISOR_TOKEN` env var at runtime
 
 ### GitHub Models Token Integration (1.prompt.yml)
 
@@ -342,7 +355,7 @@ When integrating Java-based services or referencing Java-side token patterns, ma
 |---|---|
 | `HttpHeaders.setBearerAuth(token)` | `session.headers["Authorization"] = f"Bearer {token}"` |
 | `RestTemplate.exchange(url, GET, entity, String.class)` | `requests.get(url, headers=headers)` |
-| `@Value("${ha.api.token}")` | `os.environ.get("HA_TOKEN")` or `config.get("ha_api.token")` |
+| `@Value("${ha.api.token}")` | `os.environ.get("SUPERVISOR_TOKEN")` — token is add-on-injected; for external mode pass token directly to `HomeAssistantAPI(token=...)` |
 | `JwtDecoder.decode(token)` | `import jwt; jwt.decode(token, key, algorithms=["HS256"])` |
 
 ---
@@ -401,15 +414,6 @@ streamlit run /app/bin/workflow_gui.py \
 ### workflow_config.yaml Structure
 
 ```yaml
-ha_api:
-  base_url: "http://homeassistant.local:8123"
-  token: ""                    # Use env var HA_TOKEN instead
-
-paths:
-  export_dir: "./exports"      # Always use relative or env-expanded paths
-  import_dir: "./imports"
-  secrets_dir: "./secrets"     # Never commit this directory
-
 ssh:
   enabled: false
   host: "192.168.1.100"
@@ -417,19 +421,46 @@ ssh:
   user: "root"
   auth_method: "key"           # "key" or "password"
   key_path: "~/.ssh/id_rsa"
+  remote_config_path: "/config"
   connection_timeout: 30
   transfer_timeout: 600
   retry_attempts: 3
   retry_delay: 2
 
-secrets:
-  label_prefix: "HA_SECRET"
-  auto_detect: true
+paths:
+  export_dir: "./exports"      # Always use relative or env-expanded paths
+  import_dir: "./imports"
+  secrets_dir: "./secrets"     # Never commit this directory
+  backup_dir: "./backups"
+  ai_context_dir: "./ai_context"
 
-logging:
-  level: "INFO"                # DEBUG | VERBOSE | INFO | CONDENSED | WARNING | ERROR
-  file: null
+export:
+  include_patterns: ["*.yaml", "*.yml", "*.json"]
+  exclude_patterns: ["secrets.yaml", "*.log", "*.db"]
+  sensitive_fields: ["password", "token", "api_key", "secret"]
+
+secrets:
+  encryption_method: "fernet"
+  key_file: "./secrets/.encryption_key"
+  label_prefix: "HA_SECRET"
+  auto_restore: true
+
+ai:
+  context:
+    include_entities: true
+    include_devices: true
+    include_automations: true
+    max_size_kb: 500
+  prompt_template: "templates/example_ai_prompts.md"
+
+validation:
+  check_yaml_syntax: true
+  check_secrets_references: true
+  check_entity_ids: true
+  run_ha_check: false
 ```
+
+> **Note:** There is no `ha_api.token` key in the config. HA API authentication is handled exclusively via the `SUPERVISOR_TOKEN` environment variable (add-on mode) or the `HA_URL` env var (external mode). See the GUI Configuration page to set the token at runtime.
 
 ### YAML Safety Rules
 
@@ -566,7 +597,7 @@ Before submitting any change, confirm all items pass:
 - **Linter:** `flake8 --ignore=E203,W503`
 - **Type hints:** Required on all public function signatures
 - **Docstrings:** Triple-quoted for all public classes, methods, and modules
-- **Imports order:** stdlib → third-party → local (enforced by `isort`)
+- **Imports order:** stdlib → third-party → local (by convention; no isort enforcement)
 - **Error handling:** Always catch specific exceptions — never bare `except Exception`
 
 ### Bash
@@ -589,10 +620,15 @@ from workflow_logger import get_logger
 
 logger = get_logger()
 
-logger.debug("Detailed trace: %s", repr(value))
-logger.info("✓ Export completed: %d files", count)
-logger.warning("⚠ Config key missing, using default: %s", key)
-logger.error("✗ Export failed: %s", str(exc))
+# logger methods accept a single pre-formatted string — use f-strings
+logger.debug(f"Detailed trace: {repr(value)}")
+logger.verbose(f"→ Processing file: {file_path}")
+logger.info(f"Export started for {count} files")
+logger.success(f"✓ Export completed: {count} files")   # convenience: INFO + ✓ icon
+logger.progress(f"⏳ Uploading {filename}…")            # convenience: INFO + ⏳ icon
+logger.warning(f"⚠ Config key missing, using default: {key}")
+logger.error(f"✗ Export failed: {exc}")
+logger.critical(f"❌ Cannot continue: {reason}")
 ```
 
 **Log levels** (from least to most verbose):
@@ -659,7 +695,7 @@ except Exception:
 try:
     do_thing()
 except FileNotFoundError as exc:
-    logger.error("✗ File not found: %s", exc)
+    logger.error(f"✗ File not found: {exc}")
     raise
 
 # ❌ Hardcoded container path
