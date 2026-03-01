@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.0.15] - 2026-02-08
+
+### Changed
+- **Automated version bump** — Post-merge version increment to 1.0.15 for next release cycle
+
+## [1.0.14] - 2026-02-08
+
+### Fixed
+- **Token input in automated test script** — Changed `read -r -s` to `read -r` to enable copy-paste functionality during token input (PR #55)
+- **Test script logging** — Added comprehensive logging with timestamps, function tracing, command logging, and Python call tracking (PR #55)
+
+### Added
+- **Function tracing in test script** — New `--trace` flag enables real-time function call visibility
+- **Detailed test execution logs** — All shell commands and Python script calls are now logged with timestamps
+- **CHANGELOG synchronization** — Added missing version entries from 1.0.7 to 1.0.14
+
+## [1.0.13] - 2026-02-08
+
+### Changed
+- Version bump for testing and validation
+
+## [1.0.12] - 2026-02-07
+
+### Changed
+- Version bump for lessons learned integration
+
 ## [1.0.11] - 2026-02-07
 
 ### Changed
