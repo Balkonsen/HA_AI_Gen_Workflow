@@ -22,6 +22,7 @@ BUILD_YAML = os.path.join(ADDON_DIR, "build.yaml")
 DOCKERFILE = os.path.join(ADDON_DIR, "Dockerfile")
 DOCKERIGNORE = os.path.join(ADDON_DIR, ".dockerignore")
 RUN_SH = os.path.join(ADDON_DIR, "run.sh")
+ADDON_CHANGELOG = os.path.join(ADDON_DIR, "CHANGELOG.md")
 REPO_YAML = os.path.join(REPO_ROOT, "repository.yaml")
 WORKFLOW_FILE = os.path.join(REPO_ROOT, ".github", "workflows", "docker-build.yml")
 
@@ -288,6 +289,12 @@ class TestBuildWorkflow:
         )
         assert "requirements.txt" in content, "Workflow should stage requirements.txt"
         assert "bin/" in content, "Workflow should stage bin/ directory"
+
+    def test_addon_changelog_not_committed(self):
+        """Add-on directory should not have a duplicate committed CHANGELOG file."""
+        assert not os.path.exists(
+            ADDON_CHANGELOG
+        ), "ha_ai_workflow_addon/CHANGELOG.md should not be committed; root CHANGELOG.md is the source of truth"
 
     def test_workflow_builds_declared_archs(self):
         """Workflow build architectures should match config.yaml."""
