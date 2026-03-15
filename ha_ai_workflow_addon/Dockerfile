@@ -73,9 +73,16 @@ COPY config/ /app/config/
 COPY templates/ /app/templates/
 
 # Copy master script and create ha-ai-workflow CLI command
+# Strategy: always create the wrapper from workflow_orchestrator.py (guaranteed present
+# via the "COPY bin/" above), then also install ha_ai_master_script.sh if it was staged.
+RUN printf '#!/bin/sh\nexec python3 /app/bin/workflow_orchestrator.py "$@"\n' \
+    > /usr/local/bin/ha-ai-workflow \
+    && chmod +x /usr/local/bin/ha-ai-workflow
+
+# Install the bash master script if it was staged into the build context by CI.
+# This is a best-effort COPY — build fails if the file is absent, so CI must stage it.
 COPY ha_ai_master_script.sh /app/bin/ha_ai_master_script.sh
-RUN chmod +x /app/bin/ha_ai_master_script.sh \
-    && ln -sf /app/bin/ha_ai_master_script.sh /usr/local/bin/ha-ai-workflow
+RUN chmod +x /app/bin/ha_ai_master_script.sh
 
 # Copy add-on run script (lives in the build context natively)
 COPY run.sh /run.sh

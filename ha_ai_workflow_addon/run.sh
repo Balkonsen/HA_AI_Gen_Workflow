@@ -165,20 +165,20 @@ fi
 
 # Verify SUPERVISOR_TOKEN is available for Home Assistant API access
 if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-    log_info "SUPERVISOR_TOKEN available - Full HA API access enabled"
-    log_debug "Token length: ${#SUPERVISOR_TOKEN}"
+    log_info "SUPERVISOR_TOKEN: present — HA API access enabled"
+    log_debug "Token length: ${#SUPERVISOR_TOKEN} chars"
     log_info "Features enabled: entity data, device info, automation analysis"
 else
     if [[ -f "/data/options.json" ]]; then
-        log_warning "SUPERVISOR_TOKEN not set - This is unexpected in an add-on environment"
-        log_warning "The add-on will work but some HA API features will be unavailable:"
+        log_warning "SUPERVISOR_TOKEN not set — unexpected in add-on environment"
+        log_warning "HA API features will be unavailable:"
         log_warning "  - Entity and device information retrieval"
         log_warning "  - Automation context analysis"
-        log_warning "  - Direct HA API integration features"
-        log_info "Basic workflow features (export/import/sanitize) will still function"
+        log_warning "  - Direct HA API integration"
+        log_info "Basic workflow features (export/import/sanitize) will still work"
     else
-        log_info "Running in standalone mode (SUPERVISOR_TOKEN not needed)"
-        log_info "HA API features are disabled but core workflow features work normally"
+        log_info "Running in standalone mode (SUPERVISOR_TOKEN not required)"
+        log_info "HA API features disabled; core workflow features are active"
     fi
 fi
 
@@ -360,12 +360,26 @@ log_debug "  HA_CONFIG_DIR=${HA_CONFIG_DIR}"
 # Install ha-ai-workflow CLI command if master script exists
 if [[ -f "/app/bin/ha_ai_master_script.sh" ]]; then
     chmod +x /app/bin/ha_ai_master_script.sh
-    ln -sf /app/bin/ha_ai_master_script.sh /usr/local/bin/ha-ai-workflow
-    log_info "ha-ai-workflow CLI command installed"
+    log_info "ha_ai_master_script.sh is available at /app/bin/ha_ai_master_script.sh"
 elif [[ -f "/app/ha_ai_master.sh" ]]; then
     chmod +x /app/ha_ai_master.sh
-    ln -sf /app/ha_ai_master.sh /usr/local/bin/ha-ai-workflow
-    log_info "ha-ai-workflow CLI command installed"
+    log_info "ha_ai_master.sh is available at /app/ha_ai_master.sh"
+fi
+
+# Verify ha-ai-workflow CLI command is available (created at Docker build time)
+if command -v ha-ai-workflow &> /dev/null; then
+    log_info "ha-ai-workflow CLI command: available ($(command -v ha-ai-workflow))"
+else
+    # Fallback: create the wrapper now in case the build step was skipped
+    if [[ -f "/app/bin/workflow_orchestrator.py" ]]; then
+        printf '#!/bin/sh\nexec python3 /app/bin/workflow_orchestrator.py "$@"\n' \
+            > /usr/local/bin/ha-ai-workflow
+        chmod +x /usr/local/bin/ha-ai-workflow
+        log_info "ha-ai-workflow CLI command: installed (fallback via workflow_orchestrator.py)"
+    else
+        log_warning "ha-ai-workflow CLI command: not available (workflow_orchestrator.py not found)"
+        log_warning "  The Streamlit GUI will still work; CLI access requires /app/bin/workflow_orchestrator.py"
+    fi
 fi
 
 # Failsafe: Check if Streamlit is available

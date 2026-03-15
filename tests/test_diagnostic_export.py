@@ -4,8 +4,9 @@ Tests the HAConfigExporter class (note: actual class name in module).
 """
 
 import json
+import requests as requests_lib
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import sys
 import os
 
@@ -283,3 +284,110 @@ class TestDataValidation:
         assert "entities" in loaded_data
         assert "devices" in loaded_data
         assert len(loaded_data["entities"]) == 2
+
+
+class TestAPIRequest:
+    """Test _api_request error handling (no silent swallowing)."""
+
+    def test_api_request_no_token(self, temp_dir):
+        """_api_request returns None and does not raise when api_token is absent."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = ""
+
+        result = exporter._api_request("/supervisor/info")
+
+        assert result is None
+
+    def test_api_request_connection_error_prints_message(self, temp_dir, capsys):
+        """_api_request prints a message on ConnectionError instead of silently failing."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = "dummy_token"
+
+        with patch("requests.get", side_effect=requests_lib.exceptions.ConnectionError("refused")):
+            result = exporter._api_request("/supervisor/info")
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "Cannot connect" in captured.out
+
+    def test_api_request_401_prints_auth_error(self, temp_dir, capsys):
+        """_api_request prints authentication error message on 401."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = "bad_token"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        with patch("requests.get", return_value=mock_response):
+            result = exporter._api_request("/supervisor/info")
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "401" in captured.out
+
+    def test_api_request_200_returns_data(self, temp_dir):
+        """_api_request returns parsed JSON on success."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = "valid_token"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": {"version": "2024.1.0"}}
+
+        with patch("requests.get", return_value=mock_response):
+            result = exporter._api_request("/core/info")
+
+        assert result == {"data": {"version": "2024.1.0"}}
+
+
+class TestAPIConnection:
+    """Test test_api_connection() method."""
+
+    def test_no_token_returns_failure(self, temp_dir):
+        """test_api_connection returns False when no token is set."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = ""
+
+        ok, msg = exporter.test_api_connection()
+
+        assert ok is False
+        assert "SUPERVISOR_TOKEN" in msg or "No" in msg
+
+    def test_connection_success(self, temp_dir):
+        """test_api_connection returns True on HTTP 200."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = "valid_token"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+
+        with patch("requests.get", return_value=mock_response):
+            ok, msg = exporter.test_api_connection()
+
+        assert ok is True
+        assert "Connected" in msg or "✓" in msg
+
+    def test_connection_401(self, temp_dir):
+        """test_api_connection returns False with auth-failure message on 401."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = "bad_token"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        with patch("requests.get", return_value=mock_response):
+            ok, msg = exporter.test_api_connection()
+
+        assert ok is False
+        assert "401" in msg
+
+    def test_connection_error(self, temp_dir):
+        """test_api_connection returns False on ConnectionError."""
+        exporter = HAConfigExporter(output_dir=temp_dir)
+        exporter.api_token = "valid_token"
+
+        with patch("requests.get", side_effect=requests_lib.exceptions.ConnectionError("refused")):
+            ok, msg = exporter.test_api_connection()
+
+        assert ok is False
+        assert "connect" in msg.lower() or "❌" in msg

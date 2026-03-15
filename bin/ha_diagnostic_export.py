@@ -154,9 +154,57 @@ class HAConfigExporter:
             response = requests.get(url, headers=headers, timeout=30)
             if response.status_code == 200:
                 return response.json()
-        except Exception:
-            pass
+            elif response.status_code == 401:
+                print(f"  ⚠ API authentication failed (401) for {endpoint}")
+                print("    SUPERVISOR_TOKEN is invalid or expired")
+                print("    In HA GUI: Profile → Security → Long-Lived Access Tokens → Create Token")
+            elif response.status_code == 403:
+                print(f"  ⚠ API access forbidden (403) for {endpoint}")
+                print("    The token may lack required permissions")
+            elif response.status_code == 404:
+                print(f"  ⚠ API endpoint not found (404): {url}")
+            else:
+                print(f"  ⚠ API request failed: HTTP {response.status_code} for {url}")
+        except requests.exceptions.ConnectionError:
+            print(f"  ⚠ Cannot connect to Supervisor API at {self._supervisor_base_url}{endpoint}")
+            print("    This is expected when not running as a Home Assistant add-on")
+        except requests.exceptions.Timeout:
+            print(f"  ⚠ API request timed out for {endpoint}")
+        except Exception as e:
+            print(f"  ⚠ API request error for {endpoint}: {e}")
         return None
+
+    def test_api_connection(self):
+        """Test if HA API is reachable and SUPERVISOR_TOKEN is valid.
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.api_token:
+            return False, "No SUPERVISOR_TOKEN available (set env var or add to .env file)"
+        try:
+            import requests
+
+            url = f"{self._api_base_url}/config"
+            headers = {
+                "Authorization": f"Bearer {self.api_token}",
+                "Content-Type": "application/json",
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                return True, "✓ HA API connected successfully"
+            elif response.status_code == 401:
+                return False, "❌ Authentication failed (401) - SUPERVISOR_TOKEN is invalid or expired"
+            elif response.status_code == 403:
+                return False, "❌ Access forbidden (403) - token lacks required permissions"
+            else:
+                return False, f"❌ API returned HTTP {response.status_code}"
+        except requests.exceptions.ConnectionError:
+            return False, f"❌ Cannot connect to {self._api_base_url} - not running as HA add-on?"
+        except requests.exceptions.Timeout:
+            return False, "❌ Connection timed out"
+        except Exception as e:
+            return False, f"❌ Connection error: {e}"
 
     def _export_entities_via_api(self):
         """Fallback: export entity data via HA API /api/states."""
@@ -527,16 +575,21 @@ class HAConfigExporter:
                 return True
             except PermissionError:
                 print("  ⚠ Permission denied reading device registry")
-                print("    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN")
+                if self.api_token:
+                    print("    ℹ Note: HA REST API has no /devices endpoint; device info requires .storage/ access")
+                    print("    ℹ Device data will be omitted from export")
+                else:
+                    print("    Set SUPERVISOR_TOKEN for potential API access")
                 return False
             except Exception as e:
                 print(f"  Error exporting device registry: {e}")
                 return False
         else:
             if self.api_token:
-                print("  Device registry not found, no device API available in HA REST API")
+                print("  Device registry file not found at expected path")
+                print("  ℹ Note: HA REST API has no /devices endpoint; device info requires .storage/ access")
             else:
-                print("  Device registry not found (set SUPERVISOR_TOKEN for API fallback)")
+                print("  Device registry not found (SUPERVISOR_TOKEN not set, filesystem access required)")
             return False
 
     def export_config_directory(self):
@@ -1151,6 +1204,19 @@ These files are sanitized and safe to upload to AI assistants.
         print("Home Assistant Configuration Export Tool v2.0")
         print("AI-Friendly Export with Strict Separation")
         print("=" * 70)
+
+        # Show API connectivity status upfront so failures are immediately visible
+        if self.api_token:
+            api_ok, api_msg = self.test_api_connection()
+            print(f"\n🔌 API Status: {api_msg}")
+            if not api_ok:
+                print("   ⚠ API-dependent data (entities, devices) will not be exported")
+                print("   ⚠ Filesystem data from /config will still be collected")
+        else:
+            print("\n🔌 API Status: No SUPERVISOR_TOKEN — filesystem-only export")
+            print("   Set SUPERVISOR_TOKEN to enable entity/device export via API")
+
+        print()
 
         try:
             # Phase 1: Create structure
