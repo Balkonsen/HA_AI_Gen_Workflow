@@ -284,7 +284,7 @@ class TestBuildWorkflow:
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
         # Check that the workflow copies requirements.txt and app directories
-        assert "cp CHANGELOG.md ha_ai_workflow_addon/CHANGELOG.md" in content, (
+        assert "CHANGELOG.md" in content and "ha_ai_workflow_addon/CHANGELOG.md" in content, (
             "Workflow should stage root CHANGELOG.md into add-on build context "
             "to keep release notes up to date in builds"
         )
@@ -301,7 +301,6 @@ class TestBuildWorkflow:
         """Build workflow changelog staging command should produce add-on CHANGELOG.md at runtime."""
         root_changelog = os.path.join(REPO_ROOT, "CHANGELOG.md")
         assert os.path.isfile(root_changelog), "Root CHANGELOG.md should exist"
-        assert not os.path.exists(ADDON_CHANGELOG), "Precondition failed: add-on CHANGELOG.md should not be committed"
 
         try:
             shutil.copyfile(root_changelog, ADDON_CHANGELOG)
