@@ -32,7 +32,7 @@ class TestEnhancedDebugMethods:
         logger.debug_var("test_list", [1, 2, 3])
 
         # Verify log file
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "Variable: test_var = 'test_value'" in log_content
         assert "Variable: test_dict" in log_content
         assert '"key": "value"' in log_content
@@ -52,7 +52,7 @@ class TestEnhancedDebugMethods:
         # Test with both
         logger.debug_call("test_func3", args=(1,), kwargs={"key": "value"})
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "Calling: test_func(1, 2)" in log_content
         assert "Calling: test_func2(key='value')" in log_content
         assert "Calling: test_func3(1, key='value')" in log_content
@@ -65,7 +65,7 @@ class TestEnhancedDebugMethods:
         logger.debug_return("test_func", 42)
         logger.debug_return("test_func2", {"result": "success"})
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "Returned from test_func: 42" in log_content
         assert "Returned from test_func2" in log_content
         assert '"result": "success"' in log_content
@@ -78,7 +78,7 @@ class TestEnhancedDebugMethods:
         logger.debug_enter("test_func", args=(1, 2), kwargs={"key": "value"})
         logger.debug_exit("test_func", return_value=42)
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "→ Entering: test_func(1, 2, key='value')" in log_content
         assert "← Exiting: test_func -> 42" in log_content
 
@@ -89,7 +89,7 @@ class TestEnhancedDebugMethods:
 
         logger.debug_stack()
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "Call stack:" in log_content
 
     def test_debug_methods_respect_log_level(self, tmp_path):
@@ -104,7 +104,7 @@ class TestEnhancedDebugMethods:
         logger.debug_var("test_var", "test_value")
         logger.debug_call("test_func", args=(1, 2))
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "Variable:" not in log_content
         assert "Calling:" not in log_content
 
@@ -124,7 +124,7 @@ class TestTraceCallsDecorator:
         result = test_function(1, 2)
         assert result == 3
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "→ Entering:" in log_content
         assert "test_function" in log_content
         assert "← Exiting:" in log_content
@@ -142,7 +142,7 @@ class TestTraceCallsDecorator:
         with pytest.raises(ValueError, match="Test error"):
             failing_function()
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "→ Entering:" in log_content
         assert "✗ Exception in" in log_content
         assert "ValueError" in log_content
@@ -162,7 +162,7 @@ class TestTraceCallsDecorator:
         result = test_function(1, 2)
         assert result == 3
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         # Should not have trace info at INFO level
         assert "→ Entering:" not in log_content
         assert "← Exiting:" not in log_content
@@ -187,7 +187,7 @@ class TestEnhancedDebugIntegration:
         result = outer_function(5)
         assert result == 20
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "outer_function" in log_content
         assert "inner_function" in log_content
 
@@ -200,7 +200,7 @@ class TestEnhancedDebugIntegration:
         complex_data = {"level1": {"level2": {"items": [1, 2, 3]}}}
         logger.debug_var("complex_data", complex_data)
 
-        log_content = log_file.read_text()
+        log_content = log_file.read_text(encoding="utf-8")
         assert "complex_data" in log_content
         assert "level1" in log_content
         assert "level2" in log_content

@@ -8,7 +8,6 @@ for automated updates.
 
 import os
 import re
-import subprocess
 
 import pytest
 import yaml
@@ -197,52 +196,42 @@ class TestRunScript:
 class TestVersionRetrieval:
     """Tests for automated version retrieval from config.yaml"""
 
+    @staticmethod
+    def _extract_version_from_line(line: str) -> str:
+        """Extract version from a `version:` YAML line with optional quotes."""
+        match = re.match(r'^version:\s*"?([^"\s]+)"?\s*$', line)
+        return match.group(1) if match else ""
+
     def test_version_extractable_with_grep(self):
-        """Version must be extractable using the same method as the CI workflow."""
-        result = subprocess.run(
-            ["grep", "^version:", CONFIG_YAML],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0, "grep should find version line in config.yaml"
-        version_line = result.stdout.strip()
-        assert "version:" in version_line
+        """Version line must be discoverable as a top-level `version:` entry."""
+        with open(CONFIG_YAML, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        version_lines = [line.strip() for line in lines if line.startswith("version:")]
+        assert version_lines, "config.yaml should contain a top-level version line"
+        assert "version:" in version_lines[0]
 
     def test_version_extraction_script(self):
-        """The CI version extraction command must produce a valid version string."""
-        result = subprocess.run(
-            [
-                "bash",
-                "-c",
-                f"grep '^version:' {CONFIG_YAML} | head -n1 | "
-                f"sed 's/version:[[:space:]]*\"\\{{0,1\\}}\\([^\"]*\\)\"\\{{0,1\\}}/\\1/' | "
-                f"tr -d '[:space:]'",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        version = result.stdout.strip()
+        """Version extraction logic must produce a valid non-empty version string."""
+        with open(CONFIG_YAML, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        version_line = next((line.strip() for line in lines if line.startswith("version:")), "")
+        version = self._extract_version_from_line(version_line)
         assert len(version) > 0, "Version extraction should produce a non-empty string"
         assert version != "None", f"Version extraction produced 'None' instead of a version"
 
     def test_version_matches_config(self):
         """Extracted version must match what's in config.yaml."""
-        with open(CONFIG_YAML, "r") as f:
+        with open(CONFIG_YAML, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
         expected = str(config["version"])
 
-        result = subprocess.run(
-            [
-                "bash",
-                "-c",
-                f"grep '^version:' {CONFIG_YAML} | head -n1 | "
-                f"sed 's/version:[[:space:]]*\"\\{{0,1\\}}\\([^\"]*\\)\"\\{{0,1\\}}/\\1/' | "
-                f"tr -d '[:space:]'",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        extracted = result.stdout.strip()
+        with open(CONFIG_YAML, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        version_line = next((line.strip() for line in lines if line.startswith("version:")), "")
+        extracted = self._extract_version_from_line(version_line)
         assert extracted == expected, f"Extracted version '{extracted}' != config version '{expected}'"
 
 

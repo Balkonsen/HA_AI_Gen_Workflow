@@ -81,7 +81,7 @@ class TestWorkflowLogger:
 
         # Check file exists and has content
         assert log_file.exists()
-        content = log_file.read_text()
+        content = log_file.read_text(encoding="utf-8")
         assert "Test info message" in content
         assert "Test warning message" in content
         assert "Test error message" in content
@@ -108,7 +108,7 @@ class TestWorkflowLogger:
         logger.success("Success message")
         logger.progress("Progress message")
 
-        content = log_file.read_text()
+        content = log_file.read_text(encoding="utf-8")
         assert "Debug message" in content
         assert "Verbose message" in content
         assert "Info message" in content
@@ -131,7 +131,7 @@ class TestWorkflowLogger:
 
         logger.info("Test JSON message")
 
-        content = log_file.read_text()
+        content = log_file.read_text(encoding="utf-8")
         lines = content.strip().split("\n")
         
         # Parse first line as JSON
@@ -156,7 +156,7 @@ class TestWorkflowLogger:
         logger.info("Test with context")
 
         # Read first log entry
-        with open(log_file, 'r') as f:
+        with open(log_file, "r", encoding="utf-8") as f:
             content = f.read()
         log_entry = json.loads(content.strip())
         assert log_entry["context"] == ["Context1", "Context2"]
@@ -165,7 +165,7 @@ class TestWorkflowLogger:
         logger.info("Test after pop")
 
         # Re-read file to verify second entry
-        with open(log_file, 'r') as f:
+        with open(log_file, "r", encoding="utf-8") as f:
             lines = f.readlines()
         
         # Check second line has correct context (only Context1 after pop)
@@ -189,7 +189,7 @@ class TestWorkflowLogger:
         assert logger._should_log(LogLevel.DEBUG)
         
         logger.debug("Should appear")
-        content = log_file.read_text()
+        content = log_file.read_text(encoding="utf-8")
         assert "Should appear" in content
         assert "Should not appear" not in content
 
@@ -207,7 +207,7 @@ class TestWorkflowLogger:
         except Exception as e:
             logger.log_exception(e, "Test context")
 
-        content = log_file.read_text()
+        content = log_file.read_text(encoding="utf-8")
         assert "ValueError" in content
         assert "Test exception" in content
 
@@ -228,7 +228,7 @@ class TestWorkflowLogger:
         report_path = logger.create_diagnostic_report(str(report_file))
 
         assert Path(report_path).exists()
-        report_content = Path(report_path).read_text()
+        report_content = Path(report_path).read_text(encoding="utf-8")
         
         assert "# Diagnostic Report" in report_content
         assert "## Configuration" in report_content
@@ -329,7 +329,7 @@ class TestLoggerIntegration:
         logger1.info("From logger1")
         logger2.info("From logger2")
 
-        content = log_file.read_text()
+        content = log_file.read_text(encoding="utf-8")
         assert "From logger1" in content
         assert "From logger2" in content
 

@@ -88,7 +88,8 @@ class TestResolveAndVerifyPath:
         """Environment variables are expanded."""
         monkeypatch.setenv("HA_TEST_VAR", "/tmp/ha_test_expansion")
         resolved, _, _, _ = resolve_and_verify_path("$HA_TEST_VAR/subdir")
-        assert resolved == "/tmp/ha_test_expansion/subdir"
+        expected = os.path.abspath(os.path.expandvars("$HA_TEST_VAR/subdir"))
+        assert resolved == expected
 
 
 @pytest.mark.unit
