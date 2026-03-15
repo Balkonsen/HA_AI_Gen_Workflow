@@ -8,6 +8,7 @@ for automated updates.
 
 import os
 import re
+import shutil
 from typing import Any
 
 import pytest
@@ -22,6 +23,7 @@ BUILD_YAML = os.path.join(ADDON_DIR, "build.yaml")
 DOCKERFILE = os.path.join(ADDON_DIR, "Dockerfile")
 DOCKERIGNORE = os.path.join(ADDON_DIR, ".dockerignore")
 RUN_SH = os.path.join(ADDON_DIR, "run.sh")
+ADDON_CHANGELOG = os.path.join(ADDON_DIR, "CHANGELOG.md")
 REPO_YAML = os.path.join(REPO_ROOT, "repository.yaml")
 WORKFLOW_FILE = os.path.join(REPO_ROOT, ".github", "workflows", "docker-build.yml")
 
@@ -282,8 +284,35 @@ class TestBuildWorkflow:
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
         # Check that the workflow copies requirements.txt and app directories
+        assert "CHANGELOG.md" in content and "ha_ai_workflow_addon/CHANGELOG.md" in content, (
+            "Workflow should stage root CHANGELOG.md into add-on build context "
+            "to keep release notes up to date in builds"
+        )
         assert "requirements.txt" in content, "Workflow should stage requirements.txt"
         assert "bin/" in content, "Workflow should stage bin/ directory"
+
+    def test_addon_changelog_not_committed(self):
+        """Add-on directory should not have a duplicate committed CHANGELOG file."""
+        assert not os.path.exists(
+            ADDON_CHANGELOG
+        ), "ha_ai_workflow_addon/CHANGELOG.md should not be committed; root CHANGELOG.md is the source of truth"
+
+    def test_root_changelog_can_be_staged_into_addon_context(self):
+        """Build workflow changelog staging command should produce add-on CHANGELOG.md at runtime."""
+        root_changelog = os.path.join(REPO_ROOT, "CHANGELOG.md")
+        assert os.path.isfile(root_changelog), "Root CHANGELOG.md should exist"
+
+        try:
+            shutil.copyfile(root_changelog, ADDON_CHANGELOG)
+            assert os.path.isfile(ADDON_CHANGELOG), "Staging should create add-on CHANGELOG.md"
+            with open(root_changelog, "r", encoding="utf-8") as root_file:
+                root_content = root_file.read()
+            with open(ADDON_CHANGELOG, "r", encoding="utf-8") as staged_file:
+                staged_content = staged_file.read()
+            assert staged_content == root_content, "Staged changelog should match root CHANGELOG.md exactly"
+        finally:
+            if os.path.exists(ADDON_CHANGELOG):
+                os.remove(ADDON_CHANGELOG)
 
     def test_workflow_builds_declared_archs(self):
         """Workflow build architectures should match config.yaml."""
