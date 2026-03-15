@@ -176,6 +176,9 @@ jobs:
           # Copy files that live at repo root into the add-on directory
           # so the Dockerfile can COPY them.
           echo "Staging files into ha_ai_workflow_addon/ build context..."
+          # Keep add-on CHANGELOG in sync with root CHANGELOG so the built
+          # image always contains the latest release notes.
+          cp CHANGELOG.md ha_ai_workflow_addon/CHANGELOG.md
           cp requirements.txt ha_ai_workflow_addon/
           cp -r bin/ ha_ai_workflow_addon/bin/
           cp -r config/ ha_ai_workflow_addon/config/

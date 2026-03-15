@@ -282,6 +282,10 @@ class TestBuildWorkflow:
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
         # Check that the workflow copies requirements.txt and app directories
+        assert "cp CHANGELOG.md ha_ai_workflow_addon/CHANGELOG.md" in content, (
+            "Workflow should stage root CHANGELOG.md into add-on build context "
+            "to keep release notes up to date in builds"
+        )
         assert "requirements.txt" in content, "Workflow should stage requirements.txt"
         assert "bin/" in content, "Workflow should stage bin/ directory"
 
