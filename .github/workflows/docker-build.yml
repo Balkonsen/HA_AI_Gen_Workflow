@@ -21,84 +21,15 @@ permissions:
   id-token: write
 
 jobs:
-  # Auto-bump patch version on pushes to main when version wasn't manually bumped.
-  # This ensures HA Supervisor always detects new builds as updates.
-  # The build proceeds in the SAME run after bumping — commits pushed via
-  # GITHUB_TOKEN do NOT trigger new workflow runs, so we cannot rely on a
-  # second run to build the image.
-  auto-version-bump:
-    name: Auto-bump Add-on Version
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    outputs:
-      # SHA of the commit to build — either the bump commit or the original
-      build_ref: ${{ steps.bump.outputs.build_ref }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if version was already bumped in this push
-        id: bump
-        run: |
-          # Check if config.yaml version line changed in the latest commit
-          if git diff HEAD~1 HEAD -- ha_ai_workflow_addon/config.yaml 2>/dev/null | grep -q '^[+-]version:'; then
-            echo "✓ Version was already bumped in this commit — proceeding to build"
-            echo "build_ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "→ Version was NOT bumped — auto-incrementing patch version"
-
-            # Extract current version
-            CURRENT=$(grep '^version:' ha_ai_workflow_addon/config.yaml | head -n1 | sed 's/version:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}/\1/' | tr -d '[:space:]')
-            if [ -z "$CURRENT" ]; then
-              echo "::error::Could not extract version from config.yaml"
-              exit 1
-            fi
-            echo "  Current version: ${CURRENT}"
-
-            # Split into major.minor.patch and increment patch
-            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
-            MINOR=$(echo "$CURRENT" | cut -d. -f2)
-            PATCH=$(echo "$CURRENT" | cut -d. -f3)
-            NEW_PATCH=$((PATCH + 1))
-            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-            echo "  New version: ${NEW_VERSION}"
-
-            # Update config.yaml
-            sed -i "s/^version: .*/version: \"${NEW_VERSION}\"/" ha_ai_workflow_addon/config.yaml
-            echo "✓ Updated config.yaml to version ${NEW_VERSION}"
-
-            # Commit and push the version bump
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            git add ha_ai_workflow_addon/config.yaml
-            git commit -m "chore: auto-bump add-on version to ${NEW_VERSION}"
-            git push
-            echo "✓ Pushed version bump commit"
-
-            # Output the NEW commit SHA so downstream jobs build the bumped version
-            NEW_SHA=$(git rev-parse HEAD)
-            echo "build_ref=${NEW_SHA}" >> "$GITHUB_OUTPUT"
-            echo "  Build ref: ${NEW_SHA}"
-          fi
-
   # Validate add-on configuration before building
   validate:
     name: Validate Add-on Configuration
     runs-on: ubuntu-latest
-    needs: auto-version-bump
-    # Always run: after auto-bump (whether it bumped or not), or on PRs/tags/manual triggers.
-    if: always() && needs.auto-version-bump.result != 'failure'
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          # Use the bump commit SHA when available, otherwise fall back to the trigger ref
-          ref: ${{ needs.auto-version-bump.outputs.build_ref || github.ref }}
 
       - name: Extract and verify version
         id: version
@@ -160,15 +91,31 @@ jobs:
   build:
     name: Build and Publish Add-on
     runs-on: ubuntu-latest
-    needs: [auto-version-bump, validate]
-    # Always run after validate succeeds (auto-version-bump may be skipped on PRs/tags)
-    if: always() && needs.validate.result == 'success'
+    needs: validate
+    if: needs.validate.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Use the bump commit SHA when available, otherwise fall back to the trigger ref
-          ref: ${{ needs.auto-version-bump.outputs.build_ref || github.ref }}
+          fetch-depth: 50
+
+      - name: Generate add-on changelog for build context
+        run: |
+          VERSION=$(grep '^version:' ha_ai_workflow_addon/config.yaml | head -n1 | sed 's/version:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}/\1/' | tr -d '[:space:]')
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract version from ha_ai_workflow_addon/config.yaml"
+            exit 1
+          fi
+          BUILD_DATE=$(date -u +'%Y-%m-%d')
+          {
+            echo "# Changelog"
+            echo
+            echo "## [${VERSION}] - ${BUILD_DATE}"
+            echo
+            echo "### Changes"
+            git log --no-merges -n 20 --pretty='- %s (%h)'
+          } > ha_ai_workflow_addon/CHANGELOG.md
+          echo "✓ Generated lightweight build changelog"
 
       - name: Stage files into add-on build context
         run: |
@@ -176,9 +123,6 @@ jobs:
           # Copy files that live at repo root into the add-on directory
           # so the Dockerfile can COPY them.
           echo "Staging files into ha_ai_workflow_addon/ build context..."
-          # Keep add-on CHANGELOG in sync with root CHANGELOG so the built
-          # image always contains the latest release notes.
-          cp CHANGELOG.md ha_ai_workflow_addon/CHANGELOG.md
           cp requirements.txt ha_ai_workflow_addon/
           cp -r bin/ ha_ai_workflow_addon/bin/
           cp -r config/ ha_ai_workflow_addon/config/
