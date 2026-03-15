@@ -8,6 +8,7 @@ for automated updates.
 
 import os
 import re
+import subprocess
 from typing import Any
 
 import pytest
@@ -286,9 +287,11 @@ class TestBuildWorkflow:
         assert "Generate add-on changelog for build context" in content, (
             "Workflow should generate add-on CHANGELOG.md during builds"
         )
-        assert "git log --no-merges -n 20 --pretty='- %s (%h)'" in content, (
-            "Workflow changelog generation should be lightweight and use recent commit messages"
+        assert "git log" in content and "--no-merges" in content and "--pretty=" in content, (
+            "Workflow changelog generation should be lightweight and based on recent commit messages"
         )
+        assert "## [${VERSION}] - ${BUILD_DATE}" in content, "Generated changelog should include version/date heading"
+        assert "- %s (%h)" in content, "Generated changelog should format commit lines as '- message (sha)'"
         assert "ha_ai_workflow_addon/CHANGELOG.md" in content, "Workflow should produce add-on changelog in build context"
         assert "requirements.txt" in content, "Workflow should stage requirements.txt"
         assert "bin/" in content, "Workflow should stage bin/ directory"
@@ -297,7 +300,7 @@ class TestBuildWorkflow:
         """Add-on directory should not have a duplicate committed CHANGELOG file."""
         assert not os.path.exists(
             ADDON_CHANGELOG
-        ), "ha_ai_workflow_addon/CHANGELOG.md should not be committed; root CHANGELOG.md is the source of truth"
+        ), "ha_ai_workflow_addon/CHANGELOG.md should not be committed; it is generated during workflow builds"
 
     def test_workflow_removes_auto_bump(self):
         """Workflow should no longer auto-bump add-on versions."""
@@ -305,6 +308,10 @@ class TestBuildWorkflow:
             content = f.read()
         assert "auto-version-bump:" not in content, "Auto-bump workflow job should be removed"
         assert "auto-bump add-on version" not in content, "Auto-bump commit logic should be removed"
+        assert "needs: [auto-version-bump, validate]" not in content, "Build job should no longer depend on auto-bump"
+        assert "git add ha_ai_workflow_addon/config.yaml" not in content, (
+            "Workflow should not stage config.yaml version changes in CI"
+        )
 
     def test_workflow_builds_declared_archs(self):
         """Workflow build architectures should match config.yaml."""
@@ -315,6 +322,20 @@ class TestBuildWorkflow:
             # Match --arch as a standalone flag (word boundary via whitespace/newline)
             pattern = rf"--{re.escape(arch)}(\s|\\|$)"
             assert re.search(pattern, content), f"Workflow should build for '{arch}' as declared in config.yaml"
+
+    def test_git_log_format_for_changelog(self):
+        """Build changelog format should produce concise '- message (sha)' entries."""
+        result = subprocess.run(
+            ["git", "log", "--no-merges", "-n", "1", "--pretty=- %s (%h)"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        first_line = result.stdout.strip().splitlines()[0]
+        assert re.match(r"^- \S.* \([0-9a-f]{7,}\)$", first_line), (
+            "Lightweight changelog entries should be '- commit subject (short sha)'"
+        )
 
 
 @pytest.mark.unit
