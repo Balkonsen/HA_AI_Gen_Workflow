@@ -68,7 +68,7 @@ class HAContextGenerator:
         """Safely load YAML file with HA-specific tags"""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                return yaml.load(f, Loader=HAYAMLLoader)
+                return yaml.load(f, Loader=HAYAMLLoader)  # nosec B506
         except yaml.YAMLError as e:
             print(f"  Warning: YAML parsing error in {file_path}: {e}")
             # Try to load as plain text and extract what we can
@@ -85,9 +85,7 @@ class HAContextGenerator:
 
     def analyze_configuration(self):
         """Analyze configuration.yaml"""
-        config_file = os.path.join(
-            self.export_path, "config", "configuration.yaml"
-        )
+        config_file = os.path.join(self.export_path, "config", "configuration.yaml")
         if os.path.exists(config_file):
             config = self.safe_yaml_load(config_file)
 
@@ -100,32 +98,21 @@ class HAContextGenerator:
                 if "homeassistant" in config:
                     ha_config = config["homeassistant"]
                     if isinstance(ha_config, dict):
-                        self.context["system_overview"]["unit_system"] = (
-                            ha_config.get("unit_system", "metric")
-                        )
-                        self.context["system_overview"]["time_zone"] = (
-                            ha_config.get("time_zone", "Unknown")
-                        )
-                        self.context["system_overview"]["external_url"] = (
-                            ha_config.get("external_url", "Not configured")
+                        self.context["system_overview"]["unit_system"] = ha_config.get("unit_system", "metric")
+                        self.context["system_overview"]["time_zone"] = ha_config.get("time_zone", "Unknown")
+                        self.context["system_overview"]["external_url"] = ha_config.get(
+                            "external_url", "Not configured"
                         )
             elif isinstance(config, dict) and "_parse_error" in config:
-                print(
-                    "  Note: configuration.yaml has custom tags - "
-                    "extracting basic info"
-                )
+                print("  Note: configuration.yaml has custom tags - " "extracting basic info")
                 # Extract platforms from raw content
                 raw = config.get("_raw_content", "")
                 platforms = re.findall(r"^([a-z_]+):", raw, re.MULTILINE)
-                self.context["system_overview"]["configured_platforms"] = list(
-                    set(platforms)
-                )
+                self.context["system_overview"]["configured_platforms"] = list(set(platforms))
 
     def analyze_entities(self):
         """Analyze entity registry"""
-        entities_file = os.path.join(
-            self.export_path, "diagnostics", "entities_registry.json"
-        )
+        entities_file = os.path.join(self.export_path, "diagnostics", "entities_registry.json")
         if os.path.exists(entities_file):
             try:
                 with open(entities_file, "r") as f:
@@ -133,38 +120,21 @@ class HAContextGenerator:
 
                 self.context["entities"] = {
                     "total": entity_data.get("total_entities", 0),
-                    "by_domain": {
-                        k: len(v)
-                        for k, v in entity_data.get(
-                            "entities_by_domain", {}
-                        ).items()
-                    },
-                    "by_platform": {
-                        k: len(v)
-                        for k, v in entity_data.get(
-                            "entities_by_platform", {}
-                        ).items()
-                    },
-                    "disabled_count": len(
-                        entity_data.get("disabled_entities", [])
-                    ),
+                    "by_domain": {k: len(v) for k, v in entity_data.get("entities_by_domain", {}).items()},
+                    "by_platform": {k: len(v) for k, v in entity_data.get("entities_by_platform", {}).items()},
+                    "disabled_count": len(entity_data.get("disabled_entities", [])),
                     "active_count": entity_data.get("total_entities", 0)
                     - len(entity_data.get("disabled_entities", [])),
                 }
 
-                print(
-                    "  ✓ Loaded "
-                    f"{self.context['entities']['total']} entities"
-                )
+                print("  ✓ Loaded " f"{self.context['entities']['total']} entities")
 
             except Exception as e:
                 print(f"  Warning: Could not parse entities registry: {e}")
 
     def analyze_devices(self):
         """Analyze device registry"""
-        devices_file = os.path.join(
-            self.export_path, "diagnostics", "devices_registry.json"
-        )
+        devices_file = os.path.join(self.export_path, "diagnostics", "devices_registry.json")
         if os.path.exists(devices_file):
             try:
                 with open(devices_file, "r") as f:
@@ -172,37 +142,25 @@ class HAContextGenerator:
 
                 self.context["devices"] = {
                     "total": device_data.get("total_devices", 0),
-                    "by_manufacturer": device_data.get(
-                        "devices_by_manufacturer", {}
-                    ),
-                    "by_integration": device_data.get(
-                        "devices_by_integration", {}
-                    ),
+                    "by_manufacturer": device_data.get("devices_by_manufacturer", {}),
+                    "by_integration": device_data.get("devices_by_integration", {}),
                 }
 
-                print(
-                    "  ✓ Loaded " f"{self.context['devices']['total']} devices"
-                )
+                print("  ✓ Loaded " f"{self.context['devices']['total']} devices")
 
             except Exception as e:
                 print(f"  Warning: Could not parse devices registry: {e}")
 
     def analyze_integrations(self):
         """Analyze configured integrations"""
-        integrations_file = os.path.join(
-            self.export_path, "diagnostics", "integrations.json"
-        )
+        integrations_file = os.path.join(self.export_path, "diagnostics", "integrations.json")
         if os.path.exists(integrations_file):
             try:
                 with open(integrations_file, "r") as f:
                     integ_data = json.load(f)
 
-                self.context["integrations"]["configured"] = integ_data.get(
-                    "configured_integrations", []
-                )
-                self.context["integrations"]["custom_components"] = (
-                    integ_data.get("custom_components", [])
-                )
+                self.context["integrations"]["configured"] = integ_data.get("configured_integrations", [])
+                self.context["integrations"]["custom_components"] = integ_data.get("custom_components", [])
 
                 # Categorize integrations
                 categories = {
@@ -215,29 +173,17 @@ class HAContextGenerator:
                     "other": [],
                 }
 
-                for integration in integ_data.get(
-                    "configured_integrations", []
-                ):
+                for integration in integ_data.get("configured_integrations", []):
                     domain = integration.get("domain", "")
-                    if any(
-                        x in domain
-                        for x in ["media", "cast", "spotify", "plex"]
-                    ):
+                    if any(x in domain for x in ["media", "cast", "spotify", "plex"]):
                         categories["media"].append(domain)
                     elif any(x in domain for x in ["light", "hue", "lifx"]):
                         categories["lighting"].append(domain)
-                    elif any(
-                        x in domain for x in ["climate", "thermostat", "nest"]
-                    ):
+                    elif any(x in domain for x in ["climate", "thermostat", "nest"]):
                         categories["climate"].append(domain)
-                    elif any(
-                        x in domain
-                        for x in ["alarm", "camera", "lock", "ring"]
-                    ):
+                    elif any(x in domain for x in ["alarm", "camera", "lock", "ring"]):
                         categories["security"].append(domain)
-                    elif any(
-                        x in domain for x in ["unifi", "network", "router"]
-                    ):
+                    elif any(x in domain for x in ["unifi", "network", "router"]):
                         categories["network"].append(domain)
                     elif any(x in domain for x in ["alexa", "google", "siri"]):
                         categories["voice"].append(domain)
@@ -251,21 +197,15 @@ class HAContextGenerator:
 
     def analyze_automations(self):
         """Analyze automations"""
-        auto_file = os.path.join(
-            self.export_path, "config", "automations.yaml"
-        )
+        auto_file = os.path.join(self.export_path, "config", "automations.yaml")
         if os.path.exists(auto_file):
             automations = self.safe_yaml_load(auto_file)
 
             if isinstance(automations, dict) and "_parse_error" in automations:
-                print(
-                    "  Note: automations.yaml has parse issues - "
-                    "skipping automation summary"
-                )
+                print("  Note: automations.yaml has parse issues - " "skipping automation summary")
                 return
 
             if isinstance(automations, list):
-
                 auto_summary = []
                 for auto in automations:
                     if isinstance(auto, dict):
@@ -273,21 +213,11 @@ class HAContextGenerator:
                             "id": auto.get("id", "unknown"),
                             "alias": auto.get("alias", "Unnamed"),
                             "mode": auto.get("mode", "single"),
-                            "triggers": (
-                                len(auto.get("trigger", []))
-                                if isinstance(auto.get("trigger"), list)
-                                else 1
-                            ),
+                            "triggers": (len(auto.get("trigger", [])) if isinstance(auto.get("trigger"), list) else 1),
                             "conditions": (
-                                len(auto.get("condition", []))
-                                if isinstance(auto.get("condition"), list)
-                                else 0
+                                len(auto.get("condition", [])) if isinstance(auto.get("condition"), list) else 0
                             ),
-                            "actions": (
-                                len(auto.get("action", []))
-                                if isinstance(auto.get("action"), list)
-                                else 1
-                            ),
+                            "actions": (len(auto.get("action", [])) if isinstance(auto.get("action"), list) else 1),
                         }
                         auto_summary.append(summary)
 
@@ -302,11 +232,7 @@ class HAContextGenerator:
         if os.path.exists(script_file):
             scripts = self.safe_yaml_load(script_file)
 
-            if (
-                scripts
-                and isinstance(scripts, dict)
-                and "_parse_error" not in scripts
-            ):
+            if scripts and isinstance(scripts, dict) and "_parse_error" not in scripts:
                 self.context["scripts"]["total"] = len(scripts)
                 self.context["scripts"]["list"] = list(scripts.keys())
 
@@ -314,20 +240,14 @@ class HAContextGenerator:
 
     def analyze_addons(self):
         """Analyze add-ons"""
-        addon_file = os.path.join(
-            self.export_path, "addons", "addons_summary.json"
-        )
+        addon_file = os.path.join(self.export_path, "addons", "addons_summary.json")
         if os.path.exists(addon_file):
             try:
                 with open(addon_file, "r") as f:
                     addon_data = json.load(f)
 
-                self.context["addons"]["installed"] = addon_data.get(
-                    "installed_addons", []
-                )
-                self.context["addons"]["total"] = len(
-                    addon_data.get("installed_addons", [])
-                )
+                self.context["addons"]["installed"] = addon_data.get("installed_addons", [])
+                self.context["addons"]["total"] = len(addon_data.get("installed_addons", []))
 
                 # Categorize add-ons
                 addon_categories = {
@@ -341,23 +261,13 @@ class HAContextGenerator:
 
                 for addon in addon_data.get("installed_addons", []):
                     name = addon.get("name", "").lower()
-                    if any(
-                        x in name
-                        for x in ["mysql", "postgres", "influx", "maria"]
-                    ):
+                    if any(x in name for x in ["mysql", "postgres", "influx", "maria"]):
                         addon_categories["database"].append(addon["name"])
-                    elif any(
-                        x in name
-                        for x in ["mqtt", "ssh", "dns", "wireguard", "vpn"]
-                    ):
+                    elif any(x in name for x in ["mqtt", "ssh", "dns", "wireguard", "vpn"]):
                         addon_categories["network"].append(addon["name"])
-                    elif any(
-                        x in name for x in ["plex", "music", "cast", "media"]
-                    ):
+                    elif any(x in name for x in ["plex", "music", "cast", "media"]):
                         addon_categories["media"].append(addon["name"])
-                    elif any(
-                        x in name for x in ["node", "appdaemon", "python"]
-                    ):
+                    elif any(x in name for x in ["node", "appdaemon", "python"]):
                         addon_categories["automation"].append(addon["name"])
                     elif any(x in name for x in ["grafana", "log", "monitor"]):
                         addon_categories["monitoring"].append(addon["name"])
@@ -374,14 +284,12 @@ class HAContextGenerator:
         capabilities = []
 
         # Check for specific capabilities
-        integrations = self.context.get("integrations", {}).get(
-            "configured", []
-        )
+        integrations = self.context.get("integrations", {}).get("configured", [])
         integration_domains = [i.get("domain", "") for i in integrations]
 
-        if "media_player" in integration_domains or self.context.get(
-            "integrations", {}
-        ).get("by_category", {}).get("media", []):
+        if "media_player" in integration_domains or self.context.get("integrations", {}).get("by_category", {}).get(
+            "media", []
+        ):
             capabilities.append("media_control")
 
         if any(x in integration_domains for x in ["light", "switch"]):
@@ -390,15 +298,10 @@ class HAContextGenerator:
         if "climate" in integration_domains:
             capabilities.append("climate_control")
 
-        if any(
-            x in integration_domains for x in ["camera", "alarm_control_panel"]
-        ):
+        if any(x in integration_domains for x in ["camera", "alarm_control_panel"]):
             capabilities.append("security_monitoring")
 
-        if (
-            "person" in integration_domains
-            or "device_tracker" in integration_domains
-        ):
+        if "person" in integration_domains or "device_tracker" in integration_domains:
             capabilities.append("presence_detection")
 
         if any(x in integration_domains for x in ["tts", "stt"]):
@@ -430,9 +333,7 @@ class HAContextGenerator:
         recommendations = []
 
         # Check for common missing elements
-        integrations = self.context.get("integrations", {}).get(
-            "configured", []
-        )
+        integrations = self.context.get("integrations", {}).get("configured", [])
         integration_domains = [i.get("domain", "") for i in integrations]
 
         auto_count = self.context.get("automations", {}).get("total", 0)
@@ -466,8 +367,7 @@ class HAContextGenerator:
                     "type": "dashboard",
                     "priority": "medium",
                     "suggestion": (
-                        "Create a centralized lighting control dashboard "
-                        "with scenes and brightness controls."
+                        "Create a centralized lighting control dashboard " "with scenes and brightness controls."
                     ),
                 }
             )
@@ -484,17 +384,13 @@ class HAContextGenerator:
                 }
             )
 
-        if (
-            "person" in integration_domains
-            or "device_tracker" in integration_domains
-        ):
+        if "person" in integration_domains or "device_tracker" in integration_domains:
             recommendations.append(
                 {
                     "type": "automation",
                     "priority": "high",
                     "suggestion": (
-                        "Presence detection available. Consider: "
-                        "arrival/departure automations, home/away modes."
+                        "Presence detection available. Consider: " "arrival/departure automations, home/away modes."
                     ),
                 }
             )
@@ -502,9 +398,7 @@ class HAContextGenerator:
         # Check for monitoring capabilities
         addons = self.context.get("addons", {}).get("installed", [])
         has_influx = any("influx" in a.get("name", "").lower() for a in addons)
-        has_grafana = any(
-            "grafana" in a.get("name", "").lower() for a in addons
-        )
+        has_grafana = any("grafana" in a.get("name", "").lower() for a in addons)
 
         if "sensor" in integration_domains and not (has_influx or has_grafana):
             recommendations.append(
@@ -512,8 +406,7 @@ class HAContextGenerator:
                     "type": "addon",
                     "priority": "low",
                     "suggestion": (
-                        "Many sensors available. Consider InfluxDB + "
-                        "Grafana for advanced data visualization."
+                        "Many sensors available. Consider InfluxDB + " "Grafana for advanced data visualization."
                     ),
                 }
             )
@@ -522,19 +415,11 @@ class HAContextGenerator:
 
     def generate_ai_prompt(self):
         """Generate AI-friendly prompt"""
-        configured_integrations = self.context.get("integrations", {}).get(
-            "configured", []
-        )
-        custom_components = self.context.get("integrations", {}).get(
-            "custom_components", []
-        )
+        configured_integrations = self.context.get("integrations", {}).get("configured", [])
+        custom_components = self.context.get("integrations", {}).get("custom_components", [])
         total_entities = self.context.get("entities", {}).get("total", 0)
-        active_entities = self.context.get("entities", {}).get(
-            "active_count", 0
-        )
-        disabled_entities = self.context.get("entities", {}).get(
-            "disabled_count", 0
-        )
+        active_entities = self.context.get("entities", {}).get("active_count", 0)
+        disabled_entities = self.context.get("entities", {}).get("disabled_count", 0)
         total_devices = self.context.get("devices", {}).get("total", 0)
         total_automations = self.context.get("automations", {}).get("total", 0)
         total_scripts = self.context.get("scripts", {}).get("total", 0)
@@ -557,24 +442,16 @@ class HAContextGenerator:
 """
 
         entity_domains = self.context.get("entities", {}).get("by_domain", {})
-        for domain, count in sorted(
-            entity_domains.items(), key=lambda x: x[1], reverse=True
-        ):
+        for domain, count in sorted(entity_domains.items(), key=lambda x: x[1], reverse=True):
             prompt += f"- **{domain}**: {count} entities\n"
 
         prompt += "\n## Device Manufacturers\n"
-        manufacturers = self.context.get("devices", {}).get(
-            "by_manufacturer", {}
-        )
-        for mfr, count in sorted(
-            manufacturers.items(), key=lambda x: x[1], reverse=True
-        )[:15]:
+        manufacturers = self.context.get("devices", {}).get("by_manufacturer", {})
+        for mfr, count in sorted(manufacturers.items(), key=lambda x: x[1], reverse=True)[:15]:
             prompt += f"- **{mfr}**: {count} devices\n"
 
         prompt += "\n## Integration Categories\n"
-        categories = self.context.get("integrations", {}).get(
-            "by_category", {}
-        )
+        categories = self.context.get("integrations", {}).get("by_category", {})
         for cat, items in categories.items():
             if items:
                 prompt += f"### {cat.title()}\n"
@@ -590,9 +467,7 @@ class HAContextGenerator:
                 prompt += f"- **{cat.title()}**: {', '.join(items)}\n"
 
         prompt += "\n## System Capabilities\n"
-        capabilities = self.context.get("capabilities", {}).get(
-            "available", []
-        )
+        capabilities = self.context.get("capabilities", {}).get("available", [])
         for cap in capabilities:
             prompt += f"- {cap.replace('_', ' ').title()}\n"
 
@@ -600,9 +475,7 @@ class HAContextGenerator:
         autos = self.context.get("automations", {}).get("list", [])
         for auto in autos[:20]:  # Limit to first 20
             prompt += (
-                f"- **{auto.get('alias')}**: "
-                f"{auto.get('triggers')} triggers, "
-                f"{auto.get('actions')} actions\n"
+                f"- **{auto.get('alias')}**: " f"{auto.get('triggers')} triggers, " f"{auto.get('actions')} actions\n"
             )
 
         if len(autos) > 20:
@@ -611,15 +484,10 @@ class HAContextGenerator:
         prompt += "\n## Recommendations for AI Development\n"
         recommendations = self.context.get("recommendations", [])
         for rec in recommendations:
-            prompt += (
-                f"### {rec['type'].title()} - "
-                f"Priority: {rec['priority'].upper()}\n"
-            )
+            prompt += f"### {rec['type'].title()} - " f"Priority: {rec['priority'].upper()}\n"
             prompt += f"{rec['suggestion']}\n\n"
 
-        configured_platforms = self.context.get("system_overview", {}).get(
-            "configured_platforms", []
-        )
+        configured_platforms = self.context.get("system_overview", {}).get("configured_platforms", [])
 
         prompt += f"""
 ## How to Use This Context
@@ -700,29 +568,16 @@ All configurations will be provided with placeholder values for security.
         print("\n" + "=" * 70)
         print("Context Summary")
         print("=" * 70)
-        integrations_count = len(
-            self.context.get("integrations", {}).get("configured", [])
-        )
+        integrations_count = len(self.context.get("integrations", {}).get("configured", []))
         print("Integrations: " f"{integrations_count}")
         entities = self.context.get("entities", {})
-        print(
-            f"Entities: {entities.get('total', 0)} "
-            f"({entities.get('active_count', 0)} active)"
-        )
+        print(f"Entities: {entities.get('total', 0)} " f"({entities.get('active_count', 0)} active)")
         print(f"Devices: {self.context.get('devices', {}).get('total', 0)}")
-        print(
-            "Automations: "
-            f"{self.context.get('automations', {}).get('total', 0)}"
-        )
+        print("Automations: " f"{self.context.get('automations', {}).get('total', 0)}")
         print(f"Scripts: {self.context.get('scripts', {}).get('total', 0)}")
         print(f"Add-ons: {self.context.get('addons', {}).get('total', 0)}")
-        print(
-            "Capabilities: "
-            f"{len(self.context.get('capabilities', {}).get('available', []))}"
-        )
-        print(
-            f"Recommendations: {len(self.context.get('recommendations', []))}"
-        )
+        print("Capabilities: " f"{len(self.context.get('capabilities', {}).get('available', []))}")
+        print(f"Recommendations: {len(self.context.get('recommendations', []))}")
 
         return context_file, prompt_file
 
@@ -749,10 +604,7 @@ def main():
     print("\nFiles created:")
     print(f"1. {context_file} - Detailed JSON context")
     print(f"2. {prompt_file} - AI-friendly prompt")
-    print(
-        "\nYou can now share these files with AI assistants "
-        "to get help with:"
-    )
+    print("\nYou can now share these files with AI assistants " "to get help with:")
     print("- Creating new automations")
     print("- Designing dashboards")
     print("- Writing scripts and helpers")

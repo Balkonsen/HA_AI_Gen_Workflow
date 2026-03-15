@@ -20,7 +20,10 @@ class TestEnhancedDebugMethods:
     def test_debug_var(self, tmp_path):
         """Test debug_var method."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         # Test with simple value
         logger.debug_var("test_var", "test_value")
@@ -41,7 +44,10 @@ class TestEnhancedDebugMethods:
     def test_debug_call(self, tmp_path):
         """Test debug_call method."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         # Test with args only
         logger.debug_call("test_func", args=(1, 2))
@@ -60,7 +66,10 @@ class TestEnhancedDebugMethods:
     def test_debug_return(self, tmp_path):
         """Test debug_return method."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         logger.debug_return("test_func", 42)
         logger.debug_return("test_func2", {"result": "success"})
@@ -73,19 +82,25 @@ class TestEnhancedDebugMethods:
     def test_debug_enter_exit(self, tmp_path):
         """Test debug_enter and debug_exit methods."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         logger.debug_enter("test_func", args=(1, 2), kwargs={"key": "value"})
         logger.debug_exit("test_func", return_value=42)
 
         log_content = log_file.read_text(encoding="utf-8")
-        assert "→ Entering: test_func(1, 2, key='value')" in log_content
-        assert "← Exiting: test_func -> 42" in log_content
+        assert "Entering: test_func(1, 2, key='value')" in log_content
+        assert "Exiting: test_func -> 42" in log_content
 
     def test_debug_stack(self, tmp_path):
         """Test debug_stack method."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         logger.debug_stack()
 
@@ -95,7 +110,10 @@ class TestEnhancedDebugMethods:
     def test_debug_methods_respect_log_level(self, tmp_path):
         """Test that debug methods respect log level."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.INFO, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.INFO,
+            log_file=str(log_file),
+        )
 
         # Log something at INFO level to create the file
         logger.info("Test message")
@@ -115,7 +133,10 @@ class TestTraceCallsDecorator:
     def test_trace_calls_basic(self, tmp_path):
         """Test basic trace_calls decorator functionality."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         @trace_calls(logger)
         def test_function(a, b):
@@ -125,15 +146,18 @@ class TestTraceCallsDecorator:
         assert result == 3
 
         log_content = log_file.read_text(encoding="utf-8")
-        assert "→ Entering:" in log_content
+        assert "Entering:" in log_content
         assert "test_function" in log_content
-        assert "← Exiting:" in log_content
+        assert "Exiting:" in log_content
         assert "took" in log_content  # timing info
 
     def test_trace_calls_with_exception(self, tmp_path):
         """Test trace_calls decorator with exception."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         @trace_calls(logger)
         def failing_function():
@@ -143,14 +167,17 @@ class TestTraceCallsDecorator:
             failing_function()
 
         log_content = log_file.read_text(encoding="utf-8")
-        assert "→ Entering:" in log_content
-        assert "✗ Exception in" in log_content
+        assert "Entering:" in log_content
+        assert "Exception in" in log_content
         assert "ValueError" in log_content
 
     def test_trace_calls_respects_log_level(self, tmp_path):
         """Test that trace_calls respects log level."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.INFO, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.INFO,
+            log_file=str(log_file),
+        )
 
         # Log something at INFO level to create the file
         logger.info("Test message")
@@ -164,8 +191,8 @@ class TestTraceCallsDecorator:
 
         log_content = log_file.read_text(encoding="utf-8")
         # Should not have trace info at INFO level
-        assert "→ Entering:" not in log_content
-        assert "← Exiting:" not in log_content
+        assert "â†’ Entering:" not in log_content
+        assert "â† Exiting:" not in log_content
 
 
 class TestEnhancedDebugIntegration:
@@ -174,7 +201,10 @@ class TestEnhancedDebugIntegration:
     def test_nested_function_tracing(self, tmp_path):
         """Test tracing nested function calls."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         @trace_calls(logger)
         def outer_function(x):
@@ -194,7 +224,10 @@ class TestEnhancedDebugIntegration:
     def test_debug_var_with_complex_types(self, tmp_path):
         """Test debug_var with complex data types."""
         log_file = tmp_path / "test.log"
-        logger = WorkflowLogger(log_level=LogLevel.DEBUG, log_file=str(log_file))
+        logger = WorkflowLogger(
+            log_level=LogLevel.DEBUG,
+            log_file=str(log_file),
+        )
 
         # Test with nested dict
         complex_data = {"level1": {"level2": {"items": [1, 2, 3]}}}

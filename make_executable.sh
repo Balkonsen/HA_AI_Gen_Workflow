@@ -21,7 +21,7 @@ chmod +x tools/run_docker_tests.sh
 # Tests
 chmod +x tests/validate_shell_scripts.sh
 
-echo "✓ All scripts are now executable"
+echo "âœ“ All scripts are now executable"
 echo ""
 echo "You can now run:"
 echo "  ./ha_ai_master_script.sh"

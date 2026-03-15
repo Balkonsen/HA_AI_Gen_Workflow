@@ -44,7 +44,7 @@ if [ -d "${BASE_DIR}/bin" ] && [ -f "${BASE_DIR}/bin/ha_diagnostic_export.py" ];
 elif [ -d "${SCRIPT_DIR}/bin" ] && [ -f "${SCRIPT_DIR}/bin/ha_diagnostic_export.py" ]; then
     BIN_DIR="${SCRIPT_DIR}/bin"
 else
-    echo -e "${RED}✗${NC} ERROR: Cannot locate bin directory with required Python scripts" >&2
+    echo -e "${RED}âœ—${NC} ERROR: Cannot locate bin directory with required Python scripts" >&2
     echo "  Searched locations:" >&2
     echo "    - ${BASE_DIR}/bin" >&2
     echo "    - ${SCRIPT_DIR}/bin" >&2
@@ -55,7 +55,7 @@ fi
 # Ensure output directories exist
 for _dir in "${EXPORT_DIR}" "${SECRETS_DIR}" "${ARCHIVES_DIR}" "${IMPORT_DIR}"; do
     if ! mkdir -p "${_dir}" 2>/dev/null; then
-        echo -e "${YELLOW}⚠${NC} Could not create directory: ${_dir}" >&2
+        echo -e "${YELLOW}âš ${NC} Could not create directory: ${_dir}" >&2
     fi
 done
 
@@ -68,7 +68,7 @@ log() {
     shift
     local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
+
     # Log level filtering: skip VERBOSE and DEBUG messages if not enabled
     if [ "$level" = "VERBOSE" ] && [ "$ENABLE_VERBOSE" = false ]; then
         return
@@ -76,61 +76,61 @@ log() {
     if [ "$level" = "DEBUG" ] && [ "$LOG_LEVEL" != "DEBUG" ]; then
         return
     fi
-    
+
     echo -e "${timestamp} [${level}] ${message}" | tee -a "${LOG_FILE}"
 }
 
 debug() {
     if [ "$LOG_LEVEL" = "DEBUG" ]; then
-        echo -e "${BLUE}🔍${NC} $*"
+        echo -e "${BLUE}ðŸ”${NC} $*"
         log "DEBUG" "$*"
     fi
 }
 
 verbose() {
     if [ "$ENABLE_VERBOSE" = true ] || [ "$LOG_LEVEL" = "DEBUG" ]; then
-        echo -e "${BLUE}→${NC} $*"
+        echo -e "${BLUE}â†’${NC} $*"
         log "VERBOSE" "$*"
     fi
 }
 
 info() {
-    echo -e "${BLUE}ℹ${NC} $*"
+    echo -e "${BLUE}â„¹${NC} $*"
     log "INFO" "$*"
 }
 
 success() {
-    echo -e "${GREEN}✓${NC} $*"
+    echo -e "${GREEN}âœ“${NC} $*"
     log "SUCCESS" "$*"
 }
 
 warn() {
-    echo -e "${YELLOW}⚠${NC} $*"
+    echo -e "${YELLOW}âš ${NC} $*"
     log "WARN" "$*"
 }
 
 error() {
-    echo -e "${RED}✗${NC} $*"
+    echo -e "${RED}âœ—${NC} $*"
     log "ERROR" "$*"
 }
 
 banner() {
     echo ""
-    echo "═══════════════════════════════════════════════════════════════════"
+    echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
     echo "  $*"
-    echo "═══════════════════════════════════════════════════════════════════"
+    echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
     echo ""
 }
 
 confirm() {
     local prompt="$1"
     local default="${2:-no}"
-    
+
     if [ "$AUTO_MODE" = true ]; then
         info "Auto-mode enabled, assuming 'yes'"
         return 0
     fi
-    
+
     if [ "$default" = "yes" ]; then
         read -p "$prompt [Y/n]: " response
         response=${response:-y}
@@ -138,7 +138,7 @@ confirm() {
         read -p "$prompt [y/N]: " response
         response=${response:-n}
     fi
-    
+
     case "$response" in
         [yY][eE][sS]|[yY]) return 0 ;;
         *) return 1 ;;
@@ -151,43 +151,43 @@ confirm() {
 
 check_dependencies() {
     info "Checking dependencies..."
-    
+
     local missing_deps=()
-    
+
     # Check for Python 3
     if ! command -v python3 &> /dev/null; then
         missing_deps+=("python3")
     fi
-    
+
     # Check for git
     if ! command -v git &> /dev/null; then
         missing_deps+=("git")
     fi
-    
+
     # Check for ha CLI
     if ! command -v ha &> /dev/null; then
         warn "Home Assistant CLI not found - some features may be limited"
     fi
-    
+
     if [ ${#missing_deps[@]} -ne 0 ]; then
         error "Missing dependencies: ${missing_deps[*]}"
         return 1
     fi
-    
+
     success "Core dependencies OK"
     return 0
 }
 
 install_pyyaml() {
     info "Checking PyYAML installation..."
-    
+
     if python3 -c "import yaml" 2>/dev/null; then
         success "PyYAML already installed"
         return 0
     fi
-    
+
     warn "PyYAML not found, attempting installation..."
-    
+
     # Try different installation methods
     if python3 -m pip install pyyaml --break-system-packages &>/dev/null; then
         success "PyYAML installed successfully"
@@ -215,14 +215,14 @@ init_git_repo() {
         info "Git repository already initialized"
         return 0
     fi
-    
+
     banner "Git Repository Initialization"
-    
+
     info "Initializing git repository in ${CONFIG_DIR}..."
     cd "${CONFIG_DIR}"
-    
+
     git init
-    
+
     # Create .gitignore if it doesn't exist
     if [ ! -f .gitignore ]; then
         cat > .gitignore << 'EOF'
@@ -255,11 +255,11 @@ debug_report_*.md
 EOF
         success "Created .gitignore"
     fi
-    
+
     # Initial commit
     git add .gitignore
     git commit -m "Initial commit - HA AI Workflow setup" || true
-    
+
     success "Git repository initialized"
 }
 
@@ -289,34 +289,34 @@ ensure_clean_working_tree() {
 
 run_export() {
     banner "Starting Export Workflow"
-    
+
     local timestamp=$(date '+%Y%m%d_%H%M%S')
     local export_name="ha_export_${timestamp}"
     local temp_export_dir="/tmp/${export_name}"
-    
+
     debug "Export configuration:"
     debug "  - BIN_DIR: ${BIN_DIR}"
     debug "  - CONFIG_DIR: ${CONFIG_DIR}"
     debug "  - EXPORT_DIR: ${EXPORT_DIR}"
     debug "  - Export name: ${export_name}"
     debug "  - Temp directory: ${temp_export_dir}"
-    
+
     # Step 1: Run diagnostic export
     info "Step 1/5: Running diagnostic export..."
     debug "Calling: python3 ${BIN_DIR}/ha_diagnostic_export.py --output-dir /tmp --name ${export_name} --config-dir ${CONFIG_DIR}"
-    
+
     if ! python3 "${BIN_DIR}/ha_diagnostic_export.py" --output-dir "/tmp" --name "${export_name}" --config-dir "${CONFIG_DIR}"; then
         error "Export failed"
         debug "Export command failed with exit code: $?"
         return 1
     fi
     success "Export completed"
-    
+
     # Step 2: Verify export
     info "Step 2/5: Verifying export completeness..."
     local tarball="/tmp/${export_name}.tar.gz"
     debug "Looking for tarball: ${tarball}"
-    
+
     if [ ! -f "${tarball}" ]; then
         error "Export tarball not found: ${tarball}"
         debug "Contents of /tmp directory:"
@@ -324,7 +324,7 @@ run_export() {
         return 1
     fi
     debug "Tarball found: $(ls -lh ${tarball})"
-    
+
     debug "Calling: python3 ${BIN_DIR}/ha_export_verifier.py ${tarball}"
     if ! python3 "${BIN_DIR}/ha_export_verifier.py" "${tarball}"; then
         error "Export verification failed"
@@ -332,13 +332,13 @@ run_export() {
         return 1
     fi
     success "Export verified"
-    
+
     # Step 3: Extract to working directory
     info "Step 3/5: Extracting export..."
     tar -xzf "${tarball}" -C "${EXPORT_DIR}/"
     local extracted_dir="${EXPORT_DIR}/${export_name}"
     success "Extracted to ${extracted_dir}"
-    
+
     # Step 4: Generate AI context
     info "Step 4/5: Generating AI context..."
     if ! python3 "${BIN_DIR}/ha_ai_context_gen.py" "${extracted_dir}"; then
@@ -346,7 +346,7 @@ run_export() {
         return 1
     fi
     success "AI context generated"
-    
+
     # Step 5: Manage secrets
     info "Step 5/5: Managing secrets..."
     local secrets_file="${extracted_dir}/secrets/secrets_map.json"
@@ -355,27 +355,27 @@ run_export() {
         cp "${secrets_file}" "${SECRETS_DIR}/secrets_map_${timestamp}.json"
         # Update latest
         cp "${secrets_file}" "${SECRETS_DIR}/secrets_map_latest.json"
-        
+
         # Keep only last 5 backups
         cd "${SECRETS_DIR}"
         ls -t secrets_map_*.json 2>/dev/null | tail -n +7 | xargs -r rm
-        
+
         success "Secrets backed up (keeping last 5 versions)"
     fi
-    
+
     # Clean up temporary files
     info "Cleaning up temporary files..."
     rm -f "${tarball}"
     rm -rf "/tmp/${export_name}"
     [ -d "${ARCHIVES_DIR}" ] && find "${ARCHIVES_DIR}" -name "*.tar.gz" -mtime +7 -delete
     success "Cleanup completed"
-    
+
     # Git commit snapshot
     info "Creating git snapshot..."
     cd "${CONFIG_DIR}"
     git add -A
     git commit -m "Export snapshot: ${timestamp}" || true
-    
+
     # Summary
     banner "Export Workflow Complete"
     echo ""
@@ -390,7 +390,7 @@ run_export() {
     echo "  3. Place AI-generated files in: ${IMPORT_DIR}"
     echo "  4. Run: $(basename $0) import"
     echo ""
-    
+
     return 0
 }
 
@@ -400,49 +400,49 @@ run_export() {
 
 scan_import_directory() {
     info "Scanning import directory: ${IMPORT_DIR}"
-    
+
     if [ ! -d "${IMPORT_DIR}" ]; then
         warn "Import directory does not exist"
         return 1
     fi
-    
+
     local file_count=$(find "${IMPORT_DIR}" -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.json" \) 2>/dev/null | wc -l)
-    
+
     if [ "$file_count" -eq 0 ]; then
         warn "No files found in import directory"
         return 1
     fi
-    
+
     success "Found ${file_count} file(s) to import"
-    
+
     echo ""
     echo "Files found:"
     find "${IMPORT_DIR}" -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.json" \) -exec basename {} \; | sort
     echo ""
-    
+
     return 0
 }
 
 run_import() {
     banner "Starting Import Workflow"
-    
+
     # Pre-flight checks
     if ! check_disk_space; then
         return 1
     fi
-    
+
     # Step 1: Scan import directory
     if ! scan_import_directory; then
         handle_error "no_files_to_import" "No files found in ${IMPORT_DIR}" "import_scan"
         return 1
     fi
-    
+
     # Step 1.5: Pre-import validation
     if ! pre_import_validation; then
         handle_error "import_failed" "Pre-import YAML validation failed" "pre_import_validation"
         return 1
     fi
-    
+
     # Step 2: Get branch name
     local branch_name
     if [ "$AUTO_MODE" = true ]; then
@@ -453,14 +453,14 @@ run_import() {
         read -p "Enter branch name for this import: " branch_name
         branch_name=${branch_name:-"ai-import-$(date '+%Y%m%d-%H%M%S')"}
     fi
-    
+
     info "Branch name: ${branch_name}"
-    
+
     # Step 3: Ensure clean working tree
     if ! ensure_clean_working_tree; then
         return 1
     fi
-    
+
     # Step 4: Create new branch
     info "Creating branch: ${branch_name}"
     cd "${CONFIG_DIR}"
@@ -473,36 +473,36 @@ run_import() {
         fi
     fi
     success "Branch created"
-    
+
     # Step 5: Run import script
     info "Running import script..."
     local secrets_file="${SECRETS_DIR}/secrets_map_latest.json"
-    
+
     if [ ! -f "${secrets_file}" ]; then
         handle_error "secrets_not_found" "Secrets file not found: ${secrets_file}" "import"
         git checkout -
         return 1
     fi
-    
+
     if ! python3 "${BIN_DIR}/ha_config_import.py" --apply "${IMPORT_DIR}" "${secrets_file}"; then
         handle_error "import_failed" "Import script failed" "ha_config_import"
         git checkout -
         return 1
     fi
     success "Import completed"
-    
+
     # Step 6: Commit changes
     info "Committing changes..."
     git add -A
     git commit -m "AI Import: ${branch_name} - $(date '+%Y-%m-%d %H:%M:%S')"
     success "Changes committed"
-    
+
     # Step 7: Show diff
     echo ""
     info "Changes made:"
     git diff HEAD~1 --stat
     echo ""
-    
+
     # Step 8: Validate configuration
     info "Validating configuration..."
     if ! validate_ha_config; then
@@ -510,11 +510,11 @@ run_import() {
         return 1
     fi
     success "Configuration valid"
-    
+
     # Step 9: Merge to main
     local main_branch=$(git branch | grep -E '^\*?\s+(main|master)' | sed 's/^[* ]*//' | head -1)
     main_branch=${main_branch:-main}
-    
+
     info "Merging ${branch_name} into ${main_branch}..."
     git checkout "${main_branch}"
     if ! git merge "${branch_name}" --no-ff -m "Merge AI import: ${branch_name}"; then
@@ -528,13 +528,13 @@ run_import() {
         return 1
     fi
     success "Merged successfully"
-    
+
     # Step 10: Deploy confirmation
     banner "Ready to Deploy"
     echo ""
     warn "This will restart Home Assistant with the new configuration"
     echo ""
-    
+
     if [ "$AUTO_MODE" = false ]; then
         read -p "Type 'DEPLOY' to confirm restart: " confirm_deploy
         if [ "$confirm_deploy" != "DEPLOY" ]; then
@@ -546,7 +546,7 @@ run_import() {
     else
         info "Auto-mode: Proceeding with deployment"
     fi
-    
+
     # Step 11: Restart Home Assistant
     info "Restarting Home Assistant..."
     if command -v ha &> /dev/null; then
@@ -556,14 +556,14 @@ run_import() {
         warn "HA CLI not available, please restart manually"
         echo "  docker restart homeassistant"
     fi
-    
+
     # Step 12: Move imported files to archive
     info "Archiving imported files..."
     local archive_dir="${ARCHIVES_DIR}/imported_$(date '+%Y%m%d_%H%M%S')"
     mkdir -p "${archive_dir}"
     mv "${IMPORT_DIR}"/* "${archive_dir}/" 2>/dev/null || true
     success "Files archived"
-    
+
     # Summary
     banner "Import Workflow Complete"
     echo ""
@@ -574,7 +574,7 @@ run_import() {
     info "Monitor logs with: docker logs homeassistant -f"
     info "Or: tail -f /config/home-assistant.log"
     echo ""
-    
+
     return 0
 }
 
@@ -584,19 +584,19 @@ run_import() {
 
 validate_ha_config() {
     info "Running Home Assistant configuration check..."
-    
+
     # Check if HA CLI is available
     if ! command -v ha &> /dev/null; then
         warn "HA CLI not available, skipping validation"
         warn "Please verify configuration manually"
         return 0
     fi
-    
+
     # Run configuration check
     local check_output
     check_output=$(ha core check 2>&1)
     local check_result=$?
-    
+
     if [ $check_result -eq 0 ]; then
         success "Configuration check passed"
         return 0
@@ -606,39 +606,39 @@ validate_ha_config() {
         echo "Error details:"
         echo "${check_output}"
         echo ""
-        
+
         # Check for common errors
         if echo "${check_output}" | grep -q "Integration error"; then
-            echo "💡 Tip: Check integration configurations"
+            echo "ðŸ’¡ Tip: Check integration configurations"
             echo "   Common issues:"
             echo "   - Missing required fields"
             echo "   - Invalid entity references"
             echo "   - Deprecated configuration syntax"
         fi
-        
+
         if echo "${check_output}" | grep -q "Invalid config"; then
-            echo "💡 Tip: YAML syntax error detected"
+            echo "ðŸ’¡ Tip: YAML syntax error detected"
             echo "   Use online YAML validator or:"
             echo "   python3 -c \"import yaml; yaml.safe_load(open('configuration.yaml'))\""
         fi
-        
+
         if echo "${check_output}" | grep -q "not found"; then
-            echo "💡 Tip: Entity or service not found"
+            echo "ðŸ’¡ Tip: Entity or service not found"
             echo "   - Verify entity IDs exist"
             echo "   - Check integration is loaded"
             echo "   - Restart HA if recently added"
         fi
-        
+
         return 1
     fi
 }
 
 pre_import_validation() {
     info "Running pre-import validation..."
-    
+
     # Check all YAML files in import directory
     local has_errors=false
-    
+
     for file in "${IMPORT_DIR}"/*.{yaml,yml}; do
         if [ -f "${file}" ]; then
             info "Validating: $(basename ${file})"
@@ -647,12 +647,12 @@ pre_import_validation() {
             fi
         fi
     done 2>/dev/null
-    
+
     if [ "$has_errors" = true ]; then
         error "YAML validation failed"
         return 1
     fi
-    
+
     success "Pre-import validation passed"
     return 0
 }
@@ -661,14 +661,14 @@ handle_error() {
     local error_type=$1
     local error_message=$2
     local context=$3
-    
+
     error "ERROR: ${error_message}"
-    
+
     # Log detailed error
     log "ERROR" "Type: ${error_type}"
     log "ERROR" "Message: ${error_message}"
     log "ERROR" "Context: ${context}"
-    
+
     # Check for common error patterns
     case "${error_type}" in
         "pyyaml_missing")
@@ -682,7 +682,7 @@ handle_error() {
             echo ""
             return 1
             ;;
-        
+
         "git_not_initialized")
             echo ""
             error "Git repository not initialized"
@@ -693,7 +693,7 @@ handle_error() {
             echo ""
             return 1
             ;;
-        
+
         "config_validation_failed")
             echo ""
             error "Home Assistant configuration validation failed"
@@ -706,7 +706,7 @@ handle_error() {
             generate_debug_report "validation_failed" "$(get_current_branch)"
             return 1
             ;;
-        
+
         "no_files_to_import")
             echo ""
             warn "No files found in import directory"
@@ -718,7 +718,7 @@ handle_error() {
             echo ""
             return 1
             ;;
-        
+
         "secrets_not_found")
             echo ""
             error "Secrets file not found"
@@ -730,7 +730,7 @@ handle_error() {
             echo ""
             return 1
             ;;
-        
+
         "export_failed")
             echo ""
             error "Export process failed"
@@ -747,7 +747,7 @@ handle_error() {
             echo ""
             return 1
             ;;
-        
+
         "import_failed")
             echo ""
             error "Import process failed"
@@ -760,7 +760,7 @@ handle_error() {
             generate_debug_report "import_failed" "$(get_current_branch)"
             return 1
             ;;
-        
+
         "disk_space_low")
             echo ""
             error "Low disk space detected"
@@ -774,7 +774,7 @@ handle_error() {
             echo ""
             return 1
             ;;
-        
+
         *)
             echo ""
             error "An unexpected error occurred"
@@ -797,28 +797,28 @@ handle_error() {
 check_disk_space() {
     local required_mb=500
     local available_mb=$(df -m /config | awk 'NR==2 {print $4}')
-    
+
     if [ "${available_mb}" -lt "${required_mb}" ]; then
         handle_error "disk_space_low" "Only ${available_mb}MB available (${required_mb}MB required)" "/config"
         return 1
     fi
-    
+
     return 0
 }
 
 validate_yaml_syntax() {
     local file=$1
-    
+
     if [ ! -f "${file}" ]; then
         return 0  # File doesn't exist, skip
     fi
-    
+
     if ! python3 -c "import yaml; yaml.safe_load(open('${file}'))" 2>/dev/null; then
         error "YAML syntax error in: ${file}"
         python3 -c "import yaml; yaml.safe_load(open('${file}'))" 2>&1
         return 1
     fi
-    
+
     return 0
 }
 
@@ -828,13 +828,13 @@ check_ha_availability() {
         warn "Some features will be limited"
         return 1
     fi
-    
+
     if ! ha core info &>/dev/null; then
         warn "Cannot connect to Home Assistant"
         warn "Validation features disabled"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -847,9 +847,9 @@ generate_debug_report() {
     local branch_name=$2
     local timestamp=$(date '+%Y%m%d_%H%M%S')
     local debug_file="${EXPORT_DIR}/debug_report_${timestamp}.md"
-    
+
     banner "Generating Debug Report"
-    
+
     cat > "${debug_file}" << EOF
 # Home Assistant AI Workflow - Debug Report
 
@@ -927,16 +927,16 @@ ha core restart
 
 *Generated by HA AI Workflow*
 EOF
-    
+
     success "Debug report created: ${debug_file}"
-    
+
     # Offer to upload
     if [ "$UPLOAD_DEBUG" = true ]; then
         info "Uploading debug report..."
         # TODO: Add upload logic (e.g., to pastebin, gist, etc.)
         warn "Upload functionality not yet implemented"
     fi
-    
+
     return 0
 }
 
@@ -946,33 +946,33 @@ EOF
 
 show_status() {
     banner "HA AI Workflow Status"
-    
+
     echo ""
     info "Configuration:"
     echo "  Config Dir: ${CONFIG_DIR}"
     echo "  Export Dir: ${EXPORT_DIR}"
     echo "  Import Dir: ${IMPORT_DIR}"
     echo ""
-    
+
     info "Git Status:"
     cd "${CONFIG_DIR}"
     echo "  Current Branch: $(get_current_branch)"
     echo "  Last Commit: $(git log -1 --pretty=format:'%h - %s (%ar)' 2>/dev/null || echo 'No commits')"
     echo ""
-    
+
     info "Recent Exports:"
     if [ -d "${EXPORT_DIR}" ]; then
         ls -lt "${EXPORT_DIR}" | grep '^d' | head -5 | awk '{print "  " $9 " (" $6 " " $7 " " $8 ")"}'
     fi
     echo ""
-    
+
     info "Pending Imports:"
     if [ -d "${IMPORT_DIR}" ]; then
         local count=$(find "${IMPORT_DIR}" -type f 2>/dev/null | wc -l)
         echo "  ${count} file(s) in import directory"
     fi
     echo ""
-    
+
     info "Secrets Backups:"
     if [ -d "${SECRETS_DIR}" ]; then
         ls -lt "${SECRETS_DIR}" | grep secrets_map_ | head -5 | awk '{print "  " $9 " (" $6 " " $7 " " $8 ")"}'
@@ -1014,7 +1014,7 @@ ENVIRONMENT VARIABLES:
 
 LOGGING:
     Default log file: ${LOG_FILE}
-    
+
     Log levels (from most to least verbose):
       DEBUG       - Detailed debugging information
       VERBOSE     - Detailed operational information
@@ -1042,7 +1042,7 @@ EXAMPLES:
     # Fully automated workflow (CI/CD)
     $(basename $0) export --auto
     $(basename $0) import --auto
-    
+
     # Export with custom log level
     $(basename $0) export --log-level DEBUG
 
@@ -1056,7 +1056,7 @@ EOF
 main() {
     # Parse arguments
     local command=""
-    
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             export|import|status|setup|help)
@@ -1112,32 +1112,32 @@ main() {
                 ;;
         esac
     done
-    
+
     # Export log level as environment variable for Python scripts
     export HA_AI_LOG_LEVEL="${LOG_LEVEL}"
     export HA_AI_LOG_FILE="${LOG_FILE}"
-    
+
     # Start logging
     log "INFO" "============================================"
     log "INFO" "HA AI Workflow started: command=${command}"
     log "INFO" "Log level: ${LOG_LEVEL}"
     log "INFO" "Log file: ${LOG_FILE}"
     log "INFO" "============================================"
-    
+
     # Show banner
     echo ""
-    echo "╔═══════════════════════════════════════════════════════════════╗"
-    echo "║       Home Assistant AI Workflow Automation System            ║"
-    echo "║                  Version 1.0.0                                ║"
-    echo "╚═══════════════════════════════════════════════════════════════╝"
+    echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
+    echo "â•‘       Home Assistant AI Workflow Automation System            â•‘"
+    echo "â•‘                  Version 1.0.0                                â•‘"
+    echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
     echo ""
-    
+
     # Check dependencies
     if [ "$command" != "help" ] && [ "$command" != "setup" ]; then
         check_dependencies || exit 1
         install_pyyaml || exit 1
     fi
-    
+
     # Execute command
     case $command in
         setup)
@@ -1161,17 +1161,17 @@ main() {
             exit 1
             ;;
     esac
-    
+
     local exit_code=$?
-    
+
     if [ $exit_code -eq 0 ]; then
         success "Workflow completed successfully"
     else
         error "Workflow failed with exit code: $exit_code"
     fi
-    
+
     log "INFO" "Workflow finished: exit_code=${exit_code}"
-    
+
     exit $exit_code
 }
 

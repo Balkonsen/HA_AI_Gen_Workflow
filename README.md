@@ -48,10 +48,12 @@ Transform your Home Assistant configuration management with AI assistance while 
 ### Work with AI
 
 Share the generated files with your AI assistant:
+
 - `AI_PROMPT.md` — Ready-to-use prompt with your setup overview
 - `AI_CONTEXT.json` — Detailed entity and device information
 
 **Ask AI to help you:**
+
 - Create automations based on your devices
 - Design dashboards using your entities
 - Write scripts and template sensors
@@ -81,6 +83,7 @@ api_key: <<HA_SECRET_API_KEY_001>>
 Your actual secrets are encrypted and stored locally. When you import configurations, placeholders are automatically restored to real values.
 
 **What gets sanitized:**
+
 - Passwords and tokens
 - API keys
 - IP addresses and MAC addresses

@@ -12,6 +12,7 @@ pylint>=3.0.0
 black>=23.7.0
 flake8>=6.1.0
 mypy>=1.5.0
+pyright>=1.1.390
 bandit>=1.7.5
 
 # YAML handling

@@ -8,6 +8,7 @@ for automated updates.
 
 import os
 import re
+from typing import Any
 
 import pytest
 import yaml
@@ -25,6 +26,13 @@ REPO_YAML = os.path.join(REPO_ROOT, "repository.yaml")
 WORKFLOW_FILE = os.path.join(REPO_ROOT, ".github", "workflows", "docker-build.yml")
 
 
+def _load_yaml_dict(file_path: str) -> dict[str, Any]:
+    with open(file_path, "r", encoding="utf-8") as file_obj:
+        data = yaml.safe_load(file_obj)
+    assert isinstance(data, dict)
+    return data
+
+
 @pytest.mark.unit
 class TestAddonConfigYaml:
     """Tests for ha_ai_workflow_addon/config.yaml"""
@@ -35,47 +43,43 @@ class TestAddonConfigYaml:
 
     def test_config_yaml_valid(self):
         """config.yaml must be valid YAML."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         assert isinstance(config, dict), "config.yaml should parse to a dict"
 
     def test_config_yaml_required_fields(self):
         """config.yaml must have all required HA add-on fields."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         required_fields = ["name", "version", "slug", "description", "arch", "image"]
         for field in required_fields:
             assert field in config, f"Missing required field '{field}' in config.yaml"
 
     def test_config_yaml_version_format(self):
         """Version must be a non-empty string."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         version = str(config["version"])
         assert len(version) > 0, "Version must not be empty"
         assert version != "None", "Version must not be None"
 
     def test_config_yaml_arch_valid(self):
         """Architectures must be valid HA architectures."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         valid_archs = {"amd64", "aarch64", "armv7", "armhf", "i386"}
-        for arch in config["arch"]:
+        archs = config.get("arch", [])
+        assert isinstance(archs, list)
+        for arch in archs:
             assert arch in valid_archs, f"Invalid architecture '{arch}' in config.yaml"
 
     def test_config_yaml_image_pattern(self):
         """Image field must use {arch} placeholder for HA update detection."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         image = config.get("image", "")
-        assert "{arch}" in image, (
-            f"Image field must contain '{{arch}}' placeholder for HA to detect updates. Got: {image}"
-        )
+        assert (
+            "{arch}" in image
+        ), f"Image field must contain '{{arch}}' placeholder for HA to detect updates. Got: {image}"
 
     def test_config_yaml_image_uses_ghcr(self):
         """Image field should reference ghcr.io for GitHub Container Registry."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         image = config.get("image", "")
         assert image.startswith("ghcr.io/"), f"Image should use ghcr.io registry. Got: {image}"
 
@@ -90,36 +94,29 @@ class TestBuildYaml:
 
     def test_build_yaml_valid(self):
         """build.yaml must be valid YAML."""
-        with open(BUILD_YAML, "r") as f:
-            build = yaml.safe_load(f)
+        build = _load_yaml_dict(BUILD_YAML)
         assert isinstance(build, dict), "build.yaml should parse to a dict"
 
     def test_build_yaml_has_build_from(self):
         """build.yaml must define base images via build_from."""
-        with open(BUILD_YAML, "r") as f:
-            build = yaml.safe_load(f)
+        build = _load_yaml_dict(BUILD_YAML)
         assert "build_from" in build, "build.yaml must have 'build_from' section"
 
     def test_build_yaml_arch_matches_config(self):
         """build.yaml build_from architectures must match config.yaml arch list."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
-        with open(BUILD_YAML, "r") as f:
-            build = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
+        build = _load_yaml_dict(BUILD_YAML)
         config_archs = set(config.get("arch", []))
         build_archs = set(build.get("build_from", {}).keys())
-        assert config_archs == build_archs, (
-            f"Architecture mismatch: config.yaml has {config_archs}, build.yaml has {build_archs}"
-        )
+        assert (
+            config_archs == build_archs
+        ), f"Architecture mismatch: config.yaml has {config_archs}, build.yaml has {build_archs}"
 
     def test_build_yaml_base_images_valid(self):
         """Base images must reference HA base images."""
-        with open(BUILD_YAML, "r") as f:
-            build = yaml.safe_load(f)
+        build = _load_yaml_dict(BUILD_YAML)
         for arch, image in build.get("build_from", {}).items():
-            assert "ghcr.io/home-assistant/" in image, (
-                f"Base image for {arch} should use HA base images. Got: {image}"
-            )
+            assert "ghcr.io/home-assistant/" in image, f"Base image for {arch} should use HA base images. Got: {image}"
 
 
 @pytest.mark.unit
@@ -219,12 +216,11 @@ class TestVersionRetrieval:
         version_line = next((line.strip() for line in lines if line.startswith("version:")), "")
         version = self._extract_version_from_line(version_line)
         assert len(version) > 0, "Version extraction should produce a non-empty string"
-        assert version != "None", f"Version extraction produced 'None' instead of a version"
+        assert version != "None", "Version extraction produced 'None' instead of a version"
 
     def test_version_matches_config(self):
         """Extracted version must match what's in config.yaml."""
-        with open(CONFIG_YAML, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         expected = str(config["version"])
 
         with open(CONFIG_YAML, "r", encoding="utf-8") as f:
@@ -245,8 +241,7 @@ class TestRepositoryYaml:
 
     def test_repository_yaml_valid(self):
         """repository.yaml must be valid YAML with required fields."""
-        with open(REPO_YAML, "r") as f:
-            repo = yaml.safe_load(f)
+        repo = _load_yaml_dict(REPO_YAML)
         assert isinstance(repo, dict), "repository.yaml should parse to a dict"
         assert "name" in repo, "repository.yaml must have 'name' field"
         assert "url" in repo, "repository.yaml must have 'url' field"
@@ -270,17 +265,17 @@ class TestBuildWorkflow:
         """Workflow should use home-assistant/builder action."""
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
-        assert "home-assistant/builder" in content, (
-            "Workflow should use home-assistant/builder action for HA compatibility"
-        )
+        assert (
+            "home-assistant/builder" in content
+        ), "Workflow should use home-assistant/builder action for HA compatibility"
 
     def test_workflow_targets_addon_dir(self):
         """Workflow must target ha_ai_workflow_addon directory."""
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
-        assert "--target ha_ai_workflow_addon" in content, (
-            "Workflow must use --target ha_ai_workflow_addon for the HA builder"
-        )
+        assert (
+            "--target ha_ai_workflow_addon" in content
+        ), "Workflow must use --target ha_ai_workflow_addon for the HA builder"
 
     def test_workflow_stages_files(self):
         """Workflow must stage files into the build context before building."""
@@ -292,16 +287,13 @@ class TestBuildWorkflow:
 
     def test_workflow_builds_declared_archs(self):
         """Workflow build architectures should match config.yaml."""
-        with open(CONFIG_YAML, "r") as f:
-            config = yaml.safe_load(f)
+        config = _load_yaml_dict(CONFIG_YAML)
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
         for arch in config.get("arch", []):
             # Match --arch as a standalone flag (word boundary via whitespace/newline)
             pattern = rf"--{re.escape(arch)}(\s|\\|$)"
-            assert re.search(pattern, content), (
-                f"Workflow should build for '{arch}' as declared in config.yaml"
-            )
+            assert re.search(pattern, content), f"Workflow should build for '{arch}' as declared in config.yaml"
 
 
 @pytest.mark.unit
@@ -339,23 +331,21 @@ class TestDockerfileBuildPerformance:
         """Dockerfile should use --prefer-binary to avoid compiling from source."""
         with open(DOCKERFILE, "r") as f:
             content = f.read()
-        assert "--prefer-binary" in content, (
-            "Dockerfile should use --prefer-binary for pip install to use pre-built wheels"
-        )
+        assert (
+            "--prefer-binary" in content
+        ), "Dockerfile should use --prefer-binary for pip install to use pre-built wheels"
 
     def test_dockerfile_has_progress_output(self):
         """Dockerfile pip install should show progress for user feedback."""
         with open(DOCKERFILE, "r") as f:
             content = f.read()
-        assert "--progress-bar" in content, (
-            "Dockerfile should enable pip progress bar for install feedback"
-        )
+        assert "--progress-bar" in content, "Dockerfile should enable pip progress bar for install feedback"
 
     def test_dockerfile_build_deps_conditional(self):
         """Build dependencies (gcc, cargo) should only be installed if wheel install fails."""
         with open(DOCKERFILE, "r") as f:
             content = f.read()
-        # Find the first RUN apk add block — it should contain only runtime deps
+        # Find the first RUN apk add block â€” it should contain only runtime deps
         lines = content.split("\n")
         in_first_apk = False
         first_apk_block = []
@@ -368,9 +358,9 @@ class TestDockerfileBuildPerformance:
                 if not stripped.endswith("\\"):
                     break
         first_apk_content = " ".join(first_apk_block)
-        assert "gcc" not in first_apk_content, (
-            "First apk add block should not include gcc (build dep) - it should be runtime deps only"
-        )
+        assert (
+            "gcc" not in first_apk_content
+        ), "First apk add block should not include gcc (build dep) - it should be runtime deps only"
 
     def test_requirements_no_rpds_py_pin(self):
         """requirements.txt should not pin rpds-py (unnecessary with modern Alpine)."""

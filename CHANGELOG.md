@@ -10,15 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.15] - 2026-02-08
 
 ### Changed
+
 - **Automated version bump** — Post-merge version increment to 1.0.15 for next release cycle
 
 ## [1.0.14] - 2026-02-08
 
 ### Fixed
+
 - **Token input in automated test script** — Changed `read -r -s` to `read -r` to enable copy-paste functionality during token input (PR #52)
 - **Test script logging** — Added comprehensive logging with timestamps, function tracing, command logging, and Python call tracking (PR #52)
 
 ### Added
+
 - **Function tracing in test script** — New `--trace` flag enables real-time function call visibility
 - **Detailed test execution logs** — All shell commands and Python script calls are now logged with timestamps
 - **CHANGELOG synchronization** — Added missing version entries from 1.0.7 to 1.0.14
@@ -26,16 +29,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.13] - 2026-02-08
 
 ### Changed
+
 - Version bump for testing and validation
 
 ## [1.0.12] - 2026-02-07
 
 ### Changed
+
 - Version bump for lessons learned integration
 
 ## [1.0.11] - 2026-02-07
 
 ### Changed
+
 - **Faster Docker builds** — Dockerfile now uses `--prefer-binary` to install pre-built musllinux wheels instead of compiling from source, reducing install time from ~20-30 minutes to ~2-3 minutes
 - **Build deps installed conditionally** — gcc, cargo, and other build tools are only installed if pre-built wheel installation fails, keeping the image smaller
 - **Upgraded base images** — Updated from `alpine3.18` / Python 3.11 to `alpine3.21` / Python 3.13 for better wheel compatibility and modern toolchain
@@ -43,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Install progress feedback** — pip install now shows progress bar (`--progress-bar on`) so users can see activity during long installs
 
 ### Added
+
 - **`.dockerignore` for build context** — Excludes `.git/`, `tests/`, `docs/`, and other non-runtime files from Docker build context, reducing build context size
 - **Build performance tests** — New test class `TestDockerfileBuildPerformance` validates Dockerfile optimization patterns
 - **`.dockerignore` tests** — New test class `TestDockerignore` validates required exclusion patterns
@@ -50,26 +57,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.10] - 2026-02-07
 
 ### Changed
+
 - Version bump for CI/CD pipeline improvements
 
 ## [1.0.9] - 2026-02-07
 
 ### Changed
+
 - Version bump for build optimization testing
 
 ## [1.0.8] - 2026-02-07
 
 ### Changed
+
 - Version bump for documentation updates
 
 ## [1.0.7] - 2026-02-06
 
 ### Changed
+
 - Version bump for workflow stabilization
 
 ## [1.0.6] - 2026-02-06
 
 ### Fixed
+
 - **Docker build not triggered on version bump** — Fixed `docker-build.yml` race condition where concurrent workflow runs could prevent the build from executing after PR merge (PR #46)
 - **Lessons learned pushing to wrong branch** — Fixed `lessons-learned.yml` to explicitly push to the PR target branch instead of detached HEAD, which was creating commits on unrelated branches like `v1.1b1` (PR #46)
 - **Workflow concurrency** — Added concurrency group to `docker-build.yml` to prevent race conditions between simultaneous pushes to main
@@ -77,11 +89,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.5] - 2026-02-06
 
 ### Fixed
+
 - **Docker build context alignment** — Dockerfile COPY paths now correctly reference addon-relative paths for HA builder compatibility (PR #40)
 - **Path resolution** — Replaced hardcoded `/config/ai_exports` with `os.path.abspath()` for non-container environments (PR #41)
 - **Export verifier** — Supports both v1.0 and v2.0 export formats with automatic version detection (PR #37)
 
 ### Added
+
 - **CI/CD caching** — Docker layer caching via `--self-cache` and pip cache for faster builds (PR #43)
 - **Lessons Learned Engine** — Automated self-learning improvement loop (`bin/lessons_learned.py`)
   - Analyzes PR diffs, test results, and lint output for patterns and anti-patterns
@@ -98,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Developer tooling** — Updated copilot-instructions.md with battle-tested lessons; added devcontainer (PR #42)
 
 ### Changed
+
 - Version bump to trigger Home Assistant Supervisor update detection
 
 ## [1.0.4] - 2026-02-06
@@ -105,16 +120,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **BREAKING CHANGE**: Removed support for 32-bit ARM (armv7) architectures
 
 ### Changed
+
 - **Dropped armv7 (32-bit) architecture support** - Home Assistant 2026.2.0+ only supports 64-bit systems
   - Supported architectures: amd64, aarch64 (64-bit only)
   - Users on 32-bit systems must migrate to 64-bit OS or remain on HA 2025.12 or earlier
 
 ### Fixed
+
 - Version synchronization across all add-on configuration files
 - Add-on update mechanism compatibility with Home Assistant 2026.2.0+
 - Ensures proper recognition and updates by Home Assistant Supervisor
 
 ### Security
+
 - **Updated cryptography package** from 41.0.0 to 42.0.4+ to fix critical vulnerabilities:
   - CVE-2024-0727: Bleichenbacher timing oracle attack
   - CVE-2024-26130: NULL pointer dereference in pkcs12.serialize_key_and_certificates
@@ -124,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-01-28
 
 ### Added
+
 - **Home Assistant Add-on** — Native installation via HA Supervisor with sidebar integration
 - **Streamlit Web GUI** — Full graphical interface for export/import workflow
 - **SUPERVISOR_TOKEN Authentication** — Secure API access for add-on operations
@@ -131,11 +150,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-architecture Support** — Builds for amd64, aarch64, and armv7
 
 ### Changed
+
 - Primary installation method is now Home Assistant Add-on
 - Simplified README focused on add-on usage
 - Cleaned up repository structure (removed redundant files)
 
 ### Removed
+
 - Windows PowerShell installer (deprecated in favor of add-on)
 - Redundant SSH documentation files
 - Duplicate README files
@@ -143,6 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0] - 2026-01-15
 
 ### Added
+
 - Complete pytest test suite for all Python modules
 - Pre-commit hooks for code quality
 - GitHub Actions CI/CD pipeline
@@ -151,6 +173,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive developer documentation
 
 ### Security
+
 - Bandit security scanning
 - Secrets detection in pre-commit hooks
 - Trivy vulnerability scanning in CI/CD
@@ -158,6 +181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-01-01
 
 ### Added
+
 - Initial release
 
 [1.0.0]: https://github.com/Balkonsen/HA_AI_Gen_Workflow/compare/v0.9.0...v1.0.0

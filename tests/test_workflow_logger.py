@@ -6,7 +6,6 @@ Unit tests for workflow_logger module.
 import os
 import sys
 import json
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -14,7 +13,12 @@ import pytest
 # Add bin directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 
-from workflow_logger import WorkflowLogger, LogLevel, configure_logger, get_logger
+from workflow_logger import (  # noqa: E402
+    WorkflowLogger,
+    LogLevel,
+    configure_logger,
+    get_logger,
+)
 
 
 @pytest.mark.unit
@@ -133,7 +137,7 @@ class TestWorkflowLogger:
 
         content = log_file.read_text(encoding="utf-8")
         lines = content.strip().split("\n")
-        
+
         # Parse first line as JSON
         log_entry = json.loads(lines[0])
         assert log_entry["level"] == "INFO"
@@ -167,7 +171,7 @@ class TestWorkflowLogger:
         # Re-read file to verify second entry
         with open(log_file, "r", encoding="utf-8") as f:
             lines = f.readlines()
-        
+
         # Check second line has correct context (only Context1 after pop)
         second_entry = json.loads(lines[1].strip())
         assert second_entry["context"] == ["Context1"]
@@ -187,7 +191,7 @@ class TestWorkflowLogger:
 
         logger.set_log_level(LogLevel.DEBUG)
         assert logger._should_log(LogLevel.DEBUG)
-        
+
         logger.debug("Should appear")
         content = log_file.read_text(encoding="utf-8")
         assert "Should appear" in content
@@ -215,7 +219,7 @@ class TestWorkflowLogger:
         """Test diagnostic report creation."""
         log_file = tmp_path / "test.log"
         report_file = tmp_path / "diagnostic.md"
-        
+
         logger = WorkflowLogger(
             log_level=LogLevel.INFO,
             log_file=str(log_file),
@@ -229,7 +233,7 @@ class TestWorkflowLogger:
 
         assert Path(report_path).exists()
         report_content = Path(report_path).read_text(encoding="utf-8")
-        
+
         assert "# Diagnostic Report" in report_content
         assert "## Configuration" in report_content
         assert "Log Level: INFO" in report_content
@@ -246,7 +250,7 @@ class TestWorkflowLogger:
 
         logger.banner("Test Banner")
         captured = capsys.readouterr()
-        
+
         assert "Test Banner" in captured.out
         assert "=" in captured.out
 
@@ -259,12 +263,13 @@ class TestGlobalLogger:
         """Test getting global logger instance."""
         # Reset global logger
         import workflow_logger
+
         workflow_logger._global_logger = None
-        
+
         # Set environment to use tmp_path
         log_dir = str(tmp_path)
         monkeypatch.setenv("HA_AI_LOG_DIR", log_dir)
-        
+
         logger = get_logger()
         assert isinstance(logger, WorkflowLogger)
 
@@ -275,7 +280,7 @@ class TestGlobalLogger:
     def test_configure_logger(self, tmp_path):
         """Test configuring global logger."""
         log_file = tmp_path / "global.log"
-        
+
         logger = configure_logger(
             log_level="DEBUG",
             log_file=str(log_file),
@@ -294,6 +299,7 @@ class TestGlobalLogger:
         """Test logger configuration from environment variables."""
         # Reset global logger
         import workflow_logger
+
         workflow_logger._global_logger = None
 
         log_dir = str(tmp_path)
@@ -301,7 +307,7 @@ class TestGlobalLogger:
         monkeypatch.setenv("HA_AI_LOG_LEVEL", "WARNING")
 
         logger = get_logger()
-        
+
         assert logger.log_level == LogLevel.WARNING
         assert logger.log_file == os.path.join(log_dir, "workflow.log")
 
@@ -342,7 +348,7 @@ class TestLoggerIntegration:
         )
 
         logger.info("Console only message")
-        
+
         captured = capsys.readouterr()
         assert "Console only message" in captured.out
 

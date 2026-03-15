@@ -12,7 +12,24 @@ import os
 import sys
 import json
 import tarfile
+import tempfile
 from pathlib import Path
+
+
+def _safe_extract_tar(tar: tarfile.TarFile, destination: str) -> None:
+    """Safely extract tar members and block path traversal/link attacks."""
+    destination_abs = os.path.abspath(destination)
+    safe_members = []
+    for member in tar.getmembers():
+        if member.issym() or member.islnk():
+            raise ValueError(f"Refusing to extract link member: {member.name}")
+        member_path = os.path.abspath(os.path.join(destination_abs, member.name))
+        if os.path.commonpath([destination_abs, member_path]) != destination_abs:
+            raise ValueError(f"Refusing to extract unsafe member path: {member.name}")
+        safe_members.append(member)
+
+    for member in safe_members:
+        tar.extract(member, destination_abs)
 
 
 class ExportVerifier:
@@ -32,7 +49,7 @@ class ExportVerifier:
                     metadata = json.load(f)
                 version = metadata.get("export_version", "1.0")
                 return version
-            except:
+            except (OSError, TypeError, ValueError, json.JSONDecodeError):
                 pass
 
         # Check for new format indicators
@@ -98,24 +115,28 @@ class ExportVerifier:
                 all_ids = entity_data.get("all_entity_ids", [])
                 domains = entity_data.get("entities_by_domain", {})
 
-                print(f"✓ Entity data exported successfully")
+                print("✓ Entity data exported successfully")
                 print(f"  Total entities: {total}")
                 print(f"  Entity IDs: {len(all_ids)}")
                 print(f"  Entity domains: {len(domains)}")
 
                 # Store stats
-                self.stats["entities"] = {"total": total, "domains": len(domains), "ids_count": len(all_ids)}
+                self.stats["entities"] = {
+                    "total": total,
+                    "domains": len(domains),
+                    "ids_count": len(all_ids),
+                }
 
                 # Show domain breakdown
                 if domains:
-                    print(f"\n  Entity breakdown:")
+                    print("\n  Entity breakdown:")
                     # Sort by count (domains might be dict of counts or dict of lists)
                     sorted_domains = []
                     for domain, value in domains.items():
                         count = (
                             value
                             if isinstance(value, int)
-                            else len(value) if isinstance(value, list) else value.get("count", 0)
+                            else (len(value) if isinstance(value, list) else value.get("count", 0))
                         )
                         sorted_domains.append((domain, count))
                     sorted_domains.sort(key=lambda x: x[1], reverse=True)
@@ -147,7 +168,7 @@ class ExportVerifier:
             domains = len(entity_data.get("entities_by_domain", {}))
             platforms = len(entity_data.get("entities_by_platform", {}))
 
-            print(f"✓ Entity registry exported successfully")
+            print("✓ Entity registry exported successfully")
             print(f"  Total entities: {total}")
             print(f"  Active entities: {active}")
             print(f"  Disabled entities: {len(entity_data.get('disabled_entities', []))}")
@@ -155,13 +176,25 @@ class ExportVerifier:
             print(f"  Platforms: {platforms}")
 
             # Store stats
-            self.stats["entities"] = {"total": total, "active": active, "domains": domains, "platforms": platforms}
+            self.stats["entities"] = {
+                "total": total,
+                "active": active,
+                "domains": domains,
+                "platforms": platforms,
+            }
 
             # Check for common entity types
             entities_by_domain = entity_data.get("entities_by_domain", {})
-            common_domains = ["light", "switch", "sensor", "binary_sensor", "automation", "script"]
+            common_domains = [
+                "light",
+                "switch",
+                "sensor",
+                "binary_sensor",
+                "automation",
+                "script",
+            ]
 
-            print(f"\n  Entity breakdown:")
+            print("\n  Entity breakdown:")
             for domain in common_domains:
                 count = len(entities_by_domain.get(domain, []))
                 if count > 0:
@@ -170,7 +203,7 @@ class ExportVerifier:
             # Show top 5 domains
             top_domains = sorted(entities_by_domain.items(), key=lambda x: len(x[1]), reverse=True)[:5]
             if top_domains:
-                print(f"\n  Top 5 entity types:")
+                print("\n  Top 5 entity types:")
                 for domain, entities in top_domains:
                     print(f"    - {domain}: {len(entities)} entities")
 
@@ -205,20 +238,24 @@ class ExportVerifier:
             manufacturers = len(device_data.get("devices_by_manufacturer", {}))
             integrations = len(device_data.get("devices_by_integration", {}))
 
-            print(f"✓ Device registry exported successfully")
+            print("✓ Device registry exported successfully")
             print(f"  Total devices: {total}")
             print(f"  Manufacturers: {manufacturers}")
             print(f"  Integrations: {integrations}")
 
             # Store stats
-            self.stats["devices"] = {"total": total, "manufacturers": manufacturers, "integrations": integrations}
+            self.stats["devices"] = {
+                "total": total,
+                "manufacturers": manufacturers,
+                "integrations": integrations,
+            }
 
             # Show top manufacturers
             by_manufacturer = device_data.get("devices_by_manufacturer", {})
             top_manufacturers = sorted(by_manufacturer.items(), key=lambda x: x[1], reverse=True)[:5]
 
             if top_manufacturers:
-                print(f"\n  Top 5 manufacturers:")
+                print("\n  Top 5 manufacturers:")
                 for mfr, count in top_manufacturers:
                     print(f"    - {mfr}: {count} devices")
 
@@ -252,7 +289,10 @@ class ExportVerifier:
                     context_size = os.path.getsize(context_file)
                     print(f"✓ ha_context.md exists ({context_size} bytes)")
 
-                self.stats["config_files"] = {"yaml": 1, "has_context": os.path.exists(context_file)}
+                self.stats["config_files"] = {
+                    "yaml": 1,
+                    "has_context": os.path.exists(context_file),
+                }
                 return True
             except Exception as e:
                 print(f"✗ Error checking config files: {e}")
@@ -326,7 +366,7 @@ class ExportVerifier:
             total_secrets = secrets_data.get("total_secrets", 0)
             secrets = secrets_data.get("secrets", {})
 
-            print(f"✓ Secrets mapping exported")
+            print("✓ Secrets mapping exported")
             print(f"  Total secrets replaced: {total_secrets}")
 
             # Count by type
@@ -336,7 +376,7 @@ class ExportVerifier:
                 secret_types[stype] = secret_types.get(stype, 0) + 1
 
             if secret_types:
-                print(f"\n  Secret types:")
+                print("\n  Secret types:")
                 for stype, count in sorted(secret_types.items(), key=lambda x: x[1], reverse=True):
                     print(f"    - {stype}: {count}")
 
@@ -371,11 +411,11 @@ class ExportVerifier:
 
             installed = addon_data.get("installed_addons", [])
 
-            print(f"✓ Add-on configurations exported")
+            print("✓ Add-on configurations exported")
             print(f"  Total add-ons: {len(installed)}")
 
             if installed:
-                print(f"\n  Installed add-ons:")
+                print("\n  Installed add-ons:")
                 for addon in installed[:10]:
                     name = addon.get("name", "Unknown")
                     version = addon.get("version", "?")
@@ -417,18 +457,21 @@ class ExportVerifier:
             configured = integ_data.get("configured_integrations", [])
             custom = integ_data.get("custom_components", [])
 
-            print(f"✓ Integrations exported")
+            print("✓ Integrations exported")
             print(f"  Configured integrations: {len(configured)}")
             print(f"  Custom components: {len(custom)}")
 
             if configured:
-                print(f"\n  Sample integrations:")
+                print("\n  Sample integrations:")
                 for integ in configured[:10]:
                     domain = integ.get("domain", "unknown")
                     title = integ.get("title", domain)
                     print(f"    - {title} ({domain})")
 
-            self.stats["integrations"] = {"configured": len(configured), "custom": len(custom)}
+            self.stats["integrations"] = {
+                "configured": len(configured),
+                "custom": len(custom),
+            }
 
             return True
 
@@ -444,7 +487,7 @@ class ExportVerifier:
         print("=" * 70)
 
         print(f"\nℹ Export Format: v{self.export_version}")
-        print(f"\n📊 Export Statistics:")
+        print("\n📊 Export Statistics:")
         if "entities" in self.stats:
             if "active" in self.stats["entities"]:
                 print(f"  Entities: {self.stats['entities']['total']} ({self.stats['entities']['active']} active)")
@@ -460,7 +503,8 @@ class ExportVerifier:
         if "config_files" in self.stats:
             if "json" in self.stats["config_files"]:
                 print(
-                    f"  Config Files: {self.stats['config_files']['yaml']} YAML, {self.stats['config_files']['json']} JSON"
+                    "  Config Files: "
+                    f"{self.stats['config_files']['yaml']} YAML, {self.stats['config_files']['json']} JSON"
                 )
             else:
                 print(f"  Config Files: {self.stats['config_files']['yaml']} YAML")
@@ -472,7 +516,7 @@ class ExportVerifier:
             for issue in self.issues:
                 print(f"  - {issue}")
         else:
-            print(f"\n✅ No critical issues found")
+            print("\n✅ No critical issues found")
 
         if self.warnings:
             print(f"\n⚠️  Warnings: {len(self.warnings)}")
@@ -505,15 +549,13 @@ class ExportVerifier:
         print(f"\nVerifying: {self.export_path}")
         print(f"Export Format: v{self.export_version}")
 
-        checks = [
-            self.verify_structure(),
-            self.verify_entities(),
-            self.verify_devices(),
-            self.verify_config_files(),
-            self.verify_integrations(),
-            self.verify_secrets(),
-            self.verify_addons(),
-        ]
+        self.verify_structure()
+        self.verify_entities()
+        self.verify_devices()
+        self.verify_config_files()
+        self.verify_integrations()
+        self.verify_secrets()
+        self.verify_addons()
 
         report = self.generate_report()
         return report.get("success", False)
@@ -532,12 +574,12 @@ def main():
     # Check if it's a tarball
     if export_path.endswith(".tar.gz") or export_path.endswith(".tgz"):
         print("Extracting tarball...")
-        extract_dir = "/tmp/ha_verify_temp"
+        extract_dir = os.path.join(tempfile.gettempdir(), "ha_verify_temp")
         os.makedirs(extract_dir, exist_ok=True)
 
         try:
             with tarfile.open(export_path, "r:gz") as tar:
-                tar.extractall(extract_dir)
+                _safe_extract_tar(tar, extract_dir)
 
             # Find extracted directory
             extracted_dirs = [d for d in os.listdir(extract_dir) if os.path.isdir(os.path.join(extract_dir, d))]

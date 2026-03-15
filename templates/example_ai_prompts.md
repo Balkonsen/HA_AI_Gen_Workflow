@@ -102,7 +102,7 @@ ha-ai-workflow import
 
 ```markdown
 Looking at my setup:
-- Entities: sensor.bedroom_temperature, light.bedroom_ceiling, 
+- Entities: sensor.bedroom_temperature, light.bedroom_ceiling,
   switch.coffee_maker, cover.bedroom_blinds, media_player.bedroom_speaker
 - Person: person.john
 
@@ -165,19 +165,19 @@ automation:
                 kelvin: "{{ 2700 + (repeat.index * 100) }}"
             - delay:
                 seconds: 60
-      
+
       # Step 2: Open blinds halfway
       - service: cover.set_cover_position
         target:
           entity_id: cover.bedroom_blinds
         data:
           position: 50
-      
+
       # Step 3: Start coffee maker
       - service: switch.turn_on
         target:
           entity_id: switch.coffee_maker
-      
+
       # Step 4: Wait 30 seconds then play news
       - delay:
           seconds: 30
@@ -192,7 +192,7 @@ automation:
           entity_id: media_player.bedroom_speaker
         data:
           volume_level: 0.3
-      
+
       # Step 5: Adjust climate
       - service: climate.set_temperature
         target:
@@ -200,7 +200,7 @@ automation:
         data:
           temperature: 72
           hvac_mode: heat_cool
-      
+
       # Step 6: Send notification
       - service: notify.mobile_app
         data:
@@ -260,7 +260,7 @@ template:
         state: >
           {{ (states('sensor.total_home_power') | float * 24 * 0.15) | round(2) }}
         icon: mdi:currency-usd
-      
+
       - name: "Top Power Consumer"
         unique_id: top_power_consumer
         state: >
@@ -294,7 +294,7 @@ views:
           yellow: 2000
           red: 3500
         needle: true
-      
+
       # Daily Cost Card
       - type: entities
         title: 💰 Energy Costs
@@ -315,7 +315,7 @@ views:
                 color: '#FFC107'
               - value: 3500
                 color: '#F44336'
-      
+
       # Room Breakdown
       - type: horizontal-stack
         cards:
@@ -329,7 +329,7 @@ views:
               green: 0
               yellow: 800
               red: 1200
-          
+
           - type: gauge
             entity: sensor.living_room_power
             name: Living Room
@@ -340,7 +340,7 @@ views:
               green: 0
               yellow: 800
               red: 1200
-      
+
       - type: horizontal-stack
         cards:
           - type: gauge
@@ -353,7 +353,7 @@ views:
               green: 0
               yellow: 500
               red: 800
-          
+
           - type: gauge
             entity: sensor.office_power
             name: Office
@@ -364,7 +364,7 @@ views:
               green: 0
               yellow: 500
               red: 800
-      
+
       # Historical Graph - 24 Hours
       - type: history-graph
         title: Power Usage - Last 24 Hours
@@ -381,17 +381,17 @@ views:
             name: Bedroom
           - entity: sensor.office_power
             name: Office
-      
+
       # Top Consumer
       - type: markdown
         content: >
           ## 🏆 Current Top Consumer
-          
+
           **{{ states('sensor.top_power_consumer') }}**
-          
+
           Using **{{ states('sensor.' ~ states('sensor.top_power_consumer').lower().replace(' ', '_') ~ '_power') }}W**
         title: Top Power Consumer
-      
+
       # Statistics Card
       - type: entities
         title: 📊 Statistics
@@ -405,25 +405,25 @@ views:
               - entity: sensor.total_home_power
                 name: Avg (1h)
                 attribute: mean
-          
+
           - entity: sensor.daily_energy_cost
             name: Est. Daily Cost
-          
+
           - type: section
             label: By Room
-          
+
           - entity: sensor.kitchen_power
             name: Kitchen
             secondary_info: last-changed
-          
+
           - entity: sensor.living_room_power
             name: Living Room
             secondary_info: last-changed
-          
+
           - entity: sensor.bedroom_power
             name: Bedroom
             secondary_info: last-changed
-          
+
           - entity: sensor.office_power
             name: Office
             secondary_info: last-changed
@@ -484,7 +484,7 @@ input_number:
     unit_of_measurement: "°F"
     icon: mdi:thermometer
     initial: 72
-  
+
   target_temp_night:
     name: "Target Temperature (Night)"
     min: 60
@@ -493,7 +493,7 @@ input_number:
     unit_of_measurement: "°F"
     icon: mdi:thermometer
     initial: 68
-  
+
   target_temp_away:
     name: "Target Temperature (Away)"
     min: 55
@@ -517,17 +517,17 @@ template:
         device_class: occupancy
         state: >
           {{ is_state('person.john', 'home') }}
-      
+
       - name: "Is Nighttime"
         unique_id: is_nighttime
         state: >
           {{ now().hour >= 22 or now().hour < 6 }}
-      
+
       - name: "Is Summer"
         unique_id: is_summer
         state: >
           {{ now().month in [6, 7, 8, 9] }}
-  
+
   - sensor:
       - name: "Target Temperature"
         unique_id: target_temperature
@@ -555,7 +555,7 @@ automation:
       # Trigger on presence changes
       - platform: state
         entity_id: person.john
-        to: 
+        to:
           - 'home'
           - 'not_home'
         for:
@@ -588,7 +588,7 @@ automation:
                 auto
               {% endif %}
             {% endif %}
-      
+
       # Set bedroom climate
       - service: climate.set_temperature
         target:
@@ -596,7 +596,7 @@ automation:
         data:
           temperature: "{{ target_temp }}"
           hvac_mode: "{{ hvac_mode }}"
-      
+
       # Set living room climate
       - service: climate.set_temperature
         target:
@@ -604,7 +604,7 @@ automation:
         data:
           temperature: "{{ target_temp }}"
           hvac_mode: "{{ hvac_mode }}"
-  
+
   # Pre-arrival climate adjustment
   - id: '1705234567893'
     alias: "Smart Climate - Pre-Arrival"
@@ -632,12 +632,12 @@ automation:
         data:
           temperature: "{{ states('input_number.target_temp_day') }}"
           hvac_mode: "{{ 'cool' if is_state('binary_sensor.is_summer', 'on') else 'heat' }}"
-      
+
       - service: notify.mobile_app
         data:
           message: "Welcome home! Pre-heating/cooling your home."
           title: "🏠 Climate Control"
-  
+
   # Energy-saving eco mode
   - id: '1705234567894'
     alias: "Smart Climate - Eco Mode"
@@ -662,7 +662,7 @@ automation:
         data:
           temperature: "{{ states('input_number.target_temp_away') }}"
           hvac_mode: "auto"
-      
+
       - service: climate.set_preset_mode
         target:
           entity_id:
@@ -727,7 +727,7 @@ input_boolean:
     name: "Security Notifications"
     icon: mdi:bell-ring
     initial: true
-  
+
   security_camera_snapshots:
     name: "Camera Snapshots on Motion"
     icon: mdi:camera
@@ -754,12 +754,12 @@ automation:
       - service: alarm_control_panel.alarm_arm_away
         target:
           entity_id: alarm_control_panel.home_security
-      
+
       - service: notify.mobile_app
         data:
           message: "Security system armed (Away mode)"
           title: "🔒 Security System"
-  
+
   # Auto-disarm when arriving
   - id: '1705234567896'
     alias: "Security - Auto Disarm on Arrival"
@@ -785,7 +785,7 @@ automation:
             actions:
               - action: "DISARM_SECURITY"
                 title: "Disarm Now"
-  
+
   # Door/window breach detection
   - id: '1705234567897'
     alias: "Security - Breach Detection"
@@ -822,17 +822,17 @@ automation:
                 entity_id: all
             - delay:
                 milliseconds: 500
-      
+
       # Trigger alarm
       - service: alarm_control_panel.alarm_trigger
         target:
           entity_id: alarm_control_panel.home_security
-      
+
       # Send notification
       - condition: state
         entity_id: input_boolean.security_notifications
         state: 'on'
-      
+
       - service: notify.mobile_app
         data:
           message: "⚠️ SECURITY BREACH: {{ trigger.to_state.attributes.friendly_name }}"
@@ -845,7 +845,7 @@ automation:
                 title: "View Camera"
               - action: "DISARM_SECURITY"
                 title: "Disarm"
-  
+
   # Motion detection with camera snapshot
   - id: '1705234567898'
     alias: "Security - Motion Camera Snapshot"
@@ -872,14 +872,14 @@ automation:
           entity_id: camera.front_door
         data:
           filename: "/config/www/snapshots/security_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
-      
+
       - service: notify.mobile_app
         data:
           message: "Motion detected: {{ trigger.to_state.attributes.friendly_name }}"
           title: "🎥 Security Camera"
           data:
             image: "/local/snapshots/security_{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg"
-  
+
   # Night mode activation
   - id: '1705234567899'
     alias: "Security - Auto Night Mode"
@@ -899,7 +899,7 @@ automation:
       - service: alarm_control_panel.alarm_arm_night
         target:
           entity_id: alarm_control_panel.home_security
-      
+
       - service: notify.mobile_app
         data:
           message: "Security system armed (Night mode)"
@@ -935,23 +935,23 @@ template:
       - name: "Lights On Count"
         unique_id: lights_on_count
         state: >
-          {{ states.light 
-             | selectattr('state', 'eq', 'on') 
+          {{ states.light
+             | selectattr('state', 'eq', 'on')
              | list | count }}
         icon: mdi:lightbulb-on
         unit_of_measurement: "lights"
-      
+
       # Count doors/windows open
       - name: "Open Doors Windows"
         unique_id: open_doors_windows
         state: >
-          {{ states.binary_sensor 
-             | selectattr('attributes.device_class', 'eq', 'door') 
-             | selectattr('state', 'eq', 'on') 
-             | list | count 
-             + states.binary_sensor 
-             | selectattr('attributes.device_class', 'eq', 'window') 
-             | selectattr('state', 'eq', 'on') 
+          {{ states.binary_sensor
+             | selectattr('attributes.device_class', 'eq', 'door')
+             | selectattr('state', 'eq', 'on')
+             | list | count
+             + states.binary_sensor
+             | selectattr('attributes.device_class', 'eq', 'window')
+             | selectattr('state', 'eq', 'on')
              | list | count }}
         icon: >
           {% if this.state | int > 0 %}
@@ -960,7 +960,7 @@ template:
             mdi:door-closed
           {% endif %}
         unit_of_measurement: "open"
-      
+
       # Average indoor temperature
       - name: "Average Indoor Temperature"
         unique_id: avg_indoor_temp
@@ -974,7 +974,7 @@ template:
         unit_of_measurement: "°F"
         icon: mdi:thermometer
         device_class: temperature
-      
+
       # Power usage status
       - name: "Power Usage Status"
         unique_id: power_usage_status
@@ -998,7 +998,7 @@ template:
           {% else %}
             mdi:gauge-full
           {% endif %}
-      
+
       # Time until next sunrise
       - name: "Time Until Sunrise"
         unique_id: time_until_sunrise
@@ -1014,7 +1014,7 @@ template:
             Sunrise has passed
           {% endif %}
         icon: mdi:weather-sunset-up
-      
+
       # Time until next sunset
       - name: "Time Until Sunset"
         unique_id: time_until_sunset
@@ -1030,5 +1030,3 @@ template:
             Sunset has passed
           {% endif %}
         icon: mdi:weather-sunset-down
-      
-      

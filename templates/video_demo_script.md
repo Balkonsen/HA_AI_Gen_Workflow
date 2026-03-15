@@ -3,9 +3,13 @@
 ## Video Series Structure
 
 ### Video 1: Introduction & Installation (5-7 minutes)
+
 ### Video 2: First Export & AI Context (8-10 minutes)
+
 ### Video 3: Working with AI Assistants (10-12 minutes)
+
 ### Video 4: Import & Deployment (8-10 minutes)
+
 ### Video 5: Advanced Features & Troubleshooting (10-12 minutes)
 
 ---
@@ -16,7 +20,7 @@
 
 **[Screen: Home Assistant dashboard with complex automations]**
 
-**Narrator:** 
+**Narrator:**
 "Imagine building complex Home Assistant automations, dashboards, and integrations with the help of AI - while keeping complete control through git versioning and never exposing your passwords or personal data."
 
 **[Screen: Quick montage of export → AI conversation → import → working automation]**
@@ -94,6 +98,7 @@ sudo ./setup.sh
 
 **Narrator:**
 "The setup script will:
+
 - Check all dependencies
 - Install PyYAML automatically
 - Set up the directory structure
@@ -120,6 +125,7 @@ ha-ai-workflow --help
 
 **Narrator:**
 "Great! You now have:
+
 - ✓ HA AI Workflow installed
 - ✓ Command-line tool ready
 - ✓ Git repository initialized
@@ -217,6 +223,7 @@ ls -la
 **[Open AI_PROMPT.md in editor]**
 
 "Look at this AI prompt. It contains:
+
 - Total entity count
 - Device breakdown by manufacturer
 - Integration categories
@@ -249,6 +256,7 @@ cat config/configuration.yaml
 **[Show placeholders]**
 
 "See? All sensitive data replaced with placeholders:
+
 - password: 'mysecret' → <<PASSWORD_1>>
 - latitude: 40.7128 → <<LATITUDE_1>>
 - ip: 192.168.1.1 → <<IP_ADDRESS_1>>
@@ -271,6 +279,7 @@ ls /config/ai_exports/secrets/
 
 **Narrator:**
 "Excellent! You now have:
+
 - ✓ Complete configuration export
 - ✓ AI-ready prompt
 - ✓ Secrets safely backed up
@@ -285,7 +294,7 @@ Next video: We'll take this AI_PROMPT.md and create our first automation with an
 ### Scene 1: Introduction (30 seconds)
 
 **Narrator:**
-"Now for the fun part - let's use AI to create a smart automation! 
+"Now for the fun part - let's use AI to create a smart automation!
 
 I'll show you how to safely share your configuration context and get professional-quality automations back."
 
@@ -314,6 +323,7 @@ scp root@homeassistant.local:/config/ai_exports/safe_for_ai.tar.gz .
 **[Show download]**
 
 "Extract it and you'll have:
+
 - AI_PROMPT.md ✓ Safe to share
 - AI_CONTEXT.json ✓ Safe to share
 - config/ directory ✓ Safe to share
@@ -361,6 +371,7 @@ Please create an automation that:
 **[Scroll through YAML]**
 
 "The AI has created:
+
 - ✓ Proper automation structure
 - ✓ Unique ID
 - ✓ Mode specification
@@ -374,6 +385,7 @@ This is production-ready code! Notice how it used my actual entity names from th
 **[Highlight specific lines]**
 
 "The AI even added helpful comments and used best practices like:
+
 - Template-based brightness
 - Wait for trigger pattern
 - Transition effects
@@ -416,6 +428,7 @@ This would take me 30 minutes to write manually. The AI did it in seconds."
 "Quick tips for working with AI:
 
 **DO:**
+
 - ✓ Include your AI_CONTEXT.json
 - ✓ Be specific about desired behavior
 - ✓ Mention all relevant entity names
@@ -423,6 +436,7 @@ This would take me 30 minutes to write manually. The AI did it in seconds."
 - ✓ Request multiple variations
 
 **DON'T:**
+
 - ✗ Share the secrets directory
 - ✗ Be vague ('make it better')
 - ✗ Blindly trust everything
@@ -500,26 +514,32 @@ ha-ai-workflow import
 "Watch each step:
 
 **Step 1**: Scanning import directory
+
 - Found 1 file: motion_lighting.yaml ✓
 
 **Step 2**: Pre-import validation
+
 - Checking YAML syntax ✓
 - No errors found ✓
 
 **Step 3**: Branch creation
+
 - Enter branch name: 'feature/motion-lighting'
 - Branch created ✓
 
 **Step 4**: Importing files
+
 - Restoring secrets from backup ✓
 - Processing motion_lighting.yaml ✓
 - Files imported ✓
 
 **Step 5**: Configuration validation
+
 - Running Home Assistant config check...
 - Configuration valid ✓
 
 **Step 6**: Git merge
+
 - Merging feature/motion-lighting into main ✓
 - Changes committed ✓"
 
@@ -580,6 +600,7 @@ Click to view details..."
 **[Show automation details]**
 
 "Perfect! All our logic is there:
+
 - Motion trigger ✓
 - Sunset condition ✓
 - Time-based brightness ✓
@@ -623,6 +644,7 @@ git log --oneline --graph
 **[Show commit history]**
 
 "See the full version control:
+
 - Initial commit
 - Export snapshot
 - AI Import: feature/motion-lighting
@@ -643,8 +665,9 @@ ha core restart
 
 **Narrator:**
 "Congratulations! You've completed the full cycle:
+
 - ✓ Exported configuration
-- ✓ Generated AI context  
+- ✓ Generated AI context
 - ✓ Created automation with AI
 - ✓ Imported safely
 - ✓ Deployed with version control
@@ -678,6 +701,7 @@ ha-ai-workflow import --auto
 **[Show execution]**
 
 "Perfect for:
+
 - Scheduled backups
 - CI/CD pipelines
 - Bulk imports
@@ -696,6 +720,7 @@ ha-ai-workflow status
 **[Show status output]**
 
 "This shows:
+
 - Current branch
 - Recent exports
 - Pending imports
@@ -798,6 +823,7 @@ ha core restart
 
 **Narrator:**
 "Planned features:
+
 - Web UI for workflow management
 - Pre-built automation templates
 - Community automation library
@@ -814,6 +840,7 @@ ha core restart
 "You now have a complete AI-powered workflow for Home Assistant!
 
 This system gives you:
+
 - Professional automations in minutes
 - Complete version control
 - Full security and privacy
@@ -830,12 +857,14 @@ The future of home automation is here, and it's powered by AI + version control!
 
 **Narrator:**
 "Links in description:
+
 - GitHub repository
 - Full documentation
 - Community discussions
 - Example configurations
 
 Don't forget to:
+
 - ⭐ Star the repo on GitHub
 - 👍 Like this video
 - 🔔 Subscribe for updates
@@ -848,12 +877,14 @@ Thanks for watching! Happy automating!"
 ## Production Notes
 
 ### Recording Setup
+
 - **Screen Resolution**: 1920x1080
 - **Terminal Theme**: Dark theme with good contrast
 - **Font Size**: 14-16pt for readability
 - **Cursor**: Highlight cursor for visibility
 
 ### Editing Tips
+
 - Add subtle background music
 - Use zoom effects for important details
 - Include text overlays for key points
@@ -861,12 +892,14 @@ Thanks for watching! Happy automating!"
 - Include time-stamped links in description
 
 ### Thumbnail Ideas
+
 - Split screen: Before/After
 - "AI + Home Assistant" visual
 - Success checkmark with code
 - Eye-catching color scheme
 
 ### YouTube Description Template
+
 ```
 Transform your Home Assistant with AI assistance! 🤖🏠
 

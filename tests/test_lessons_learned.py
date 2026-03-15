@@ -339,7 +339,7 @@ bin/bar.py:5:1: E303 too many blank lines (3)
         lint_output = """
 would reformat bin/foo.py
 would reformat bin/bar.py
-Oh no! 💥 💔 💥
+Oh no! ðŸ’¥ ðŸ’” ðŸ’¥
 2 files would be reformatted.
 """
         analyzer = PRAnalyzer(str(tmp_path))
@@ -351,7 +351,7 @@ Oh no! 💥 💔 💥
     def test_analyze_lint_results_clean(self, tmp_path):
         """Test that clean lint output produces no lessons."""
         lint_output = """
-All done! ✨ 🍰 ✨
+All done! âœ¨ ðŸ° âœ¨
 42 files left unchanged.
 """
         analyzer = PRAnalyzer(str(tmp_path))

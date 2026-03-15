@@ -59,7 +59,11 @@ class WorkflowConfig:
             "check_entity_ids": True,
             "run_ha_check": False,
         },
-        "vscode": {"notifications": True, "auto_open_files": True, "use_integrated_terminal": True},
+        "vscode": {
+            "notifications": True,
+            "auto_open_files": True,
+            "use_integrated_terminal": True,
+        },
     }
 
     CONFIG_LOCATIONS = [
@@ -99,6 +103,8 @@ class WorkflowConfig:
             try:
                 with open(config_file, "r") as f:
                     user_config = yaml.safe_load(f) or {}
+                if not isinstance(user_config, dict):
+                    user_config = {}
                 config = self._deep_merge(config, user_config)
                 self.config_path = config_file
                 print(f"✓ Configuration loaded from: {config_file}")
@@ -222,7 +228,7 @@ class WorkflowConfig:
         print("Workflow Configuration Summary")
         print("=" * 60)
 
-        print(f"\n📡 SSH Connection:")
+        print("\n📡 SSH Connection:")
         if self.get("ssh.enabled"):
             print(f"   Host: {self.get('ssh.user')}@{self.get('ssh.host')}:{self.get('ssh.port')}")
             print(f"   Auth: {self.get('ssh.auth_method')}")
@@ -230,13 +236,13 @@ class WorkflowConfig:
         else:
             print("   Disabled (local mode)")
 
-        print(f"\n📁 Paths:")
+        print("\n📁 Paths:")
         print(f"   Export: {self.get('paths.export_dir')}")
         print(f"   Import: {self.get('paths.import_dir')}")
         print(f"   Secrets: {self.get('paths.secrets_dir')}")
         print(f"   Backups: {self.get('paths.backup_dir')}")
 
-        print(f"\n🔐 Secrets:")
+        print("\n🔐 Secrets:")
         print(f"   Encryption: {self.get('secrets.encryption_method')}")
         print(f"   Label Prefix: {self.get('secrets.label_prefix')}")
         print(f"   Auto-restore: {self.get('secrets.auto_restore')}")

@@ -9,10 +9,24 @@ import sys
 import json
 import tarfile
 import shutil
-import re
-from pathlib import Path
+import tempfile
 from datetime import datetime
-import subprocess
+
+
+def _safe_extract_tar(tar: tarfile.TarFile, destination: str) -> None:
+    """Safely extract tar members and block path traversal/link attacks."""
+    destination_abs = os.path.abspath(destination)
+    safe_members = []
+    for member in tar.getmembers():
+        if member.issym() or member.islnk():
+            raise ValueError(f"Refusing to extract link member: {member.name}")
+        member_path = os.path.abspath(os.path.join(destination_abs, member.name))
+        if os.path.commonpath([destination_abs, member_path]) != destination_abs:
+            raise ValueError(f"Refusing to extract unsafe member path: {member.name}")
+        safe_members.append(member)
+
+    for member in safe_members:
+        tar.extract(member, destination_abs)
 
 
 class HAConfigImporter:
@@ -70,7 +84,15 @@ class HAConfigImporter:
             shutil.copytree(
                 "/config",
                 self.config_backup_path,
-                ignore=shutil.ignore_patterns("*.db", "*.db-wal", "*.db-shm", "*.log", "deps", "tts", "__pycache__"),
+                ignore=shutil.ignore_patterns(
+                    "*.db",
+                    "*.db-wal",
+                    "*.db-shm",
+                    "*.log",
+                    "deps",
+                    "tts",
+                    "__pycache__",
+                ),
             )
             print(f"✓ Backup created at {self.config_backup_path}")
             return True
@@ -168,7 +190,7 @@ class HAConfigImporter:
                     secret_types.add(secret_type)
 
             if secret_types:
-                print(f"\nSecret types restored:")
+                print("\nSecret types restored:")
                 for stype in sorted(secret_types):
                     count = len([c for c in self.changes_log if stype in c])
                     print(f"  - {stype}: {count}")
@@ -302,15 +324,15 @@ If you need to rollback:
 
 def extract_tarball(tarball_path):
     """Extract tarball and return path to extracted directory"""
-    print(f"\n=== Extracting Tarball ===")
+    print("\n=== Extracting Tarball ===")
     print(f"Source: {tarball_path}")
 
-    extract_dir = "/tmp/ha_import_temp"
+    extract_dir = os.path.join(tempfile.gettempdir(), "ha_import_temp")
     os.makedirs(extract_dir, exist_ok=True)
 
     try:
         with tarfile.open(tarball_path, "r:gz") as tar:
-            tar.extractall(extract_dir)
+            _safe_extract_tar(tar, extract_dir)
 
         # Find the extracted directory
         extracted_dirs = [d for d in os.listdir(extract_dir) if os.path.isdir(os.path.join(extract_dir, d))]
@@ -336,10 +358,10 @@ def main():
 Examples:
   # Dry run (preview changes)
   %(prog)s /path/to/export secrets_map.json
-  
+
   # Actually apply changes
   %(prog)s --apply /path/to/export secrets_map.json
-  
+
   # Import from tarball
   %(prog)s --apply /path/to/export.tar.gz secrets_map.json
         """,
@@ -347,8 +369,16 @@ Examples:
 
     parser.add_argument("import_path", help="Path to extracted export directory or tarball")
     parser.add_argument("secrets_file", help="Path to secrets_map.json file")
-    parser.add_argument("--apply", action="store_true", help="Actually apply changes (default is dry run)")
-    parser.add_argument("--no-backup", action="store_true", help="Skip backup creation (not recommended)")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Actually apply changes (default is dry run)",
+    )
+    parser.add_argument(
+        "--no-backup",
+        action="store_true",
+        help="Skip backup creation (not recommended)",
+    )
 
     args = parser.parse_args()
 

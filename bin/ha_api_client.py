@@ -117,7 +117,10 @@ class HomeAssistantAPI:
                 elif status == 403:
                     _LOGGER.error("API access forbidden (403): Token may lack required permissions")
                 elif status == 404:
-                    _LOGGER.error("API endpoint not found (404): %s - Check Home Assistant version", url)
+                    _LOGGER.error(
+                        "API endpoint not found (404): %s - Check Home Assistant version",
+                        url,
+                    )
                 else:
                     _LOGGER.error("API request failed with status %d: %s - %s", status, url, err)
             else:
@@ -156,7 +159,8 @@ class HomeAssistantAPI:
 
     def get_states(self) -> list[dict[str, Any]] | None:
         """Get all entity states."""
-        return self._request("GET", f"{self._api_url}/states")
+        result = self._request("GET", f"{self._api_url}/states")
+        return result if isinstance(result, list) else None
 
     def get_state(self, entity_id: str) -> dict[str, Any] | None:
         """Get state of a specific entity."""
@@ -240,9 +244,15 @@ class HomeAssistantAPI:
                     "  3. Update via GUI Configuration or set SUPERVISOR_TOKEN environment variable"
                 )
             elif response.status_code == 403:
-                return False, "❌ Access forbidden (403) - Token may lack required permissions"
+                return (
+                    False,
+                    "❌ Access forbidden (403) - Token may lack required permissions",
+                )
             elif response.status_code == 404:
-                return False, "❌ API endpoint not found (404) - Check Home Assistant version compatibility"
+                return (
+                    False,
+                    "❌ API endpoint not found (404) - Check Home Assistant version compatibility",
+                )
             else:
                 return False, f"❌ API returned status {response.status_code}"
         except requests.exceptions.Timeout:

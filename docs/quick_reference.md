@@ -67,17 +67,20 @@ ha-ai-workflow import
 ## 🎯 Common Tasks
 
 ### Check What's Exported
+
 ```bash
 ha-ai-workflow status
 ls -la /config/ai_exports/
 ```
 
 ### View AI Prompt
+
 ```bash
 cat /config/ai_exports/ha_export_*/AI_PROMPT.md | less
 ```
 
 ### Prepare for AI
+
 ```bash
 cd /config/ai_exports
 tar -czf safe_for_ai.tar.gz --exclude='secrets' ha_export_*/
@@ -85,6 +88,7 @@ scp safe_for_ai.tar.gz user@laptop:~/
 ```
 
 ### Place AI Files
+
 ```bash
 cd /config/ai_imports/pending
 nano new_automation.yaml
@@ -92,6 +96,7 @@ nano new_automation.yaml
 ```
 
 ### Monitor Import
+
 ```bash
 docker logs homeassistant -f
 ```
@@ -99,17 +104,20 @@ docker logs homeassistant -f
 ## 🐛 Quick Fixes
 
 ### PyYAML Missing
+
 ```bash
 python3 -m pip install pyyaml --break-system-packages
 ```
 
 ### Validation Failed
+
 ```bash
 ha core check
 cat /config/ai_exports/debug_report_*.md
 ```
 
 ### Rollback Changes
+
 ```bash
 cd /config
 git log --oneline
@@ -118,6 +126,7 @@ ha core restart
 ```
 
 ### Permission Issues
+
 ```bash
 sudo ha-ai-workflow export
 chmod +x /usr/local/bin/ha-ai-workflow
@@ -147,6 +156,7 @@ git reset --soft HEAD~1
 ## 🔐 Safety Checks
 
 ### Before Sharing
+
 ```bash
 # ✅ SAFE to share:
 AI_PROMPT.md
@@ -159,6 +169,7 @@ secrets/secrets_map.json
 ```
 
 ### Verify Secrets Not Exposed
+
 ```bash
 grep -r "password" /config/ai_exports/ha_export_*/config/
 # Should see placeholders: <<PASSWORD_1>>
@@ -193,11 +204,13 @@ ha core info
 ## 💡 Pro Tips
 
 1. **Export regularly** (daily cron)
+
    ```bash
    0 2 * * * /usr/local/bin/ha-ai-workflow export --auto
    ```
 
 2. **Test in branch first**
+
    ```bash
    git checkout -b test-automation
    # Make changes
@@ -206,11 +219,13 @@ ha core info
    ```
 
 3. **Keep secrets backed up**
+
    ```bash
    cp /config/ai_exports/secrets/secrets_map_latest.json ~/backup/
    ```
 
 4. **Monitor git size**
+
    ```bash
    du -sh /config/.git
    git gc --aggressive  # if too large

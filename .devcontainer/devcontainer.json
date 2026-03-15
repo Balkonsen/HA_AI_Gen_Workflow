@@ -3,6 +3,20 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "postCreateCommand": "pip install -r requirements-test.txt && pip install -r requirements.txt",
   "customizations": {
+    "vscode": {
+      "settings": {
+        "TRUSTIFY_DA_PYTHON_VIRTUAL_ENV": false,
+        "files.exclude": {
+          "**/.venv": true
+        },
+        "files.watcherExclude": {
+          "**/.venv/**": true
+        },
+        "search.exclude": {
+          "**/.venv/**": true
+        }
+      }
+    },
     "codespaces": {
       "openFiles": [".github/copilot-instructions.md"]
     }

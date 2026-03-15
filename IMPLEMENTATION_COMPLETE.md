@@ -21,6 +21,7 @@ url = f"http://supervisor/addons"  # ❌ Missing /api/hassio/ prefix
 ```
 
 This didn't work from external environments because:
+
 1. `http://supervisor` is only resolvable inside add-on containers
 2. External API requires `/api/hassio/` prefix to access supervisor endpoints
 
@@ -37,7 +38,7 @@ Implemented automatic mode detection with two distinct patterns:
 api = HomeAssistantAPI()
 → Uses: http://supervisor/addons
 
-# External Mode (Standalone) 
+# External Mode (Standalone)
 api = HomeAssistantAPI(ha_url="http://192.168.1.100:8123")
 → Uses: http://192.168.1.100:8123/api/hassio/addons ✅ MATCHES EXAMPLE!
 ```
@@ -49,7 +50,7 @@ class HomeAssistantAPI:
     def __init__(self, token=None, ha_url=None):
         self._external_ha_url = ha_url or os.environ.get("HA_URL")
         self._is_external_mode = bool(self._external_ha_url)
-        
+
         if self._is_external_mode:
             # External: Match example script pattern
             self._supervisor_url = f"{self._external_ha_url}/api/hassio"
@@ -110,29 +111,34 @@ addons = api.get_addons()  # Uses http://supervisor/addons
 ## Files Changed
 
 ### 1. bin/ha_api_client.py
+
 - ✅ Added `ha_url` parameter
 - ✅ Added `_is_external_mode` detection
 - ✅ Dynamic endpoint selection
 - ✅ Backward compatible
 
 ### 2. bin/ha_diagnostic_export.py
+
 - ✅ Added `ha_url` parameter
 - ✅ Updated `_api_request()` method
 - ✅ Updated all API methods to use dynamic URLs
 - ✅ Backward compatible
 
 ### 3. tests/test_ha_api_client.py (NEW)
+
 - ✅ 17 comprehensive tests
 - ✅ Tests both modes
 - ✅ Tests endpoint construction
 - ✅ Tests error handling
 
 ### 4. tests/test_diagnostic_export.py (UPDATED)
+
 - ✅ Added 3 dual-mode tests
 - ✅ Tests mode detection
 - ✅ Tests environment variable support
 
 ### 5. docs/API_CONFIGURATION_GUIDE.md (NEW)
+
 - ✅ Complete configuration guide
 - ✅ Troubleshooting section
 - ✅ Security best practices
@@ -153,6 +159,7 @@ Total: 25/25 tests passing ✅
 ### Test Coverage
 
 **Initialization Tests:**
+
 - ✅ Internal mode with SUPERVISOR_TOKEN
 - ✅ External mode with ha_url parameter
 - ✅ External mode with HA_URL env var
@@ -160,12 +167,14 @@ Total: 25/25 tests passing ✅
 - ✅ Token availability
 
 **Endpoint Tests:**
+
 - ✅ get_addons() - both modes
 - ✅ get_supervisor_info() - both modes
 - ✅ get_states() - both modes
 - ✅ Correct URL construction verified
 
 **Error Handling:**
+
 - ✅ Missing token handling
 - ✅ Connection timeout handling
 - ✅ HTTP error handling
@@ -173,22 +182,27 @@ Total: 25/25 tests passing ✅
 ## Benefits Delivered
 
 ### 1. Matches Example Script ✅
+
 The implementation now uses the **exact same endpoint pattern** as the working example:
+
 - Example: `${HA_URL}/api/hassio/addons`
 - Ours: `{ha_url}/api/hassio/addons`
 
 ### 2. Developer Friendly ✅
+
 - Can develop/test without installing add-on
 - Works from any machine with network access
 - Easy configuration via environment variables
 
 ### 3. Production Ready ✅
+
 - 100% backward compatible
 - Comprehensive test coverage
 - Well documented
 - Secure token handling
 
 ### 4. Flexible ✅
+
 - Auto-detects mode automatically
 - Multiple configuration methods
 - Supports HTTP and HTTPS
@@ -197,12 +211,14 @@ The implementation now uses the **exact same endpoint pattern** as the working e
 ## Security Considerations
 
 ✅ **Implemented:**
+
 - Token never logged
 - Environment variable support
 - .env file support (secure storage)
 - HTTPS support for remote connections
 
 ⚠️ **Best Practices:**
+
 - Rotate tokens regularly
 - Use HTTPS for remote access
 - Never commit tokens to git
@@ -229,6 +245,7 @@ exporter = HAConfigExporter(ha_url="http://192.168.1.100:8123")
 Created comprehensive guide: `docs/API_CONFIGURATION_GUIDE.md`
 
 **Contents:**
+
 - Overview of both modes
 - Configuration methods (3 ways)
 - Creating long-lived tokens
@@ -250,6 +267,6 @@ Created comprehensive guide: `docs/API_CONFIGURATION_GUIDE.md`
 ---
 
 **Status:** ✅ COMPLETE - Ready for merge
-**Tests:** ✅ 25/25 passing  
+**Tests:** ✅ 25/25 passing
 **Documentation:** ✅ Complete
 **Backward Compatibility:** ✅ 100%
