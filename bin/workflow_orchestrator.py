@@ -15,14 +15,14 @@ from typing import Optional, Dict, Any
 # Add bin directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from workflow_config import WorkflowConfig
-from workflow_logger import get_logger, configure_logger, LogLevel
-from secrets_manager import SecretsManager, SecretsSanitizer
-from ssh_transfer import HARemoteManager
-from ha_diagnostic_export import HAConfigExporter
-from ha_ai_context_gen import HAContextGenerator
-from ha_config_import import HAConfigImporter
-from ha_export_verifier import ExportVerifier
+from workflow_config import WorkflowConfig  # noqa: E402
+from workflow_logger import get_logger, configure_logger  # noqa: E402
+from secrets_manager import SecretsManager, SecretsSanitizer  # noqa: E402
+from ssh_transfer import HARemoteManager  # noqa: E402
+from ha_diagnostic_export import HAConfigExporter  # noqa: E402
+from ha_ai_context_gen import HAContextGenerator  # noqa: E402
+from ha_config_import import HAConfigImporter  # noqa: E402
+from ha_export_verifier import ExportVerifier  # noqa: E402
 
 
 class WorkflowOrchestrator:
@@ -53,7 +53,8 @@ class WorkflowOrchestrator:
 
         self.config = WorkflowConfig(config_path)
         self.secrets_manager = SecretsManager(
-            secrets_dir=self.config.get("paths.secrets_dir"), label_prefix=self.config.get("secrets.label_prefix")
+            secrets_dir=self.config.get("paths.secrets_dir"),
+            label_prefix=self.config.get("secrets.label_prefix"),
         )
 
         # Store CLI overrides for timeouts
@@ -64,7 +65,13 @@ class WorkflowOrchestrator:
 
     def _ensure_directories(self):
         """Ensure all required directories exist."""
-        for path_key in ["export_dir", "import_dir", "secrets_dir", "backup_dir", "ai_context_dir"]:
+        for path_key in [
+            "export_dir",
+            "import_dir",
+            "secrets_dir",
+            "backup_dir",
+            "ai_context_dir",
+        ]:
             path = self.config.get(f"paths.{path_key}")
             if path:
                 Path(path).mkdir(parents=True, exist_ok=True)
@@ -468,7 +475,15 @@ Examples:
 
     parser.add_argument(
         "command",
-        choices=["setup", "export", "sanitize", "context", "import", "validate", "full"],
+        choices=[
+            "setup",
+            "export",
+            "sanitize",
+            "context",
+            "import",
+            "validate",
+            "full",
+        ],
         help="Command to run",
     )
 
@@ -477,9 +492,17 @@ Examples:
     parser.add_argument("--target", "-t", help="Target path for import")
     parser.add_argument("--remote", "-r", action="store_true", help="Use SSH for remote HA")
     parser.add_argument("--dry-run", "-n", action="store_true", help="Dry run (no changes)")
-    parser.add_argument("--ssh-timeout", type=int, default=30, help="SSH connection timeout in seconds (default: 30)")
     parser.add_argument(
-        "--transfer-timeout", type=int, default=600, help="File transfer timeout in seconds (default: 600)"
+        "--ssh-timeout",
+        type=int,
+        default=30,
+        help="SSH connection timeout in seconds (default: 30)",
+    )
+    parser.add_argument(
+        "--transfer-timeout",
+        type=int,
+        default=600,
+        help="File transfer timeout in seconds (default: 600)",
     )
 
     args = parser.parse_args()
@@ -491,7 +514,9 @@ Examples:
         return 0
 
     orchestrator = WorkflowOrchestrator(
-        args.config, ssh_timeout=args.ssh_timeout, transfer_timeout=args.transfer_timeout
+        args.config,
+        ssh_timeout=args.ssh_timeout,
+        transfer_timeout=args.transfer_timeout,
     )
 
     if args.command == "export":

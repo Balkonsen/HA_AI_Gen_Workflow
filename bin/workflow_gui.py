@@ -20,10 +20,9 @@ except ImportError:
     print("Then run: streamlit run bin/workflow_gui.py")
     sys.exit(1)
 
-from workflow_config import WorkflowConfig
-from workflow_logger import get_logger, configure_logger, LogLevel
-from secrets_manager import SecretsManager
-from ssh_transfer import SSHTransfer
+from workflow_config import WorkflowConfig  # noqa: E402
+from workflow_logger import configure_logger, LogLevel  # noqa: E402
+from ssh_transfer import SSHTransfer  # noqa: E402
 
 # Standard HA root directories for path verification
 STANDARD_ROOT_DIRS = [
@@ -61,7 +60,12 @@ def resolve_and_verify_path(path_str: str) -> tuple:
     # Check if parent exists or can be created
     parent = os.path.dirname(resolved)
     if os.path.exists(parent):
-        return resolved, False, True, f"⚠️ Does not exist (parent exists, can be created): {resolved}"
+        return (
+            resolved,
+            False,
+            True,
+            f"⚠️ Does not exist (parent exists, can be created): {resolved}",
+        )
 
     # Walk up to find nearest existing ancestor
     ancestor = parent
@@ -71,9 +75,19 @@ def resolve_and_verify_path(path_str: str) -> tuple:
             break
 
     if ancestor and os.path.exists(ancestor):
-        return resolved, False, True, f"⚠️ Does not exist (nearest ancestor: {ancestor}): {resolved}"
+        return (
+            resolved,
+            False,
+            True,
+            f"⚠️ Does not exist (nearest ancestor: {ancestor}): {resolved}",
+        )
 
-    return resolved, False, False, f"❌ Cannot create — no valid ancestor found: {resolved}"
+    return (
+        resolved,
+        False,
+        False,
+        f"❌ Cannot create — no valid ancestor found: {resolved}",
+    )
 
 
 def find_standard_root() -> str:
@@ -189,7 +203,7 @@ def render_path_input_with_validation(label: str, config_key: str, config: Workf
     current_value = config.get(config_key, "")
     widget_key = f"path_{config_key}_{key_suffix}" if key_suffix else f"path_{config_key}"
 
-    path_value = st.text_input(label, value=current_value, key=widget_key)
+    path_value = st.text_input(label, value=current_value, key=widget_key) or ""
 
     resolved, exists, creatable, message = resolve_and_verify_path(path_value)
 
@@ -287,7 +301,10 @@ def render_sidebar():
     # CLI hint
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 💻 Command Line")
-    st.sidebar.code("ha-ai-workflow export\nha-ai-workflow import\nha-ai-workflow status\nha-ai-workflow --help", language="bash")
+    st.sidebar.code(
+        "ha-ai-workflow export\nha-ai-workflow import\nha-ai-workflow status\nha-ai-workflow --help",
+        language="bash",
+    )
 
 
 def render_configuration():
@@ -311,7 +328,11 @@ def render_configuration():
         config.set("ssh.enabled", ssh_enabled)
 
         if ssh_enabled:
-            ssh_host = st.text_input("SSH Host", value=config.get("ssh.host", ""), placeholder="192.168.1.100")
+            ssh_host = st.text_input(
+                "SSH Host",
+                value=config.get("ssh.host", ""),
+                placeholder="192.168.1.100",
+            )
             config.set("ssh.host", ssh_host)
 
             ssh_user = st.text_input("SSH Username", value=config.get("ssh.user", "root"))
@@ -324,12 +345,20 @@ def render_configuration():
             default_index = 1 if (current_pass and not current_key) else 0
 
             auth_method = st.radio(
-                "Authentication Method", ["SSH Key", "Password"], index=default_index, horizontal=True
+                "Authentication Method",
+                ["SSH Key", "Password"],
+                index=default_index,
+                horizontal=True,
             )
 
     with col2:
         if ssh_enabled:
-            ssh_port = st.number_input("SSH Port", value=config.get("ssh.port", 22), min_value=1, max_value=65535)
+            ssh_port = st.number_input(
+                "SSH Port",
+                value=config.get("ssh.port", 22),
+                min_value=1,
+                max_value=65535,
+            )
             config.set("ssh.port", int(ssh_port))
 
             if auth_method == "SSH Key":
@@ -337,11 +366,18 @@ def render_configuration():
                 config.set("ssh.key_path", ssh_key)
                 config.set("ssh.password", "")  # Clear password if using key
             else:  # Password
-                ssh_password = st.text_input("SSH Password", value=config.get("ssh.password", ""), type="password")
+                ssh_password = st.text_input(
+                    "SSH Password",
+                    value=config.get("ssh.password", ""),
+                    type="password",
+                )
                 config.set("ssh.password", ssh_password)
                 config.set("ssh.key_path", "")  # Clear key if using password
 
-            remote_path = st.text_input("Remote Config Path", value=config.get("ssh.remote_config_path", "/config"))
+            remote_path = st.text_input(
+                "Remote Config Path",
+                value=config.get("ssh.remote_config_path", "/config"),
+            )
             config.set("ssh.remote_config_path", remote_path)
 
     if ssh_enabled and st.button("🔗 Test SSH Connection"):
@@ -350,8 +386,8 @@ def render_configuration():
                 host=config.get("ssh.host"),
                 user=config.get("ssh.user"),
                 port=config.get("ssh.port"),
-                key_path=config.get("ssh.key_path") if config.get("ssh.key_path") else None,
-                password=config.get("ssh.password") if config.get("ssh.password") else None,
+                key_path=(config.get("ssh.key_path") if config.get("ssh.key_path") else None),
+                password=(config.get("ssh.password") if config.get("ssh.password") else None),
             )
             success, msg = ssh.test_connection()
 
@@ -381,7 +417,7 @@ def render_configuration():
         placeholder="Paste token from HA → Profile → Long-Lived Access Tokens",
         key="ha_api_token",
         help="Generate at: HA → Profile → Security → Long-Lived Access Tokens. "
-             "Leave empty in add-on mode (SUPERVISOR_TOKEN is auto-injected).",
+        "Leave empty in add-on mode (SUPERVISOR_TOKEN is auto-injected).",
     )
 
     col_token1, col_token2 = st.columns(2)
@@ -391,8 +427,12 @@ def render_configuration():
             with st.spinner("Testing HA API..."):
                 try:
                     import requests
+
                     api_url = os.environ.get("HA_API_URL", "http://supervisor/core/api")
-                    headers = {"Authorization": f"Bearer {ha_token}", "Content-Type": "application/json"}
+                    headers = {
+                        "Authorization": f"Bearer {ha_token}",
+                        "Content-Type": "application/json",
+                    }
                     response = requests.get(f"{api_url}/config", headers=headers, timeout=10)
                     if response.status_code == 200:
                         ha_config = response.json()
@@ -406,19 +446,13 @@ def render_configuration():
         if ha_token and st.button("💾 Save Token"):
             os.environ["SUPERVISOR_TOKEN"] = ha_token
             # Persist to env file for CLI usage
-            env_file = os.path.join(
-                os.environ.get("HA_INSTALL_DIR", "/usr/local/ha-ai-workflow"),
-                ".env"
-            )
+            env_file = os.path.join(os.environ.get("HA_INSTALL_DIR", "/usr/local/ha-ai-workflow"), ".env")
             try:
                 # Read existing env file, update SUPERVISOR_TOKEN line
                 env_lines = []
                 if os.path.exists(env_file):
                     with open(env_file, "r") as f:
-                        env_lines = [
-                            line for line in f.readlines()
-                            if not line.startswith("SUPERVISOR_TOKEN=")
-                        ]
+                        env_lines = [line for line in f.readlines() if not line.startswith("SUPERVISOR_TOKEN=")]
                 env_lines.append(f"SUPERVISOR_TOKEN={ha_token}\n")
                 with open(env_file, "w") as f:
                     f.writelines(env_lines)
@@ -479,7 +513,13 @@ def render_configuration():
         if not base_exists and base_creatable:
             if st.button("📁 Create Storage Directory"):
                 try:
-                    for sub in ["exports", "imports", "secrets", "backups", "ai_context"]:
+                    for sub in [
+                        "exports",
+                        "imports",
+                        "secrets",
+                        "backups",
+                        "ai_context",
+                    ]:
                         Path(os.path.join(resolved_base, sub)).mkdir(parents=True, exist_ok=True)
                     st.success(f"✅ Created storage directory: {resolved_base}")
                     st.rerun()
@@ -498,7 +538,10 @@ def render_configuration():
         config.set("secrets.label_prefix", label_prefix)
 
     with col2:
-        auto_restore = st.checkbox("Auto-restore secrets on import", value=config.get("secrets.auto_restore", True))
+        auto_restore = st.checkbox(
+            "Auto-restore secrets on import",
+            value=config.get("secrets.auto_restore", True),
+        )
         config.set("secrets.auto_restore", auto_restore)
 
     st.markdown("---")
@@ -525,7 +568,11 @@ def render_export():
     export_mode = st.radio("Export Mode", ["Local", "SSH Remote"], horizontal=True)
 
     if export_mode == "Local":
-        source_path = st.text_input("Home Assistant Config Path", value=find_standard_root(), placeholder="/config")
+        source_path = st.text_input(
+            "Home Assistant Config Path",
+            value=find_standard_root(),
+            placeholder="/config",
+        )
         # Show validation for the source path
         resolved, exists, _creatable, message = resolve_and_verify_path(source_path)
         st.caption(message)
@@ -554,7 +601,8 @@ def render_export():
                 st.rerun()
         else:
             st.info(
-                f"Will export from: {config.get('ssh.user')}@{config.get('ssh.host')}:{config.get('ssh.remote_config_path')}"
+                "Will export from: "
+                f"{config.get('ssh.user')}@{config.get('ssh.host')}:{config.get('ssh.remote_config_path')}"
             )
 
             if st.button("📤 Start Remote Export", type="primary"):
@@ -600,7 +648,9 @@ def render_ai_context():
     st.header("🤖 Generate AI Context")
 
     export_path = st.text_input(
-        "Export Path", value=st.session_state.export_path or "", placeholder="./exports/export_..."
+        "Export Path",
+        value=st.session_state.export_path or "",
+        placeholder="./exports/export_...",
     )
     if export_path:
         _resolved, _exists, _creatable, message = resolve_and_verify_path(export_path)
@@ -611,12 +661,12 @@ def render_ai_context():
     col1, col2 = st.columns(2)
 
     with col1:
-        include_entities = st.checkbox("Include entity analysis", value=True)
-        include_devices = st.checkbox("Include device analysis", value=True)
+        st.checkbox("Include entity analysis", value=True)
+        st.checkbox("Include device analysis", value=True)
 
     with col2:
-        include_automations = st.checkbox("Include automation analysis", value=True)
-        include_integrations = st.checkbox("Include integration analysis", value=True)
+        st.checkbox("Include automation analysis", value=True)
+        st.checkbox("Include integration analysis", value=True)
 
     if st.button("🤖 Generate AI Context", type="primary"):
         if not export_path:
@@ -678,7 +728,7 @@ def render_import():
         dry_run = st.checkbox("Dry run (preview only)", value=True)
 
     with col2:
-        auto_restore = st.checkbox("Auto-restore secrets", value=config.get("secrets.auto_restore", True))
+        st.checkbox("Auto-restore secrets", value=config.get("secrets.auto_restore", True))
 
     if import_mode == "Local":
         target_path = st.text_input("Target Config Path", value=find_standard_root(), placeholder="/config")
@@ -708,7 +758,8 @@ def render_import():
             st.warning("⚠️ SSH not configured")
         else:
             st.info(
-                f"Will import to: {config.get('ssh.user')}@{config.get('ssh.host')}:{config.get('ssh.remote_config_path')}"
+                "Will import to: "
+                f"{config.get('ssh.user')}@{config.get('ssh.host')}:{config.get('ssh.remote_config_path')}"
             )
 
             if st.button("📥 Start Remote Import", type="primary"):
@@ -738,7 +789,9 @@ def render_validate():
     st.header("🔍 Validate Export/Import")
 
     validate_path = st.text_input(
-        "Path to validate", value=st.session_state.export_path or "", placeholder="./exports/export_..."
+        "Path to validate",
+        value=st.session_state.export_path or "",
+        placeholder="./exports/export_...",
     )
     if validate_path:
         _resolved, _exists, _creatable, message = resolve_and_verify_path(validate_path)
@@ -780,12 +833,14 @@ def render_full_pipeline():
         st.info(f"Will use remote path: {source_path}")
 
     st.markdown("### Pipeline Steps")
-    st.markdown("""
+    st.markdown(
+        """
     1. **Export** - Download/copy HA configuration
     2. **Sanitize** - Replace secrets with labels
     3. **AI Context** - Generate context for AI
     4. **Validate** - Verify export completeness
-    """)
+    """
+    )
 
     if st.button("🚀 Run Full Pipeline", type="primary"):
         with st.spinner("Running pipeline..."):
@@ -814,12 +869,14 @@ def render_settings():
     st.subheader("Export Settings")
 
     include_patterns = st.text_area(
-        "Include Patterns (one per line)", value="\n".join(config.get("export.include_patterns", []))
+        "Include Patterns (one per line)",
+        value="\n".join(config.get("export.include_patterns", [])),
     )
     config.set("export.include_patterns", include_patterns.split("\n"))
 
     exclude_patterns = st.text_area(
-        "Exclude Patterns (one per line)", value="\n".join(config.get("export.exclude_patterns", []))
+        "Exclude Patterns (one per line)",
+        value="\n".join(config.get("export.exclude_patterns", [])),
     )
     config.set("export.exclude_patterns", exclude_patterns.split("\n"))
 
@@ -828,7 +885,8 @@ def render_settings():
     st.subheader("Sensitive Fields")
 
     sensitive_fields = st.text_area(
-        "Sensitive field patterns (one per line)", value="\n".join(config.get("export.sensitive_fields", []))
+        "Sensitive field patterns (one per line)",
+        value="\n".join(config.get("export.sensitive_fields", [])),
     )
     config.set("export.sensitive_fields", sensitive_fields.split("\n"))
 

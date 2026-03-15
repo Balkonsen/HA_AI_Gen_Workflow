@@ -34,10 +34,10 @@ for script in $SCRIPTS; do
     TOTAL=$((TOTAL + 1))
     echo -n "Checking $(basename $script)... "
     if bash -n "$script" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
+        echo -e "${GREEN}âœ“${NC}"
         PASSED=$((PASSED + 1))
     else
-        echo -e "${RED}✗${NC}"
+        echo -e "${RED}âœ—${NC}"
         FAILED=$((FAILED + 1))
         bash -n "$script" 2>&1 | sed 's/^/  /'
     fi
@@ -52,10 +52,10 @@ if command -v shellcheck &> /dev/null; then
         TOTAL=$((TOTAL + 1))
         echo -n "Analyzing $(basename $script)... "
         if shellcheck -x "$script" 2>/dev/null; then
-            echo -e "${GREEN}✓${NC}"
+            echo -e "${GREEN}âœ“${NC}"
             PASSED=$((PASSED + 1))
         else
-            echo -e "${YELLOW}⚠${NC}"
+            echo -e "${YELLOW}âš ${NC}"
             # Don't count shellcheck warnings as failures
             PASSED=$((PASSED + 1))
             shellcheck -x "$script" 2>&1 | grep -A 5 "^In" | sed 's/^/  /' || true
@@ -72,21 +72,21 @@ echo "Test 3: Common Issues Check"
 echo "------------------------"
 for script in $SCRIPTS; do
     ISSUES=0
-    
+
     # Check for 'set -e' or error handling
     if ! grep -q "set -e" "$script" && ! grep -q "set -euo pipefail" "$script"; then
-        echo -e "${YELLOW}⚠${NC} $(basename $script): No 'set -e' found (error handling)"
+        echo -e "${YELLOW}âš ${NC} $(basename $script): No 'set -e' found (error handling)"
         ISSUES=$((ISSUES + 1))
     fi
-    
+
     # Check for unquoted variables (basic check)
     if grep -q '\$[A-Z_]*[^"]' "$script" 2>/dev/null; then
-        echo -e "${YELLOW}⚠${NC} $(basename $script): Possible unquoted variables"
+        echo -e "${YELLOW}âš ${NC} $(basename $script): Possible unquoted variables"
         ISSUES=$((ISSUES + 1))
     fi
-    
+
     if [ $ISSUES -eq 0 ]; then
-        echo -e "${GREEN}✓${NC} $(basename $script): No common issues found"
+        echo -e "${GREEN}âœ“${NC} $(basename $script): No common issues found"
         PASSED=$((PASSED + 1))
     else
         # Don't fail on warnings
@@ -103,10 +103,10 @@ for script in $SCRIPTS; do
     TOTAL=$((TOTAL + 1))
     echo -n "Checking $(basename $script)... "
     if [ -x "$script" ]; then
-        echo -e "${GREEN}✓${NC}"
+        echo -e "${GREEN}âœ“${NC}"
         PASSED=$((PASSED + 1))
     else
-        echo -e "${YELLOW}⚠${NC} Not executable"
+        echo -e "${YELLOW}âš ${NC} Not executable"
         PASSED=$((PASSED + 1))  # Don't fail on this
     fi
 done

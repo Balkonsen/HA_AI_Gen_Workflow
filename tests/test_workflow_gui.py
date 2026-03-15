@@ -13,8 +13,8 @@ import pytest
 # Add bin directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 
-# Import the helper functions directly — these do not depend on Streamlit
-from workflow_gui import (
+# Import the helper functions directly â€” these do not depend on Streamlit
+from workflow_gui import (  # noqa: E402
     resolve_and_verify_path,
     find_standard_root,
     list_directory_contents,
@@ -47,7 +47,7 @@ class TestResolveAndVerifyPath:
         assert resolved == str(tmp_path)
         assert exists is True
         assert creatable is True
-        assert "✅" in msg
+        assert "Directory exists:" in msg
 
     def test_existing_file(self, tmp_path):
         """Existing file returns exists=True."""
@@ -55,7 +55,7 @@ class TestResolveAndVerifyPath:
         f.write_text("hello")
         resolved, exists, creatable, msg = resolve_and_verify_path(str(f))
         assert exists is True
-        assert "✅" in msg
+        assert "File exists:" in msg
 
     def test_nonexistent_but_parent_exists(self, tmp_path):
         """Non-existing path with existing parent is creatable."""
@@ -63,7 +63,7 @@ class TestResolveAndVerifyPath:
         resolved, exists, creatable, msg = resolve_and_verify_path(str(target))
         assert exists is False
         assert creatable is True
-        assert "⚠️" in msg
+        assert "parent exists, can be created" in msg
 
     def test_deeply_nested_nonexistent(self, tmp_path):
         """Non-existing path with an existing ancestor is still creatable."""
@@ -71,7 +71,7 @@ class TestResolveAndVerifyPath:
         resolved, exists, creatable, msg = resolve_and_verify_path(str(target))
         assert exists is False
         assert creatable is True
-        assert "⚠️" in msg
+        assert "nearest ancestor:" in msg
 
     def test_resolved_is_absolute(self):
         """Returned path is always absolute."""
@@ -88,7 +88,8 @@ class TestResolveAndVerifyPath:
         """Environment variables are expanded."""
         monkeypatch.setenv("HA_TEST_VAR", "/tmp/ha_test_expansion")
         resolved, _, _, _ = resolve_and_verify_path("$HA_TEST_VAR/subdir")
-        assert resolved == "/tmp/ha_test_expansion/subdir"
+        expected = os.path.abspath(os.path.expandvars("$HA_TEST_VAR/subdir"))
+        assert resolved == expected
 
 
 @pytest.mark.unit
@@ -108,7 +109,7 @@ class TestFindStandardRoot:
 
     def test_falls_back_to_cwd(self, monkeypatch):
         """Falls back to current directory if no standard root exists."""
-        # This test verifies the fallback — the function checks STANDARD_ROOT_DIRS
+        # This test verifies the fallback â€” the function checks STANDARD_ROOT_DIRS
         # and falls back to cwd. Since we can't guarantee /config doesn't exist,
         # we simply verify the result is a valid directory.
         result = find_standard_root()

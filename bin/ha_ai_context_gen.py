@@ -7,8 +7,6 @@ Generates optimized context files for AI assistants to understand your HA setup
 import os
 import json
 import yaml
-from pathlib import Path
-from datetime import datetime
 import re
 
 
@@ -70,7 +68,7 @@ class HAContextGenerator:
         """Safely load YAML file with HA-specific tags"""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                return yaml.load(f, Loader=HAYAMLLoader)
+                return yaml.load(f, Loader=HAYAMLLoader)  # nosec B506
         except yaml.YAMLError as e:
             print(f"  Warning: YAML parsing error in {file_path}: {e}")
             # Try to load as plain text and extract what we can
@@ -79,7 +77,7 @@ class HAContextGenerator:
                     content = f.read()
                 # Return a minimal structure
                 return {"_raw_content": content, "_parse_error": str(e)}
-            except:
+            except OSError:
                 return None
         except Exception as e:
             print(f"  Warning: Could not read {file_path}: {e}")
@@ -91,7 +89,7 @@ class HAContextGenerator:
         if os.path.exists(config_file):
             config = self.safe_yaml_load(config_file)
 
-            if config and "_parse_error" not in config:
+            if isinstance(config, dict) and "_parse_error" not in config:
                 self.context["system_overview"]["configured_platforms"] = [
                     k for k in config.keys() if not k.startswith("_")
                 ]
@@ -105,8 +103,8 @@ class HAContextGenerator:
                         self.context["system_overview"]["external_url"] = ha_config.get(
                             "external_url", "Not configured"
                         )
-            elif config and "_parse_error" in config:
-                print(f"  Note: configuration.yaml has custom tags - extracting basic info")
+            elif isinstance(config, dict) and "_parse_error" in config:
+                print("  Note: configuration.yaml has custom tags - " "extracting basic info")
                 # Extract platforms from raw content
                 raw = config.get("_raw_content", "")
                 platforms = re.findall(r"^([a-z_]+):", raw, re.MULTILINE)
@@ -129,7 +127,7 @@ class HAContextGenerator:
                     - len(entity_data.get("disabled_entities", [])),
                 }
 
-                print(f"  ✓ Loaded {self.context['entities']['total']} entities")
+                print("  ✓ Loaded " f"{self.context['entities']['total']} entities")
 
             except Exception as e:
                 print(f"  Warning: Could not parse entities registry: {e}")
@@ -148,7 +146,7 @@ class HAContextGenerator:
                     "by_integration": device_data.get("devices_by_integration", {}),
                 }
 
-                print(f"  ✓ Loaded {self.context['devices']['total']} devices")
+                print("  ✓ Loaded " f"{self.context['devices']['total']} devices")
 
             except Exception as e:
                 print(f"  Warning: Could not parse devices registry: {e}")
@@ -203,10 +201,11 @@ class HAContextGenerator:
         if os.path.exists(auto_file):
             automations = self.safe_yaml_load(auto_file)
 
-            if automations and not isinstance(automations, dict) or "_parse_error" not in automations:
-                if not isinstance(automations, list):
-                    automations = []
+            if isinstance(automations, dict) and "_parse_error" in automations:
+                print("  Note: automations.yaml has parse issues - " "skipping automation summary")
+                return
 
+            if isinstance(automations, list):
                 auto_summary = []
                 for auto in automations:
                     if isinstance(auto, dict):
@@ -214,11 +213,11 @@ class HAContextGenerator:
                             "id": auto.get("id", "unknown"),
                             "alias": auto.get("alias", "Unnamed"),
                             "mode": auto.get("mode", "single"),
-                            "triggers": len(auto.get("trigger", [])) if isinstance(auto.get("trigger"), list) else 1,
+                            "triggers": (len(auto.get("trigger", [])) if isinstance(auto.get("trigger"), list) else 1),
                             "conditions": (
                                 len(auto.get("condition", [])) if isinstance(auto.get("condition"), list) else 0
                             ),
-                            "actions": len(auto.get("action", [])) if isinstance(auto.get("action"), list) else 1,
+                            "actions": (len(auto.get("action", [])) if isinstance(auto.get("action"), list) else 1),
                         }
                         auto_summary.append(summary)
 
@@ -343,7 +342,10 @@ class HAContextGenerator:
                 {
                     "type": "automation",
                     "priority": "high",
-                    "suggestion": "No automations configured. Consider creating basic automations for lighting, climate, or security.",
+                    "suggestion": (
+                        "No automations configured. Consider creating basic "
+                        "automations for lighting, climate, or security."
+                    ),
                 }
             )
 
@@ -352,7 +354,10 @@ class HAContextGenerator:
                 {
                     "type": "automation",
                     "priority": "medium",
-                    "suggestion": "Media players detected. Consider automations for: movie mode, bedtime routine, morning playlist.",
+                    "suggestion": (
+                        "Media players detected. Consider automations for: "
+                        "movie mode, bedtime routine, morning playlist."
+                    ),
                 }
             )
 
@@ -361,7 +366,9 @@ class HAContextGenerator:
                 {
                     "type": "dashboard",
                     "priority": "medium",
-                    "suggestion": "Create a centralized lighting control dashboard with scenes and brightness controls.",
+                    "suggestion": (
+                        "Create a centralized lighting control dashboard " "with scenes and brightness controls."
+                    ),
                 }
             )
 
@@ -370,7 +377,10 @@ class HAContextGenerator:
                 {
                     "type": "automation",
                     "priority": "high",
-                    "suggestion": "Climate control available. Consider: temperature schedules, away mode, weather-based adjustments.",
+                    "suggestion": (
+                        "Climate control available. Consider: temperature "
+                        "schedules, away mode, weather-based adjustments."
+                    ),
                 }
             )
 
@@ -379,7 +389,9 @@ class HAContextGenerator:
                 {
                     "type": "automation",
                     "priority": "high",
-                    "suggestion": "Presence detection available. Consider: arrival/departure automations, home/away modes.",
+                    "suggestion": (
+                        "Presence detection available. Consider: " "arrival/departure automations, home/away modes."
+                    ),
                 }
             )
 
@@ -393,7 +405,9 @@ class HAContextGenerator:
                 {
                     "type": "addon",
                     "priority": "low",
-                    "suggestion": "Many sensors available. Consider InfluxDB + Grafana for advanced data visualization.",
+                    "suggestion": (
+                        "Many sensors available. Consider InfluxDB + " "Grafana for advanced data visualization."
+                    ),
                 }
             )
 
@@ -401,18 +415,28 @@ class HAContextGenerator:
 
     def generate_ai_prompt(self):
         """Generate AI-friendly prompt"""
+        configured_integrations = self.context.get("integrations", {}).get("configured", [])
+        custom_components = self.context.get("integrations", {}).get("custom_components", [])
+        total_entities = self.context.get("entities", {}).get("total", 0)
+        active_entities = self.context.get("entities", {}).get("active_count", 0)
+        disabled_entities = self.context.get("entities", {}).get("disabled_count", 0)
+        total_devices = self.context.get("devices", {}).get("total", 0)
+        total_automations = self.context.get("automations", {}).get("total", 0)
+        total_scripts = self.context.get("scripts", {}).get("total", 0)
+        total_addons = self.context.get("addons", {}).get("total", 0)
+
         prompt = f"""# Home Assistant Configuration Context
 
 ## System Overview
-- **Total Integrations**: {len(self.context.get('integrations', {}).get('configured', []))}
-- **Custom Components**: {len(self.context.get('integrations', {}).get('custom_components', []))}
-- **Total Entities**: {self.context.get('entities', {}).get('total', 0)}
-- **Active Entities**: {self.context.get('entities', {}).get('active_count', 0)}
-- **Disabled Entities**: {self.context.get('entities', {}).get('disabled_count', 0)}
-- **Total Devices**: {self.context.get('devices', {}).get('total', 0)}
-- **Automations**: {self.context.get('automations', {}).get('total', 0)}
-- **Scripts**: {self.context.get('scripts', {}).get('total', 0)}
-- **Add-ons**: {self.context.get('addons', {}).get('total', 0)}
+- **Total Integrations**: {len(configured_integrations)}
+- **Custom Components**: {len(custom_components)}
+- **Total Entities**: {total_entities}
+- **Active Entities**: {active_entities}
+- **Disabled Entities**: {disabled_entities}
+- **Total Devices**: {total_devices}
+- **Automations**: {total_automations}
+- **Scripts**: {total_scripts}
+- **Add-ons**: {total_addons}
 
 ## Entity Breakdown by Domain
 """
@@ -421,12 +445,12 @@ class HAContextGenerator:
         for domain, count in sorted(entity_domains.items(), key=lambda x: x[1], reverse=True):
             prompt += f"- **{domain}**: {count} entities\n"
 
-        prompt += f"\n## Device Manufacturers\n"
+        prompt += "\n## Device Manufacturers\n"
         manufacturers = self.context.get("devices", {}).get("by_manufacturer", {})
         for mfr, count in sorted(manufacturers.items(), key=lambda x: x[1], reverse=True)[:15]:
             prompt += f"- **{mfr}**: {count} devices\n"
 
-        prompt += f"\n## Integration Categories\n"
+        prompt += "\n## Integration Categories\n"
         categories = self.context.get("integrations", {}).get("by_category", {})
         for cat, items in categories.items():
             if items:
@@ -436,36 +460,40 @@ class HAContextGenerator:
                     prompt += f"... and {len(items) - 10} more\n"
                 prompt += "\n"
 
-        prompt += f"## Add-on Categories\n"
+        prompt += "## Add-on Categories\n"
         addon_cats = self.context.get("addons", {}).get("by_category", {})
         for cat, items in addon_cats.items():
             if items:
                 prompt += f"- **{cat.title()}**: {', '.join(items)}\n"
 
-        prompt += f"\n## System Capabilities\n"
+        prompt += "\n## System Capabilities\n"
         capabilities = self.context.get("capabilities", {}).get("available", [])
         for cap in capabilities:
             prompt += f"- {cap.replace('_', ' ').title()}\n"
 
-        prompt += f"\n## Existing Automations\n"
+        prompt += "\n## Existing Automations\n"
         autos = self.context.get("automations", {}).get("list", [])
         for auto in autos[:20]:  # Limit to first 20
-            prompt += f"- **{auto.get('alias')}**: {auto.get('triggers')} triggers, {auto.get('actions')} actions\n"
+            prompt += (
+                f"- **{auto.get('alias')}**: " f"{auto.get('triggers')} triggers, " f"{auto.get('actions')} actions\n"
+            )
 
         if len(autos) > 20:
             prompt += f"- ... and {len(autos) - 20} more\n"
 
-        prompt += f"\n## Recommendations for AI Development\n"
+        prompt += "\n## Recommendations for AI Development\n"
         recommendations = self.context.get("recommendations", [])
         for rec in recommendations:
-            prompt += f"### {rec['type'].title()} - Priority: {rec['priority'].upper()}\n"
+            prompt += f"### {rec['type'].title()} - " f"Priority: {rec['priority'].upper()}\n"
             prompt += f"{rec['suggestion']}\n\n"
+
+        configured_platforms = self.context.get("system_overview", {}).get("configured_platforms", [])
 
         prompt += f"""
 ## How to Use This Context
 
 You can help with:
-1. **Creating Automations**: Based on the available integrations and capabilities
+1. **Creating Automations**: Based on available integrations and capabilities
 2. **Designing Dashboards**: Leveraging all configured devices and sensors
 3. **Writing Scripts**: For complex multi-step operations
 4. **Binary Sensors**: Creating template sensors and helpers
@@ -476,14 +504,14 @@ You can help with:
 {', '.join(sorted(entity_domains.keys()))}
 
 ## Top Device Types
-Based on {self.context.get('devices', {}).get('total', 0)} devices across {len(manufacturers)} manufacturers.
+Based on {total_devices} devices across {len(manufacturers)} manufacturers.
 
 ## Configuration Files Available
-- configuration.yaml (with {len(self.context.get('system_overview', {}).get('configured_platforms', []))} platforms)
-- automations.yaml ({self.context.get('automations', {}).get('total', 0)} automations)
-- scripts.yaml ({self.context.get('scripts', {}).get('total', 0)} scripts)
-- Entity registry (all {self.context.get('entities', {}).get('total', 0)} entities)
-- Device registry (all {self.context.get('devices', {}).get('total', 0)} devices)
+- configuration.yaml (with {len(configured_platforms)} platforms)
+- automations.yaml ({total_automations} automations)
+- scripts.yaml ({total_scripts} scripts)
+- Entity registry (all {total_entities} entities)
+- Device registry (all {total_devices} devices)
 
 Please ask me to:
 - Create specific automations
@@ -526,7 +554,7 @@ All configurations will be provided with placeholder values for security.
         with open(context_file, "w") as f:
             json.dump(self.context, f, indent=2)
 
-        print(f"✓ Saved detailed context: AI_CONTEXT.json")
+        print("✓ Saved detailed context: AI_CONTEXT.json")
 
         # Generate AI prompt
         prompt = self.generate_ai_prompt()
@@ -534,21 +562,21 @@ All configurations will be provided with placeholder values for security.
         with open(prompt_file, "w") as f:
             f.write(prompt)
 
-        print(f"✓ Saved AI prompt: AI_PROMPT.md")
+        print("✓ Saved AI prompt: AI_PROMPT.md")
 
         # Print summary
         print("\n" + "=" * 70)
         print("Context Summary")
         print("=" * 70)
-        print(f"Integrations: {len(self.context.get('integrations', {}).get('configured', []))}")
-        print(
-            f"Entities: {self.context.get('entities', {}).get('total', 0)} ({self.context.get('entities', {}).get('active_count', 0)} active)"
-        )
+        integrations_count = len(self.context.get("integrations", {}).get("configured", []))
+        print("Integrations: " f"{integrations_count}")
+        entities = self.context.get("entities", {})
+        print(f"Entities: {entities.get('total', 0)} " f"({entities.get('active_count', 0)} active)")
         print(f"Devices: {self.context.get('devices', {}).get('total', 0)}")
-        print(f"Automations: {self.context.get('automations', {}).get('total', 0)}")
+        print("Automations: " f"{self.context.get('automations', {}).get('total', 0)}")
         print(f"Scripts: {self.context.get('scripts', {}).get('total', 0)}")
         print(f"Add-ons: {self.context.get('addons', {}).get('total', 0)}")
-        print(f"Capabilities: {len(self.context.get('capabilities', {}).get('available', []))}")
+        print("Capabilities: " f"{len(self.context.get('capabilities', {}).get('available', []))}")
         print(f"Recommendations: {len(self.context.get('recommendations', []))}")
 
         return context_file, prompt_file
@@ -573,10 +601,10 @@ def main():
     print("\n" + "=" * 70)
     print("✓ Context Generation Complete!")
     print("=" * 70)
-    print(f"\nFiles created:")
+    print("\nFiles created:")
     print(f"1. {context_file} - Detailed JSON context")
     print(f"2. {prompt_file} - AI-friendly prompt")
-    print(f"\nYou can now share these files with AI assistants to get help with:")
+    print("\nYou can now share these files with AI assistants " "to get help with:")
     print("- Creating new automations")
     print("- Designing dashboards")
     print("- Writing scripts and helpers")

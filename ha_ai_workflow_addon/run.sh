@@ -45,28 +45,28 @@ get_config() {
     local key="$1"
     local default="$2"
     local value=""
-    
+
     log_debug "Reading config key: ${key}"
-    
+
     # Try primary config file
     if [[ -f "${CONFIG_FILE}" ]]; then
         log_debug "Reading from primary config: ${CONFIG_FILE}"
         # Use jq with --arg for safe parameter passing
         value=$(jq -r --arg k "${key}" '.[$k] // empty' "${CONFIG_FILE}" 2>/dev/null || echo "")
     fi
-    
+
     # Fallback to secondary config file
     if [[ -z "${value}" ]] && [[ -f "${CONFIG_FILE_FALLBACK}" ]]; then
         log_debug "Trying fallback config: ${CONFIG_FILE_FALLBACK}"
         value=$(jq -r --arg k "${key}" '.[$k] // empty' "${CONFIG_FILE_FALLBACK}" 2>/dev/null || echo "")
     fi
-    
+
     # Use default if still empty
     if [[ -z "${value}" ]] || [[ "${value}" == "null" ]]; then
         log_debug "Using default value for ${key}: ${default}"
         value="${default}"
     fi
-    
+
     echo "${value}"
 }
 
@@ -79,7 +79,7 @@ if ! command -v jq &> /dev/null; then
         exit 1
     fi
     log_info "jq installed successfully"
-    
+
     # Verify jq is now available
     if ! command -v jq &> /dev/null; then
         log_error "jq installation appeared successful but command not found"
@@ -187,35 +187,35 @@ test_ha_api() {
     local response
     local retry_count=0
     local max_retries=3
-    
+
     log_debug "Testing Home Assistant API connectivity..."
-    
+
     # Validate token exists first
     if [[ -z "${SUPERVISOR_TOKEN:-}" ]]; then
         log_error "SUPERVISOR_TOKEN is not set - API features will be disabled"
         log_error "HA API calls require a valid token to function"
         return 1
     fi
-    
+
     while [[ ${retry_count} -lt ${max_retries} ]]; do
         response=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
             "http://supervisor/core/api/config" 2>/dev/null || echo "000")
-        
+
         if [[ "${response}" == "200" ]]; then
             log_info "Home Assistant API connection verified (HTTP ${response})"
             return 0
         else
             retry_count=$((retry_count + 1))
             log_debug "API test attempt ${retry_count}/${max_retries} - Status: ${response}"
-            
+
             if [[ ${retry_count} -lt ${max_retries} ]]; then
                 log_debug "Waiting 2 seconds before retry..."
                 sleep 2
             fi
         fi
     done
-    
+
     log_error "Home Assistant API test failed with status: ${response} after ${max_retries} attempts"
     log_error "Please verify SUPERVISOR_TOKEN is valid and Home Assistant is accessible"
     return 1
@@ -226,14 +226,14 @@ if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
     if test_ha_api; then
         log_info "API connectivity check passed"
     else
-        log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        log_error "  ⚠️  SUPERVISOR_TOKEN is set but API test FAILED"
-        log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        log_error "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+        log_error "  âš ï¸  SUPERVISOR_TOKEN is set but API test FAILED"
+        log_error "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
         log_error ""
         log_error "This means API-dependent features will NOT work:"
-        log_error "  • Entity and device information retrieval"
-        log_error "  • Automation context analysis"
-        log_error "  • Direct Home Assistant integration"
+        log_error "  â€¢ Entity and device information retrieval"
+        log_error "  â€¢ Automation context analysis"
+        log_error "  â€¢ Direct Home Assistant integration"
         log_error ""
         log_error "Possible causes:"
         log_error "  1. Token is invalid or expired"
@@ -325,7 +325,7 @@ if [[ -n "${SUPERVISOR_TOKEN:-}" ]] || [[ -f "/data/options.json" ]]; then
     HA_ADDON_ENVIRONMENT=true
     log_info "Running in Home Assistant add-on environment"
     log_info "Ingress proxy will handle URL routing automatically"
-    
+
     # For informational purposes only - not used in Streamlit config
     if [[ -f "/data/slug" ]]; then
         local_slug=$(cat /data/slug 2>/dev/null || echo 'ha_ai_gen_workflow')
@@ -373,14 +373,14 @@ log_info "Verifying Streamlit installation..."
 if ! command -v streamlit &> /dev/null; then
     log_warning "Streamlit is not installed"
     log_info "Attempting to install Streamlit..."
-    
+
     # Check if pip3 is available
     if ! command -v pip3 &> /dev/null; then
         log_error "pip3 is not available - cannot install Streamlit"
         log_error "This is a critical error - the add-on cannot function without Streamlit"
         exit 1
     fi
-    
+
     if pip3 install --no-cache-dir streamlit; then
         log_info "Streamlit installed successfully"
     else

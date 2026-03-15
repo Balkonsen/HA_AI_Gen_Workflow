@@ -14,6 +14,7 @@ The error message `s6-overlay-suexec: fatal: can only run as pid 1` occurs when:
 ### Why does this happen?
 
 When a Docker container starts:
+
 - The first process (PID 1) has special responsibilities for managing child processes
 - s6-overlay is designed to run as PID 1 and manage other processes
 - When `init: false` is set, Home Assistant runs your script directly as PID 1
@@ -27,6 +28,7 @@ When a Docker container starts:
 ```
 
 But in `config.yaml`:
+
 ```yaml
 init: false  # ← This DISABLES s6-overlay!
 ```
@@ -40,6 +42,7 @@ Result: **ERROR** - Script can't run because s6-overlay isn't available.
 #### 1. Removed s6-overlay Dependency
 
 **Before:**
+
 ```bash
 #!/usr/bin/with-contenv bashio
 EXPORT_PATH=$(bashio::config 'export_path')
@@ -47,6 +50,7 @@ bashio::log.info "Starting..."
 ```
 
 **After:**
+
 ```bash
 #!/usr/bin/env bash
 EXPORT_PATH=$(get_config 'export_path' '/config/ai_exports')
@@ -56,6 +60,7 @@ log_info "Starting..."
 #### 2. Implemented Native Bash Configuration Reading
 
 Created a `get_config()` function that:
+
 - Reads JSON config files directly using `jq`
 - Has TWO fallback locations for config files
 - Provides default values if config is missing
@@ -65,22 +70,22 @@ Created a `get_config()` function that:
 get_config() {
     local key="$1"
     local default="$2"
-    
+
     # Try primary config file
     if [[ -f "/data/options.json" ]]; then
         value=$(jq -r ".${key}" /data/options.json)
     fi
-    
+
     # Fallback to secondary location
     if [[ -z "${value}" ]] && [[ -f "/config/options.json" ]]; then
         value=$(jq -r ".${key}" /config/options.json)
     fi
-    
+
     # Use default if still empty
     if [[ -z "${value}" ]]; then
         value="${default}"
     fi
-    
+
     echo "${value}"
 }
 ```
@@ -91,12 +96,13 @@ Replaced all `bashio::log.*` functions with native bash logging:
 
 ```bash
 log_info()    # Green [INFO] messages
-log_warning() # Yellow [WARNING] messages  
+log_warning() # Yellow [WARNING] messages
 log_error()   # Red [ERROR] messages
 log_debug()   # Blue [DEBUG] messages (only if debug enabled)
 ```
 
 Features:
+
 - Color-coded output for easy reading
 - Timestamps on every message
 - Debug mode for detailed troubleshooting
@@ -105,6 +111,7 @@ Features:
 #### 4. Multiple Failsafe Mechanisms
 
 ##### Failsafe #1: Auto-install Missing Dependencies
+
 ```bash
 if ! command -v jq &> /dev/null; then
     log_error "jq is not installed - installing now..."
@@ -113,6 +120,7 @@ fi
 ```
 
 ##### Failsafe #2: Config File Fallbacks
+
 ```bash
 CONFIG_FILE="/data/options.json"          # Primary location
 CONFIG_FILE_FALLBACK="/config/options.json"  # Fallback location
@@ -120,6 +128,7 @@ CONFIG_FILE_FALLBACK="/config/options.json"  # Fallback location
 ```
 
 ##### Failsafe #3: Directory Creation with Retries
+
 ```bash
 if ! mkdir -p "${dir}" 2>/dev/null; then
     log_warning "Attempting to create with elevated permissions..."
@@ -128,6 +137,7 @@ fi
 ```
 
 ##### Failsafe #4: API Testing with Retries
+
 ```bash
 retry_count=0
 max_retries=3
@@ -138,6 +148,7 @@ done
 ```
 
 ##### Failsafe #5: Ingress URL - 3 Detection Methods
+
 ```bash
 # Method 1: Environment variable
 if [[ -n "${INGRESS_ENTRY}" ]]; then
@@ -156,6 +167,7 @@ fi
 ```
 
 ##### Failsafe #6: Application Checks Before Start
+
 ```bash
 # Check if Streamlit is installed
 if ! command -v streamlit &> /dev/null; then
@@ -180,6 +192,7 @@ options:
 ```
 
 Enable these to get detailed information about:
+
 - Configuration loading process
 - Which config file is being used
 - Default values being applied
@@ -189,6 +202,7 @@ Enable these to get detailed information about:
 - Command arguments
 
 Example debug output:
+
 ```
 [DEBUG] 2026-01-28 11:35:21 - Reading config key: export_path
 [DEBUG] 2026-01-28 11:35:21 - Reading from primary config: /data/options.json
@@ -202,6 +216,7 @@ Example debug output:
 ### For Regular Users
 
 **Nothing to do!** The fix is automatic. Just:
+
 1. Update to version 1.0.2 or later
 2. Restart the add-on
 3. Everything should work
@@ -212,31 +227,37 @@ If you encounter issues, enable debug mode:
 
 1. Go to the add-on configuration page
 2. Add these options:
+
    ```yaml
    debug_mode: true
    verbose: true
    ```
+
 3. Save and restart the add-on
 4. Check the logs for detailed information
 
 ### Log Reading Guide
 
 **Green [INFO]** - Normal operation, everything is working
+
 ```
 [INFO] 2026-01-28 11:35:21 - HA AI Gen Workflow Add-on Starting
 ```
 
 **Yellow [WARNING]** - Something unexpected but not critical
+
 ```
 [WARNING] 2026-01-28 11:35:21 - API test failed, continuing anyway...
 ```
 
 **Red [ERROR]** - Critical issue that needs attention
+
 ```
 [ERROR] 2026-01-28 11:35:21 - Failed to write workflow configuration file
 ```
 
 **Blue [DEBUG]** - Detailed info (only visible when debug enabled)
+
 ```
 [DEBUG] 2026-01-28 11:35:21 - Using default value for ssh_enabled: false
 ```
@@ -270,6 +291,7 @@ We maintain `init: false` in the configuration because:
 ### Dependencies
 
 The fixed script requires:
+
 - **bash** (always available)
 - **jq** (auto-installed if missing)
 - **curl** (included in Home Assistant base images)
@@ -282,6 +304,7 @@ No s6-overlay or bashio required!
 To verify the fix is working:
 
 1. Check the add-on logs - should see:
+
    ```
    [INFO] HA AI Gen Workflow Add-on Starting
    [INFO] Configuration loaded successfully
@@ -300,7 +323,7 @@ If you still encounter the s6-overlay error after this fix:
 
 1. Enable debug mode: `debug_mode: true` and `verbose: true`
 2. Copy the full logs
-3. Create an issue at: https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
+3. Create an issue at: <https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues>
 4. Include:
    - Add-on version
    - Home Assistant version
@@ -309,10 +332,10 @@ If you still encounter the s6-overlay error after this fix:
 
 ## Summary
 
-✅ **Removed**: s6-overlay dependency  
-✅ **Added**: Native bash configuration reading  
-✅ **Added**: Custom logging system  
-✅ **Added**: Multiple failsafe mechanisms  
-✅ **Added**: Debug and verbose modes  
-✅ **Added**: Comprehensive error handling  
+✅ **Removed**: s6-overlay dependency
+✅ **Added**: Native bash configuration reading
+✅ **Added**: Custom logging system
+✅ **Added**: Multiple failsafe mechanisms
+✅ **Added**: Debug and verbose modes
+✅ **Added**: Comprehensive error handling
 ✅ **Result**: Fully functional add-on without s6-overlay conflicts

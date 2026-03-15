@@ -5,8 +5,6 @@ Unit tests for workflow_config module.
 
 import os
 import sys
-import tempfile
-import shutil
 
 import pytest
 import yaml
@@ -14,7 +12,7 @@ import yaml
 # Add bin directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 
-from workflow_config import WorkflowConfig
+from workflow_config import WorkflowConfig  # noqa: E402
 
 
 @pytest.mark.unit
@@ -24,7 +22,13 @@ class TestPathExpansion:
     def test_default_paths_are_absolute(self):
         """Default relative paths like ./exports should be resolved to absolute."""
         config = WorkflowConfig()
-        for key in ["export_dir", "import_dir", "secrets_dir", "backup_dir", "ai_context_dir"]:
+        for key in [
+            "export_dir",
+            "import_dir",
+            "secrets_dir",
+            "backup_dir",
+            "ai_context_dir",
+        ]:
             path = config.get(f"paths.{key}")
             assert os.path.isabs(path), f"paths.{key} is not absolute: {path}"
 
@@ -54,8 +58,8 @@ class TestPathExpansion:
             yaml.dump(config_data, f)
 
         config = WorkflowConfig(str(config_file))
-        assert config.get("paths.export_dir") == "/tmp/my_ha_exports"
-        assert config.get("paths.import_dir") == "/tmp/my_ha_imports"
+        assert config.get("paths.export_dir") == os.path.abspath("/tmp/my_ha_exports")
+        assert config.get("paths.import_dir") == os.path.abspath("/tmp/my_ha_imports")
 
     def test_tilde_expansion(self, tmp_path):
         """Paths with ~ should be expanded to the home directory."""
@@ -87,7 +91,7 @@ class TestPathExpansion:
             yaml.dump(config_data, f)
 
         config = WorkflowConfig(str(config_file))
-        assert config.get("paths.export_dir") == "/tmp/ha_test/exports"
+        assert config.get("paths.export_dir") == os.path.abspath("/tmp/ha_test/exports")
 
 
 @pytest.mark.unit

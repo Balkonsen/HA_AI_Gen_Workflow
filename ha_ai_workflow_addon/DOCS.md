@@ -7,10 +7,12 @@ This add-on provides a web-based graphical interface for the Home Assistant AI G
 **Important**: This add-on requires **Home Assistant 2026.2.0 or later** running on **64-bit hardware**.
 
 ### Supported Architectures
+
 - **amd64** (64-bit x86 - Intel/AMD processors)
 - **aarch64** (64-bit ARM - Raspberry Pi 3/4/5 with 64-bit OS, Home Assistant Green/Yellow)
 
 ### Unsupported Architectures
+
 - ❌ **armv7** (32-bit ARM) - No longer supported as of Home Assistant 2026.2.0
 - ❌ **i386** (32-bit x86) - No longer supported as of Home Assistant 2026.2.0
 
@@ -76,7 +78,7 @@ The default paths work for most installations.
 ### Step 2: Export Configuration
 
 1. Open the add-on web UI
-2. Navigate to **Export** 
+2. Navigate to **Export**
 3. Select your export mode (Local or SSH Remote)
 4. Click **Start Export**
 
@@ -99,11 +101,13 @@ The default paths work for most installations.
 This add-on follows Home Assistant security best practices:
 
 ### Authentication
+
 - Uses **SUPERVISOR_TOKEN** for all Home Assistant API interactions
 - Token is automatically provided by the Supervisor (never stored in files)
 - All API calls use Bearer token authentication
 
 ### Permissions
+
 - **homeassistant_api**: Enabled for configuration validation and restart
 - **hassio_api**: Enabled for add-on and system information
 - **hassio_role**: Set to `homeassistant` (minimum required)
@@ -111,12 +115,14 @@ This add-on follows Home Assistant security best practices:
 - **panel_admin**: Only administrators can access the add-on
 
 ### Data Protection
+
 - Secrets are automatically sanitized during export
 - Encrypted secrets are stored separately from configuration
 - Never share the secrets directory with AI assistants
 - All configuration changes are validated before deployment
 
 ### File System Access
+
 - `/config` - Read/Write (required for export/import)
 - `/ssl` - Read-only (for SSH key access)
 - `/share` - Read/Write (for file sharing)
@@ -130,16 +136,18 @@ This add-on follows Home Assistant security best practices:
 **Status**: This error has been completely resolved in version 1.0.2. The add-on no longer depends on s6-overlay and uses native bash scripts instead.
 
 **What was changed**:
+
 - Removed dependency on s6-overlay bashio functions
 - Rewrote startup script to use standard bash
 - Added comprehensive fallback mechanisms
 - Implemented custom logging system
 
 If you still see this error after upgrading to v1.0.2, please:
+
 1. Restart the add-on
 2. Enable `debug_mode: true` in the configuration
 3. Check the logs for detailed information
-4. Report the issue with full logs at: https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
+4. Report the issue with full logs at: <https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues>
 
 ### Add-on Won't Start
 
@@ -152,11 +160,13 @@ If you still see this error after upgrading to v1.0.2, please:
 ### Configuration Loading Issues
 
 The add-on has multiple fallback mechanisms:
+
 - Primary config: `/data/options.json`
 - Fallback config: `/config/options.json`
 - Default values for all options
 
 If you see warnings about missing config files:
+
 1. This is normal if running outside Home Assistant
 2. The add-on will use default values
 3. Enable `debug_mode` to see which values are being used
@@ -186,30 +196,34 @@ If you see warnings about missing config files:
 **Status**: This error has been resolved in version 1.0.3. The issue was related to Streamlit's websocket compression setting when running behind Home Assistant's Ingress proxy.
 
 **What was changed**:
+
 - Added `--server.enableWebsocketCompression=false` flag to Streamlit configuration
 - This is required for Streamlit 1.10+ to work correctly behind reverse proxies/ingress
 
 **Important Notes**:
+
 - The URL shown in the logs (e.g., `http://0.0.0.0:8501/api/hassio_ingress/...`) is the **internal** container address
 - **Do NOT try to access this URL directly** - it won't work from outside the container
 - **Access the add-on through Home Assistant's sidebar** or the add-on's "Open Web UI" button
 - The add-on uses Home Assistant's Ingress feature, which proxies requests through HA's web interface
 
 **About SSH Server**:
+
 - **SSH server is NOT required** for the add-on to work
 - SSH is only needed if you want to export/import configurations from/to a **remote** Home Assistant instance
 - For local usage (most common), the add-on accesses your config directly via `/config` mount
 - Enable SSH only if you're managing a separate/remote Home Assistant installation
 
 If you still see 404 errors after upgrading to v1.0.3:
+
 1. Restart the add-on completely (stop, then start)
 2. Clear your browser cache and reload the page
 3. Try accessing from a different browser or incognito/private mode
 4. Check the add-on logs for any error messages
 5. Enable `debug_mode: true` for detailed logging
-6. Report the issue with full logs at: https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
+6. Report the issue with full logs at: <https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues>
 
 ## Support
 
 For issues and feature requests, visit:
-https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
+<https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues>

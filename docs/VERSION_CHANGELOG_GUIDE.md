@@ -11,6 +11,7 @@ That's it. No complex validation, no automation needed.
 ### 1. Before Making Changes
 
 Current state:
+
 - `ha_ai_workflow_addon/config.yaml` has `version: "1.0.14"`
 - `CHANGELOG.md` has a section `## [1.0.14] - 2026-02-08`
 
@@ -28,7 +29,7 @@ version: "1.0.15"  # Bump version
 ### Fixed
 - **Your fix description** — What you fixed and why (PR #XX)
 
-### Added  
+### Added
 - **Your new feature** — What you added (PR #XX)
 
 ### Changed
@@ -38,6 +39,7 @@ version: "1.0.15"  # Bump version
 ### 3. Real Examples (What Worked)
 
 **Version 1.0.6:**
+
 ```markdown
 ## [1.0.6] - 2026-02-06
 
@@ -48,6 +50,7 @@ version: "1.0.15"  # Bump version
 ```
 
 **Version 1.0.5:**
+
 ```markdown
 ## [1.0.5] - 2026-02-06
 
@@ -64,6 +67,7 @@ version: "1.0.15"  # Bump version
 ## What NOT to Do
 
 ❌ **Don't bump version without CHANGELOG entry:**
+
 ```yaml
 # config.yaml
 version: "1.0.15"  # Changed
@@ -73,6 +77,7 @@ version: "1.0.15"  # Changed
 ```
 
 ❌ **Don't use generic placeholders:**
+
 ```markdown
 ## [1.0.15] - 2026-02-XX
 

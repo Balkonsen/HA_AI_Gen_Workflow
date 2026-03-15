@@ -18,14 +18,11 @@ Export Structure:
 import os
 import sys
 import json
-import yaml
 import tarfile
 import hashlib
 import re
 import subprocess
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
 import shutil
 
 # Script version - increment when making incompatible changes
@@ -57,7 +54,7 @@ def _load_supervisor_token_from_env_file() -> str:
 
 
 class HAConfigExporter:
-    def __init__(self, output_dir="/tmp/ha_export", config_dir=None, ha_url=None):
+    def __init__(self, output_dir="/tmp/ha_export", config_dir=None, ha_url=None):  # nosec B108
         self.output_dir = output_dir
         self.config_dir = config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
         self.secrets_map = {}
@@ -253,11 +250,16 @@ class HAConfigExporter:
             print(f"  Error fetching entity states via API: {e}")
             return False
 
-    def run_command(self, cmd, shell=True):
-        """Run shell command and return output"""
+    def run_command(self, cmd):
+        """Run command and return output."""
         try:
             result = subprocess.run(
-                cmd, shell=shell, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=30,
             )
             return result.stdout, result.stderr, result.returncode
         except Exception as e:
@@ -418,7 +420,11 @@ class HAConfigExporter:
         print("\n=== Exporting Entity States ===")
         restore_state_path = os.path.join(self.config_dir, ".storage", "core.restore_state")
 
-        states_data = {"total_states": 0, "states_by_domain": {}, "state_values": {}}  # entity_id -> state value
+        states_data = {
+            "total_states": 0,
+            "states_by_domain": {},
+            "state_values": {},
+        }  # entity_id -> state value
 
         if os.path.exists(restore_state_path):
             try:
@@ -539,22 +545,6 @@ class HAConfigExporter:
         config_dir = self.config_dir
 
         # Files to exclude
-        exclude_patterns = [
-            "*.db",
-            "*.db-wal",
-            "*.db-shm",
-            "*.log",
-            "home-assistant.log*",
-            "home-assistant_v2.db*",
-            "*.sqlite",
-            ".cloud",
-            ".storage/lovelace*",
-            "deps",
-            "tts",
-            "__pycache__",
-            ".DS_Store",
-        ]
-
         exported_count = 0
 
         # Collect automations
@@ -642,7 +632,7 @@ class HAConfigExporter:
                                 "version": manifest.get("version", "unknown"),
                             }
                         )
-                    except:
+                    except (OSError, TypeError, ValueError, json.JSONDecodeError):
                         custom_components.append({"domain": comp})
             self.config_files["custom_components"] = custom_components
 
@@ -657,9 +647,9 @@ class HAConfigExporter:
         }
 
         # Get list of installed add-ons via CLI
-        stdout, _, _ = self.run_command("ha addons --raw-json 2>/dev/null || echo '{}'")
+        stdout, _, code = self.run_command(["ha", "addons", "--raw-json"])
         try:
-            addons_info = json.loads(stdout) if stdout.strip() else {}
+            addons_info = json.loads(stdout) if code == 0 and stdout.strip() else {}
             if "data" in addons_info and "addons" in addons_info["data"]:
                 for addon in addons_info["data"]["addons"]:
                     addon_data["installed_addons"].append(
@@ -692,7 +682,7 @@ class HAConfigExporter:
         }
 
         # Get HA version via CLI
-        stdout, _, code = self.run_command("ha core info --raw-json")
+        stdout, _, code = self.run_command(["ha", "core", "info", "--raw-json"])
         if code == 0:
             try:
                 info = json.loads(stdout)
@@ -701,7 +691,7 @@ class HAConfigExporter:
                 pass
 
         # Get supervisor version via CLI
-        stdout, _, code = self.run_command("ha supervisor info --raw-json")
+        stdout, _, code = self.run_command(["ha", "supervisor", "info", "--raw-json"])
         if code == 0:
             try:
                 info = json.loads(stdout)
@@ -777,11 +767,16 @@ class HAConfigExporter:
             json.dump(secrets_data, f, indent=2)
 
         print(f"✓ Saved {len(self.secrets_map)} secret mappings to secrets/secrets_map.json")
-        print(f"⚠️  IMPORTANT: Keep secrets/ folder secure - NEVER upload to AI!")
+        print("⚠️  IMPORTANT: Keep secrets/ folder secure - NEVER upload to AI!")
 
     def generate_ai_context_file(self):
         """Generate consolidated AI context markdown file"""
         print("\n=== Generating AI Context File ===")
+
+        active_entities = self.entities_data.get("total_entities", 0) - len(
+            self.entities_data.get("disabled_entities", [])
+        )
+        addons_count = len(self.integrations_data.get("addons", {}).get("installed_addons", []))
 
         # Build the context markdown
         context = f"""# Home Assistant Configuration Context
@@ -793,11 +788,11 @@ HA Version: {self.system_info.get('ha_version', 'unknown')}
 | Metric | Value |
 |--------|-------|
 | Total Entities | {self.entities_data.get('total_entities', 0)} |
-| Active Entities | {self.entities_data.get('total_entities', 0) - len(self.entities_data.get('disabled_entities', []))} |
+| Active Entities | {active_entities} |
 | Disabled Entities | {len(self.entities_data.get('disabled_entities', []))} |
 | Total Devices | {self.devices_data.get('total_devices', 0)} |
 | Integrations | {len(self.integrations_data.get('configured', []))} |
-| Add-ons | {len(self.integrations_data.get('addons', {}).get('installed_addons', []))} |
+| Add-ons | {addons_count} |
 
 ## Entity Domains
 
@@ -897,7 +892,10 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
 
         # Add domain breakdown with entity IDs
         for domain, entity_ids in self.entities_data.get("entities_by_domain", {}).items():
-            entities_export["entities_by_domain"][domain] = {"count": len(entity_ids), "entity_ids": entity_ids}
+            entities_export["entities_by_domain"][domain] = {
+                "count": len(entity_ids),
+                "entity_ids": entity_ids,
+            }
 
         # Add entity states if available
         if "entity_states" in self.entities_data:
@@ -961,7 +959,7 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
 
         # Check file size
         if len(config_content) > MAX_AI_FILE_SIZE:
-            print(f"  ⚠ Config file too large ({len(config_content)/1024/1024:.1f}MB), truncating")
+            print(f"  ⚠ Config file too large ({len(config_content) / 1024 / 1024:.1f}MB), truncating")
             # Prioritize automations, truncate rest
             truncated_config = []
             if "automations" in self.config_files:
@@ -1021,7 +1019,7 @@ Export Version: 2.0
 ```
 {self.export_name}/
 ├── ai_upload/          ← UPLOAD THESE TO AI
-│   ├── ha_context.md       System overview ({ai_upload_size/1024:.0f} KB total)
+│   ├── ha_context.md       System overview ({ai_upload_size / 1024:.0f} KB total)
 │   ├── ha_entities.json    All entity IDs
 │   └── ha_config.yaml      Automations & config
 │
@@ -1033,10 +1031,10 @@ Export Version: 2.0
 
 Upload ALL files from `ai_upload/` to your AI assistant:
 - **Claude**: Supports .md, .json, .yaml (max 30MB/file)
-- **ChatGPT**: Supports .md, .json, .yaml (max 512MB/file)  
+- **ChatGPT**: Supports .md, .json, .yaml (max 512MB/file)
 - **Gemini**: Supports .md, .json, .yaml (max 2GB/file)
 
-Total AI upload size: **{ai_upload_size/1024:.1f} KB**
+Total AI upload size: **{ai_upload_size / 1024:.1f} KB**
 
 ## ❌ Never Share (secrets/)
 
@@ -1088,7 +1086,7 @@ These files are sanitized and safe to upload to AI assistants.
 2. Select all files from this folder
 3. Start your conversation
 
-### ChatGPT  
+### ChatGPT
 1. Click the attachment icon in the chat
 2. Upload files one at a time or together
 3. Reference them in your prompt
@@ -1144,7 +1142,7 @@ These files are sanitized and safe to upload to AI assistants.
         """Remove temporary export directory"""
         try:
             shutil.rmtree(self.export_path)
-        except:
+        except OSError:
             pass
 
     def run(self):
@@ -1187,7 +1185,7 @@ These files are sanitized and safe to upload to AI assistants.
             print("=" * 70)
 
             print(f"\n📁 Export Location: {self.export_path}")
-            print(f"\n📤 AI Upload Files:")
+            print("\n📤 AI Upload Files:")
             print(f"   {self.ai_upload_path}/")
             for f in os.listdir(self.ai_upload_path):
                 fpath = os.path.join(self.ai_upload_path, f)
@@ -1195,20 +1193,20 @@ These files are sanitized and safe to upload to AI assistants.
                     size_kb = os.path.getsize(fpath) / 1024
                     print(f"   └── {f} ({size_kb:.1f} KB)")
 
-            print(f"\n🔒 Secrets Location (NEVER SHARE):")
+            print("\n🔒 Secrets Location (NEVER SHARE):")
             print(f"   {self.secrets_path}/secrets_map.json")
 
-            print(f"\n📦 Archives Created:")
+            print("\n📦 Archives Created:")
             print(f"   AI Upload Only: {ai_tarball}")
             print(f"   Full Export:    {full_tarball}")
 
-            print(f"\n🚀 Next Steps:")
-            print(f"   1. Upload files from ai_upload/ to your AI assistant")
-            print(f"   2. Ask AI to help with automations, dashboards, etc.")
-            print(f"   3. Use import script to apply AI-generated configs")
+            print("\n🚀 Next Steps:")
+            print("   1. Upload files from ai_upload/ to your AI assistant")
+            print("   2. Ask AI to help with automations, dashboards, etc.")
+            print("   3. Use import script to apply AI-generated configs")
 
-            print(f"\n⚠️  Security Reminder:")
-            print(f"   NEVER upload secrets/ folder to AI!")
+            print("\n⚠️  Security Reminder:")
+            print("   NEVER upload secrets/ folder to AI!")
 
             return full_tarball
 
@@ -1224,12 +1222,17 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Export Home Assistant configuration with sanitization", epilog=f"Version: {SCRIPT_VERSION}"
+        description="Export Home Assistant configuration with sanitization",
+        epilog=f"Version: {SCRIPT_VERSION}",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {SCRIPT_VERSION}")
-    parser.add_argument("--output-dir", default="/tmp/ha_export", help="Output directory for export")
+    parser.add_argument("--output-dir", default="/tmp/ha_export", help="Output directory for export")  # nosec B108
     parser.add_argument("--name", help="Custom export name")
-    parser.add_argument("--config-dir", default=None, help="HA config directory (default: $HA_CONFIG_DIR or /config)")
+    parser.add_argument(
+        "--config-dir",
+        default=None,
+        help="HA config directory (default: $HA_CONFIG_DIR or /config)",
+    )
     parser.add_argument("--quiet", action="store_true", help="Minimize output")
 
     args = parser.parse_args()
@@ -1241,7 +1244,8 @@ def main():
 
     config_dir = args.config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
 
-    if os.geteuid() != 0 and not args.quiet:
+    geteuid = getattr(os, "geteuid", None)
+    if callable(geteuid) and geteuid() != 0 and not args.quiet:
         print("⚠️  Warning: Running without root privileges")
         print("   Some system information may not be accessible")
         print()

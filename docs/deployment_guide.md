@@ -89,6 +89,7 @@ cd ha-ai-workflow
 ```
 
 **Setup will:**
+
 - ✅ Check dependencies
 - ✅ Install PyYAML
 - ✅ Install all scripts
@@ -116,6 +117,7 @@ ha-ai-workflow export
 ```
 
 **Expected Output:**
+
 ```
 ╔═══════════════════════════════════════════════════════════════╗
 ║       Home Assistant AI Workflow Automation System            ║
@@ -170,6 +172,7 @@ cat /config/ai_exports/ha_export_*/AI_PROMPT.md
 ```
 
 **Example Content:**
+
 ```markdown
 # Home Assistant Configuration Context
 
@@ -204,6 +207,7 @@ scp root@homeassistant.local:/config/ai_exports/safe_for_ai.tar.gz .
 ```
 
 **Share with AI:**
+
 - Upload `AI_PROMPT.md`
 - Upload `AI_CONTEXT.json`
 - Upload any relevant config files from `config/`
@@ -212,6 +216,7 @@ scp root@homeassistant.local:/config/ai_exports/safe_for_ai.tar.gz .
 ### 4. Import AI Changes
 
 **Prepare import:**
+
 ```bash
 # SSH to Home Assistant
 ssh root@homeassistant.local
@@ -225,11 +230,13 @@ nano new_automation.yaml
 ```
 
 **Run import:**
+
 ```bash
 ha-ai-workflow import
 ```
 
 **Expected Flow:**
+
 ```
 ═══════════════════════════════════════════════════════════════════
   Starting Import Workflow
@@ -338,6 +345,7 @@ ha-ai-workflow status
 ```
 
 **Output:**
+
 ```
 ═══════════════════════════════════════════════════════════════════
   HA AI Workflow Status
@@ -516,12 +524,14 @@ ssh root@ha-instance-b.local "
    - Clean old logs before export
 
 2. **Speed Up Git Operations**
+
    ```bash
    cd /config
    git gc --aggressive
    ```
 
 3. **Archive Old Exports**
+
    ```bash
    find /config/ai_exports -name "ha_export_*" -mtime +30 -exec rm -rf {} \;
    ```
@@ -529,23 +539,27 @@ ssh root@ha-instance-b.local "
 ## 🔐 Security Best Practices
 
 1. **Never commit secrets to git**
+
    ```bash
    # Verify .gitignore
    cat /config/.gitignore | grep secrets
    ```
 
 2. **Regularly rotate secrets backups**
+
    ```bash
    # Keep only last 5 (automatic)
    ls /config/ai_exports/secrets/
    ```
 
 3. **Secure the secrets directory**
+
    ```bash
    chmod 700 /config/ai_exports/secrets
    ```
 
 4. **Use separate git remote for backups**
+
    ```bash
    cd /config
    git remote add backup git@backup-server:ha-config.git

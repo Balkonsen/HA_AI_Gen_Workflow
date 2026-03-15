@@ -21,6 +21,7 @@ The logging system supports the following levels (from most to least verbose):
 ### 2. File Output
 
 All logs are written to a file with timestamps and structured formatting:
+
 - Default location: `/config/ai_exports/workflow.log`
 - Can be customized via `--log-file` option or environment variable
 - Automatic directory creation
@@ -29,6 +30,7 @@ All logs are written to a file with timestamps and structured formatting:
 ### 3. Context Tracking
 
 The logger maintains a context stack for better error diagnostics:
+
 ```python
 logger.push_context("Export Operation")
 # ... do work ...
@@ -38,6 +40,7 @@ logger.pop_context()
 ### 4. Diagnostic Reports
 
 Generate comprehensive diagnostic reports for troubleshooting:
+
 - Current configuration
 - Context stack
 - Recent log entries (last 50 lines)
@@ -121,6 +124,7 @@ Configure logging via environment variables:
 - `HA_AI_LOG_DIR`: Set default log directory (defaults to `/config/ai_exports`)
 
 Example:
+
 ```bash
 export HA_AI_LOG_LEVEL=DEBUG
 export HA_AI_LOG_DIR=/custom/log/path
@@ -132,6 +136,7 @@ ha-ai-workflow export
 The enhanced `setup.sh` script now includes:
 
 ### Comprehensive Checks
+
 1. ✅ Directory structure creation
 2. ✅ System dependency verification (python3, git, pip, shellcheck)
 3. ✅ Python dependency installation from requirements.txt
@@ -169,6 +174,7 @@ sudo ./setup.sh --verbose
 ## Log Output Examples
 
 ### Text Format (Default)
+
 ```
 2026-02-05 07:00:00 [INFO     ] ℹ Starting export workflow
 2026-02-05 07:00:01 [VERBOSE  ] → Connecting to remote host
@@ -178,6 +184,7 @@ sudo ./setup.sh --verbose
 ```
 
 ### JSON Format
+
 ```json
 {"timestamp": "2026-02-05 07:00:00", "level": "INFO", "message": "Starting export", "context": ["Export"]}
 {"timestamp": "2026-02-05 07:00:01", "level": "ERROR", "message": "Connection failed", "context": ["Export", "SSH"]}
@@ -185,12 +192,13 @@ sudo ./setup.sh --verbose
 
 ## Best Practices
 
-1. **Use appropriate log levels**: 
+1. **Use appropriate log levels**:
    - DEBUG for development/troubleshooting
    - INFO for normal operations
    - ERROR for problems that need attention
 
 2. **Add context for operations**:
+
    ```python
    logger.push_context("Export")
    # ... operations ...
@@ -198,6 +206,7 @@ sudo ./setup.sh --verbose
    ```
 
 3. **Log exceptions with context**:
+
    ```python
    try:
        risky_operation()
@@ -206,12 +215,14 @@ sudo ./setup.sh --verbose
    ```
 
 4. **Generate diagnostic reports on failures**:
+
    ```python
    if operation_failed:
        logger.create_diagnostic_report("/tmp/debug.md")
    ```
 
 5. **Use verbose mode for troubleshooting**:
+
    ```bash
    ha-ai-workflow export --verbose --log-level DEBUG
    ```
@@ -250,15 +261,18 @@ The logging system is integrated throughout the workflow:
 ## Troubleshooting
 
 ### Logs not appearing?
+
 - Check log file path: `echo $HA_AI_LOG_FILE`
 - Verify directory permissions: `ls -la /config/ai_exports/`
 - Check log level: Use `--log-level DEBUG` to see all messages
 
 ### Permission denied errors?
+
 - Run setup as root: `sudo ./setup.sh`
 - Check directory ownership: `ls -la /config/`
 
 ### GUI not showing logs?
+
 - Verify log file exists: `ls -la /config/ai_exports/workflow.log`
 - Check Streamlit is running: `ps aux | grep streamlit`
 - Refresh the page or restart Streamlit
@@ -266,6 +280,7 @@ The logging system is integrated throughout the workflow:
 ## Future Enhancements
 
 Potential future improvements:
+
 - Log rotation (size-based or time-based)
 - Remote logging (syslog, external services)
 - Real-time log streaming in GUI
@@ -276,6 +291,7 @@ Potential future improvements:
 ---
 
 For more information, see:
+
 - `bin/workflow_logger.py` - Logger implementation
 - `tests/test_workflow_logger.py` - Comprehensive tests
 - `docs/DEVELOPER_GUIDE.md` - Development documentation

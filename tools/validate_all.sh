@@ -34,28 +34,28 @@ echo "Validation started at $(date)" > "${LOG_FILE}"
 
 print_header() {
     echo ""
-    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
     echo -e "${CYAN}  $1${NC}"
-    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
     echo ""
 }
 
 print_step() {
-    echo -e "${BLUE}▶${NC} $1"
+    echo -e "${BLUE}â–¶${NC} $1"
 }
 
 success() {
-    echo -e "${GREEN}✓${NC} $1"
+    echo -e "${GREEN}âœ“${NC} $1"
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
 }
 
 failure() {
-    echo -e "${RED}✗${NC} $1"
+    echo -e "${RED}âœ—${NC} $1"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
 }
 
 warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
+    echo -e "${YELLOW}âš ${NC} $1"
     WARNING_CHECKS=$((WARNING_CHECKS + 1))
 }
 
@@ -63,10 +63,10 @@ run_check() {
     local name=$1
     shift
     local cmd="$*"
-    
+
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     print_step "$name"
-    
+
     if eval "$cmd" >> "${LOG_FILE}" 2>&1; then
         success "$name passed"
         return 0
@@ -104,8 +104,8 @@ else
     echo "  Required test dependencies are not installed."
     echo ""
     echo "  To install dependencies, run one of:"
-    echo "    • make install"
-    echo "    • pip install -r requirements-test.txt"
+    echo "    â€¢ make install"
+    echo "    â€¢ pip install -r requirements-test.txt"
     echo ""
     echo "  See GETTING_STARTED.md for complete setup instructions."
     echo ""
@@ -266,28 +266,28 @@ echo -e "${RED}Failed:${NC}         $FAILED_CHECKS"
 echo ""
 
 if [ $FAILED_CHECKS -eq 0 ]; then
-    echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}  ✓ ALL VALIDATIONS PASSED${NC}"
-    echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
+    echo -e "${GREEN}  âœ“ ALL VALIDATIONS PASSED${NC}"
+    echo -e "${GREEN}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
     echo ""
     echo "Your code is ready to commit!"
     echo ""
-    
+
     if [ $WARNING_CHECKS -gt 0 ]; then
         echo -e "${YELLOW}Note: $WARNING_CHECKS warning(s) detected. Review before merging.${NC}"
         echo ""
     fi
-    
+
     exit 0
 else
-    echo -e "${RED}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${RED}  ✗ VALIDATION FAILED${NC}"
-    echo -e "${RED}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
+    echo -e "${RED}  âœ— VALIDATION FAILED${NC}"
+    echo -e "${RED}â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${NC}"
     echo ""
     echo "Please fix the errors above before committing."
     echo ""
     echo "Detailed log: ${LOG_FILE}"
     echo ""
-    
+
     exit 1
 fi

@@ -5,6 +5,7 @@
 **HA AI Gen Workflow** is a Home Assistant add-on that enables users to safely export their Home Assistant configurations, sanitize sensitive data, generate AI-ready context, and import AI-modified configurations back. The tool automatically detects and replaces secrets (passwords, tokens, API keys, IP addresses, etc.) with labeled placeholders, making it safe to share configurations with AI assistants.
 
 **Key Features:**
+
 - Automatic secret sanitization and restoration
 - AI-ready export with context generation
 - Safe import with secret restoration
@@ -58,7 +59,9 @@
 ## CRITICAL RULES — Learned from Past Failures
 
 ### 1. Docker Build Context (PR #38, #40)
+
 The HA builder sets `ha_ai_workflow_addon/` as the Docker build context. ALL Dockerfile COPY paths MUST be relative to that directory, NOT the repo root.
+
 ```dockerfile
 # ✅ CORRECT — relative to ha_ai_workflow_addon/
 COPY run.sh /run.sh
@@ -68,17 +71,21 @@ COPY bin/ /app/bin/
 # ❌ WRONG — repo-root paths fail in HA builder context
 COPY ha_ai_workflow_addon/run.sh /run.sh
 ```
+
 The CI workflow stages repo-root files (bin/, config/, templates/, requirements.txt) INTO `ha_ai_workflow_addon/` before build.
 
 ### 2. Version and CHANGELOG Synchronization (PR #36, #52)
+
 **CRITICAL RULE:** When bumping version, ALWAYS update CHANGELOG.md in the same commit/PR.
 
 Version MUST be identical across ALL files:
+
 - `ha_ai_workflow_addon/config.yaml` (source of truth)
 - `ha_ai_workflow_addon/build.yaml`
 - Dockerfile labels
 
 **CHANGELOG.md Update Process (worked perfectly through 1.0.6):**
+
 1. When you bump version in `config.yaml`, immediately add a new section to `CHANGELOG.md`
 2. Place it right after `## [Unreleased]`
 3. Use format: `## [X.X.X] - YYYY-MM-DD`
@@ -87,6 +94,7 @@ Version MUST be identical across ALL files:
 6. See `docs/VERSION_CHANGELOG_GUIDE.md` for examples
 
 **Example:**
+
 ```markdown
 ## [1.0.15] - 2026-02-08
 
@@ -98,6 +106,7 @@ Version MUST be identical across ALL files:
 ```
 
 **DO NOT:**
+
 - ❌ Bump version without updating CHANGELOG
 - ❌ Use vague entries like "version bump" or "updates"
 - ❌ Skip PR numbers or descriptions
@@ -105,7 +114,9 @@ Version MUST be identical across ALL files:
 The CI extracts version from config.yaml. Human-written CHANGELOG entries are mandatory.
 
 ### 3. NO bashio or s6-overlay in run.sh (PR #26, #27)
+
 The run.sh script must use pure bash — no `bashio::` functions, no `#!/usr/bin/with-contenv bashio`. Config reading uses `jq` with `--arg` for safe parameter passing from `/data/options.json`.
+
 ```bash
 # ✅ CORRECT
 #!/usr/bin/env bash
@@ -117,33 +128,41 @@ bashio::config 'export_path'
 ```
 
 ### 4. Streamlit Behind HA Ingress (PR #28, #29, #30)
+
 - Do NOT set `--server.baseUrlPath` in add-on mode — HA Ingress uses dynamic session tokens
 - MUST set `--server.enableWebsocketCompression=false` for Streamlit 1.10+
 - MUST set `--server.enableCORS=false` and `--server.enableXsrfProtection=false`
 
 ### 5. Architecture — 64-bit ONLY (PR #36)
+
 - Supported: `amd64`, `aarch64`
 - NOT supported: `armv7` (removed for HA 2026.2.0+ compatibility)
 - Never add armv7 back to config.yaml, build.yaml, or CI workflow
 
 ### 6. Python Dependency Pins (PR #21)
+
 - `rpds-py<0.30.0` — required for Alpine Cargo compatibility
 - `cryptography>=42.0.4` — security CVE fixes
 - Always check that new dependencies build on Alpine/musl
 
 ### 7. Path Resolution (PR #41)
+
 - Always use `os.path.abspath()` after `os.path.expanduser(os.path.expandvars())`
 - Never hardcode `/config/ai_exports` — only valid inside HA Docker container
 - Use `os.path.abspath("./exports")` as fallback for non-container environments
 
 ### 8. Export Format Versioning (PR #37)
+
 The export verifier supports TWO formats:
+
 - **v2.0**: `ai_upload/` with `ha_entities.json`, `ha_config.yaml`, `ha_context.md`
 - **v1.0 (legacy)**: `config/`, `diagnostics/`, `addons/`
 Always maintain backward compatibility. Use `_detect_export_version()`.
 
 ### 9. API Method Signatures (PR #34)
+
 Before calling any method, verify its ACTUAL signature in the source code.
+
 ```python
 # ✅ CORRECT — generate_context_file() takes no params, returns tuple
 context_file, prompt_file = generator.generate_context_file()
@@ -153,15 +172,18 @@ generator.generate_context_file(str(context_file))
 ```
 
 ### 10. Shell Script Standards (PR #1, #32)
+
 - Use `$*` (not `$@`) in echo/logging functions to avoid SC2145
 - ALL `.sh` files MUST be executable (`chmod +x`)
 - Redirect stderr on glob patterns AFTER the loop: `done 2>/dev/null`
 - Use `shlex.quote()` in Python when constructing shell commands
 
 ### 11. Setup and Installation Simplicity (Through 1.0.5) (PR #52)
+
 **CRITICAL:** Keep setup.sh and ha_ai_master_script.sh simple. Complex solutions break.
 
 **The pattern that worked through 1.0.5:**
+
 - **Don't rename files** - `ha_ai_master_script.sh` stays `ha_ai_master_script.sh`
 - **Predictable paths** - One install dir: `/usr/local/ha-ai-workflow/`
 - **Clear errors** - Exit with helpful message if path/file not found
@@ -183,14 +205,16 @@ cp ha_ai_master_script.sh ha_ai_master.sh  # Don't!
 ## Coding Conventions
 
 ### Python Style
+
 - **Line Length**: 120 characters maximum
 - **Formatter**: `black --line-length 120`
 - **Linter**: `flake8 --ignore=E203,W503`
 - **Docstrings**: Triple-quoted for all functions, classes, modules
 - **Type Hints**: Required on function signatures
-- **Naming**: PascalCase (classes), snake_case (functions), UPPER_SNAKE_CASE (constants), _underscore (private)
+- **Naming**: PascalCase (classes), snake_case (functions), UPPER_SNAKE_CASE (constants),_underscore (private)
 
 ### Code Organization
+
 - **Imports**: stdlib → third-party → local
 - **Error Handling**: Specific exceptions (never bare `except Exception`)
   - SSH: `subprocess.TimeoutExpired`, `FileNotFoundError`, `PermissionError` + stderr parsing
@@ -204,15 +228,18 @@ cp ha_ai_master_script.sh ha_ai_master.sh  # Don't!
 - **Secrets**: Never log, never commit, encrypt at rest
 
 ### Configuration Management
+
 - Use `WorkflowConfig` class for all configuration access
 - Configuration files are in YAML format
 - Support both local and remote (SSH) operations
 - Store secrets encrypted in dedicated directory (never in version control)
 
 ### File Operations
+
 - Always use `pathlib.Path` for cross-platform compatibility
 - Create parent directories with `Path.mkdir(parents=True, exist_ok=True)`
 - Use context managers for file operations:
+
   ```python
   with open(file_path, 'r') as f:
       content = f.read()
@@ -221,6 +248,7 @@ cp ha_ai_master_script.sh ha_ai_master.sh  # Don't!
 ## Testing Requirements
 
 ### Before Every PR
+
 ```bash
 make format     # Auto-format with black
 make lint       # Linting checks
@@ -229,6 +257,7 @@ make security   # Bandit security scan
 ```
 
 ### Running Tests
+
 ```bash
 # All tests
 make test
@@ -244,6 +273,7 @@ make coverage
 ```
 
 ### Test Structure
+
 - Tests in `tests/test_<module>.py`
 - Use pytest fixtures from `conftest.py`
 - Mock ALL external dependencies (SSH, API, filesystem)
@@ -252,6 +282,7 @@ make coverage
 - Target: >80% coverage on new code
 
 ### Test Patterns That Work
+
 ```python
 # Mock SSH operations
 with mock.patch('subprocess.run') as mock_run:
@@ -273,6 +304,7 @@ with mock.patch('requests.get') as mock_get:
 ## PR Checklist — MANDATORY
 
 Before submitting ANY pull request:
+
 1. [ ] `make format` passes (black formatting)
 2. [ ] `make lint` passes (flake8 + pylint)
 3. [ ] `make test` passes (all tests green)
@@ -305,6 +337,7 @@ Before submitting ANY pull request:
 ## Common Patterns
 
 ### Working with Secrets
+
 ```python
 from secrets_manager import SecretsManager, SecretsSanitizer
 
@@ -320,6 +353,7 @@ restored_content = secrets_manager.restore_secrets(sanitized_content)
 ```
 
 ### SSH Operations
+
 ```python
 from ssh_transfer import HARemoteManager
 
@@ -338,6 +372,7 @@ success = remote_manager.export_config("/local/export/path", exclude_patterns=[]
 ```
 
 ### Configuration Access
+
 ```python
 from workflow_config import WorkflowConfig
 
@@ -349,11 +384,13 @@ ssh_enabled = config.get("ssh.enabled", default=False)
 ## Development Workflow
 
 ### Initial Setup
+
 ```bash
 make dev-setup    # Install deps + pre-commit hooks
 ```
 
 ### Development Cycle
+
 ```bash
 make format       # Auto-format with black
 make lint         # Check style
@@ -363,6 +400,7 @@ make ci           # Full CI simulation (lint + test + security)
 ```
 
 ### Docker
+
 ```bash
 make docker-build # Build test image
 make docker-test  # Test in container
@@ -370,6 +408,7 @@ make docker-shell # Interactive shell
 ```
 
 ### Making Changes
+
 1. **Create feature branch** from main
 2. **Make minimal changes** focused on the specific issue
 3. **Run linting**: `make lint` or `make format` to auto-fix
@@ -379,7 +418,9 @@ make docker-shell # Interactive shell
 7. **Commit with descriptive messages**
 
 ### Pre-commit Hooks
+
 The project uses pre-commit hooks that automatically run:
+
 - Code formatting (black)
 - Linting (flake8)
 - Security checks (bandit)
@@ -391,6 +432,7 @@ The project uses pre-commit hooks that automatically run:
 ## Important Considerations
 
 ### Security
+
 - **Never commit secrets** — use `.gitignore` to exclude `secrets/` directories
 - **Validate all user inputs** to prevent path traversal attacks
 - **Use paramiko carefully** — validate SSH hosts and keys
@@ -398,6 +440,7 @@ The project uses pre-commit hooks that automatically run:
 - Run `make security` before committing changes
 
 ### Home Assistant Integration
+
 - The add-on runs as a Docker container in Home Assistant OS
 - Uses Home Assistant API for entity/state information
 - Supports both local and remote HA instances via SSH
@@ -405,12 +448,14 @@ The project uses pre-commit hooks that automatically run:
 - Web GUI is served via Ingress on port 8501
 
 ### Error Handling
+
 - Provide clear, actionable error messages
 - Use exit codes appropriately (0 = success, non-zero = failure)
 - Log detailed errors but show user-friendly messages
 - Always clean up temporary files, even on failure
 
 ### Performance
+
 - Use streaming for large file operations
 - Minimize SSH connections (batch operations when possible)
 - Cache API responses when appropriate
@@ -435,7 +480,7 @@ The project uses pre-commit hooks that automatically run:
 
 ## Additional Resources
 
-- **Repository**: https://github.com/Balkonsen/HA_AI_Gen_Workflow
+- **Repository**: <https://github.com/Balkonsen/HA_AI_Gen_Workflow>
 - **Issues**: Use GitHub Issues for bug reports and feature requests
 - **Home Assistant Add-on Store**: Add via repository URL
 - **License**: MIT License (see `mit_license.txt`)

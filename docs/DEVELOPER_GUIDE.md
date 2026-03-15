@@ -3,6 +3,7 @@
 ## Quick Start for Developers
 
 ### Prerequisites
+
 ```bash
 # System requirements
 - Python 3.8+
@@ -17,6 +18,7 @@
 ```
 
 ### Initial Setup
+
 ```bash
 # 1. Clone repository
 git clone https://github.com/Balkonsen/HA_AI_Gen_Workflow.git
@@ -40,6 +42,7 @@ pytest -v
 ## Development Environment
 
 ### Directory Structure Explained
+
 ```
 HA_AI_Gen_Workflow/
 ├── bin/                    # Core Python modules
@@ -73,6 +76,7 @@ HA_AI_Gen_Workflow/
 ```
 
 ### Python Virtual Environment
+
 ```bash
 # Create virtual environment
 python3 -m venv venv
@@ -95,27 +99,32 @@ deactivate
 ### Running Tests
 
 #### All Tests
+
 ```bash
 pytest -v
 ```
 
 #### Specific Test File
+
 ```bash
 pytest tests/test_context_gen.py -v
 ```
 
 #### Specific Test Function
+
 ```bash
 pytest tests/test_context_gen.py::TestHAContextGenerator::test_init -v
 ```
 
 #### With Coverage
+
 ```bash
 pytest --cov=bin --cov-report=html --cov-report=term
 # View HTML report: open htmlcov/index.html
 ```
 
 #### Watch Mode (run tests on file changes)
+
 ```bash
 pip install pytest-watch
 ptw -- -v
@@ -124,21 +133,25 @@ ptw -- -v
 ### Test Categories
 
 #### Unit Tests
+
 ```bash
 pytest -v -m unit
 ```
 
 #### Integration Tests
+
 ```bash
 pytest -v -m integration
 ```
 
 #### Security Tests
+
 ```bash
 pytest -v -m security
 ```
 
 ### Shell Script Testing
+
 ```bash
 # Validate all shell scripts
 ./tests/validate_shell_scripts.sh
@@ -157,6 +170,7 @@ bats tests/test_bash_scripts.bats
 ### Formatting
 
 #### Python (Black)
+
 ```bash
 # Check formatting
 black --check bin/
@@ -169,11 +183,13 @@ black bin/ha_ai_context_gen.py
 ```
 
 #### Configuration
+
 Line length: 120 characters (see `pytest.ini`)
 
 ### Linting
 
 #### Python (Flake8)
+
 ```bash
 # Check all Python files
 flake8 bin/
@@ -186,6 +202,7 @@ flake8 bin/ --statistics
 ```
 
 #### Bash (ShellCheck)
+
 ```bash
 # Check specific script
 shellcheck ha_ai_master_script.sh
@@ -197,6 +214,7 @@ find . -name "*.sh" -exec shellcheck {} \;
 ### Security Scanning
 
 #### Python (Bandit)
+
 ```bash
 # Scan for security issues
 bandit -r bin/
@@ -209,6 +227,7 @@ bandit -r bin/ -f json -o security-report.json
 ```
 
 #### Secrets Detection
+
 ```bash
 # Install detect-secrets
 pip install detect-secrets
@@ -223,6 +242,7 @@ detect-secrets scan --baseline .secrets.baseline
 ## Pre-commit Hooks
 
 ### Setup
+
 ```bash
 # Install pre-commit
 pip install pre-commit
@@ -235,6 +255,7 @@ pre-commit install --hook-type commit-msg
 ```
 
 ### Usage
+
 ```bash
 # Run manually on all files
 pre-commit run --all-files
@@ -250,6 +271,7 @@ pre-commit autoupdate
 ```
 
 ### Hooks Configured
+
 1. Trailing whitespace removal
 2. End-of-file fixer
 3. YAML/JSON validation
@@ -264,6 +286,7 @@ pre-commit autoupdate
 ## Git Workflow
 
 ### Branch Strategy
+
 ```
 main (protected)
   ├── develop
@@ -274,6 +297,7 @@ main (protected)
 ```
 
 ### Creating a Feature
+
 ```bash
 # Start from develop
 git checkout develop
@@ -296,6 +320,7 @@ git push origin feature/my-new-feature
 ```
 
 ### Commit Message Convention
+
 ```
 <type>(<scope>): <subject>
 
@@ -305,6 +330,7 @@ git push origin feature/my-new-feature
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation only
@@ -314,6 +340,7 @@ git push origin feature/my-new-feature
 - `chore`: Build process or tools
 
 **Examples:**
+
 ```
 feat(context-gen): Add device statistics to AI context
 
@@ -343,6 +370,7 @@ Added Docker setup instructions and troubleshooting section.
 ### Python Debugging
 
 #### Using pdb
+
 ```python
 import pdb
 
@@ -353,6 +381,7 @@ def problematic_function():
 ```
 
 #### Using pytest with pdb
+
 ```bash
 # Drop into debugger on failure
 pytest --pdb
@@ -362,7 +391,9 @@ pytest -x --pdb
 ```
 
 #### Using VSCode Debugger
+
 Create `.vscode/launch.json`:
+
 ```json
 {
     "version": "0.2.0",
@@ -386,6 +417,7 @@ Create `.vscode/launch.json`:
 ```
 
 ### Bash Debugging
+
 ```bash
 # Run with debug output
 bash -x script.sh
@@ -402,6 +434,7 @@ bash -n script.sh
 ### Logging
 
 #### Python Logging
+
 ```python
 import logging
 
@@ -430,6 +463,7 @@ logger.exception("Exception occurred")  # Includes traceback
 ### GitHub Actions Workflow
 
 The CI/CD pipeline runs on:
+
 - Push to `main`, `develop`, or `feature/*` branches
 - Pull requests to `main` or `develop`
 - Manual trigger via GitHub UI
@@ -471,6 +505,7 @@ The CI/CD pipeline runs on:
 ### Running CI Locally
 
 #### Using Act
+
 ```bash
 # Install act (GitHub Actions local runner)
 curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
@@ -486,6 +521,7 @@ act -s GITHUB_TOKEN=your_token
 ```
 
 #### Manual Validation
+
 ```bash
 # Run all validations
 ./tools/run_all_validations.sh
@@ -494,6 +530,7 @@ act -s GITHUB_TOKEN=your_token
 ## Performance Profiling
 
 ### Python Profiling
+
 ```bash
 # Install profiling tools
 pip install line_profiler memory_profiler
@@ -506,6 +543,7 @@ python -m memory_profiler bin/ha_ai_context_gen.py
 ```
 
 ### Bash Profiling
+
 ```bash
 # Measure execution time
 time ./ha_ai_master_script.sh export
@@ -517,6 +555,7 @@ PS4='+ $(date "+%s.%N")\011 ' bash -x script.sh
 ## Documentation
 
 ### Updating Documentation
+
 ```bash
 # Check documentation
 ./docs/
@@ -528,6 +567,7 @@ make html
 ```
 
 ### Documentation Standards
+
 - Use Markdown for all documentation
 - Include code examples
 - Keep docs in sync with code
@@ -536,10 +576,12 @@ make html
 ## Release Process
 
 ### Version Numbering
+
 Format: `YYYY.MM.DD-HASH`
 Example: `2026.01.15-a1b2c3d4`
 
 ### Creating a Release
+
 ```bash
 # 1. Ensure all tests pass
 pytest -v
@@ -569,6 +611,7 @@ git push origin v2026.01.15
 ### Common Issues
 
 #### Tests Failing Locally
+
 ```bash
 # Clear pytest cache
 rm -rf .pytest_cache
@@ -582,6 +625,7 @@ pytest -vv
 ```
 
 #### Import Errors
+
 ```bash
 # Ensure PYTHONPATH includes bin/
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/bin"
@@ -591,6 +635,7 @@ pip install -e .
 ```
 
 #### Pre-commit Hook Failures
+
 ```bash
 # Update hooks
 pre-commit autoupdate
@@ -622,11 +667,11 @@ ssh:
   auth_method: "key"          # "key" or "password"
   key_path: "~/.ssh/id_rsa"  # Path to SSH private key
   remote_config_path: "/config"
-  
+
   # Timeout settings (in seconds)
   connection_timeout: 30      # SSH connection timeout
   transfer_timeout: 600       # File transfer timeout (10 minutes)
-  
+
   # Retry configuration
   retry_attempts: 3           # Number of retry attempts
   retry_delay: 2              # Delay between retries
@@ -678,6 +723,7 @@ Test SSH connection directly:
 #### Recommended Settings by Scenario
 
 **Local Network (Proxmox VM / Docker on LAN)**
+
 ```yaml
 connection_timeout: 15   # Fast local network
 transfer_timeout: 300    # 5 minutes for typical configs
@@ -686,6 +732,7 @@ retry_delay: 1           # Short delay
 ```
 
 **Remote Network (Over Internet/VPN)**
+
 ```yaml
 connection_timeout: 60   # Slower connection establishment
 transfer_timeout: 1200   # 20 minutes for large configs
@@ -694,6 +741,7 @@ retry_delay: 5           # Longer delay between retries
 ```
 
 **Slow/Unreliable Network**
+
 ```yaml
 connection_timeout: 90
 transfer_timeout: 1800   # 30 minutes
@@ -702,6 +750,7 @@ retry_delay: 10
 ```
 
 **Large Configuration Files (>100MB)**
+
 ```yaml
 connection_timeout: 30
 transfer_timeout: 3600   # 60 minutes
@@ -712,116 +761,150 @@ retry_delay: 5
 ### Common SSH Errors and Solutions
 
 #### Connection Refused
+
 ```
 Error: Connection refused: SSH service may not be running on 192.168.1.100:22
 ```
 
 **Solutions:**
+
 1. Verify SSH service is running:
+
    ```bash
    # On HA host
    systemctl status sshd
    ```
+
 2. Check firewall rules allow port 22
 3. Verify correct IP address and port
 4. For Home Assistant OS, ensure SSH add-on is installed and started
 
 #### Authentication Failed
+
 ```
 Error: Authentication failed: Check username, password, or SSH key
 ```
 
 **Solutions:**
+
 1. Verify SSH key is correct:
+
    ```bash
    # Test SSH key
    ssh -i ~/.ssh/id_rsa root@192.168.1.100
    ```
+
 2. Check key permissions:
+
    ```bash
    chmod 600 ~/.ssh/id_rsa
    chmod 700 ~/.ssh
    ```
+
 3. Verify public key is in `~/.ssh/authorized_keys` on remote host
 4. Try password authentication if key fails
 5. Check username is correct (usually `root` for HA OS)
 
 #### Connection Timeout
+
 ```
 Error: Connection timeout after 30s. Host may be unreachable.
 ```
 
 **Solutions:**
+
 1. Verify host is reachable:
+
    ```bash
    ping 192.168.1.100
    ```
+
 2. Increase timeout for slow networks:
+
    ```yaml
    connection_timeout: 60
    ```
+
 3. Check network connectivity
 4. Verify VPN is active (if accessing remotely)
 5. Check if host is behind firewall/NAT
 
 #### Hostname Resolution Failed
+
 ```
 Error: Cannot resolve hostname: ha.local
 ```
 
 **Solutions:**
+
 1. Use IP address instead of hostname
 2. Add hostname to `/etc/hosts`:
+
    ```bash
    echo "192.168.1.100 ha.local" | sudo tee -a /etc/hosts
    ```
+
 3. Verify DNS is working:
+
    ```bash
    nslookup ha.local
    ```
+
 4. Use mDNS (.local domains) if on local network
 
 #### Transfer Timeout
+
 ```
 Error: Transfer timeout after 600s
 ```
 
 **Solutions:**
+
 1. Increase transfer timeout:
+
    ```yaml
    transfer_timeout: 1200  # 20 minutes
    ```
+
 2. Check network bandwidth
 3. Reduce configuration size by excluding unnecessary files
 4. Use faster connection (LAN vs WiFi)
 5. Check for network congestion
 
 #### Permission Denied (File Operations)
+
 ```
 Error: Permission denied: /config/configuration.yaml
 ```
 
 **Solutions:**
+
 1. Verify SSH user has read/write permissions:
+
    ```bash
    # On remote host
    ls -la /config
    ```
+
 2. Use correct user (usually `root` for HA OS)
 3. Check SELinux/AppArmor settings
 4. Ensure target directory exists and is writable
 
 #### No Route to Host
+
 ```
 Error: Network unreachable: Cannot reach host 192.168.1.100
 ```
 
 **Solutions:**
+
 1. Verify host is on same network or routable
 2. Check routing table:
+
    ```bash
    ip route
    ```
+
 3. Verify network interface is up
 4. Check VPN connection for remote access
 5. Verify firewall allows traffic
@@ -871,6 +954,7 @@ The SSH module automatically retries transient failures:
 - **Configurable:** Retry attempts and delay between retries
 
 **Monitoring retries:**
+
 ```python
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -898,6 +982,7 @@ The module reuses SSH connections where possible to reduce overhead.
 #### Large File Transfers
 
 For large configuration exports/imports:
+
 1. Use rsync (automatically preferred when available)
 2. Increase `transfer_timeout`
 3. Consider compression (rsync uses `-z` by default)
@@ -996,6 +1081,7 @@ vim config/workflow_config.yaml
 ## Best Practices
 
 ### Code Style
+
 - Follow PEP 8 for Python
 - Use type hints
 - Write docstrings for all public functions
@@ -1003,6 +1089,7 @@ vim config/workflow_config.yaml
 - Prefer explicit over implicit
 
 ### Testing
+
 - Write tests before/with code (TDD)
 - Aim for >80% code coverage
 - Test edge cases and error conditions
@@ -1010,6 +1097,7 @@ vim config/workflow_config.yaml
 - Mock external dependencies
 
 ### Security
+
 - Never commit secrets
 - Always sanitize user input
 - Validate all external data
@@ -1017,6 +1105,7 @@ vim config/workflow_config.yaml
 - Run security scans regularly
 
 ### Performance
+
 - Profile before optimizing
 - Avoid premature optimization
 - Use appropriate data structures

@@ -85,7 +85,7 @@ jobs:
               --pr-number "${PR_NUMBER:-unknown}" \
               --diff-file "${DIFF_FILE}" \
               --test-output-file "${TEST_OUTPUT_FILE:-}" \
-              --lint-output-file "${LINT_OUTPUT_FILE:-}" 
+              --lint-output-file "${LINT_OUTPUT_FILE:-}"
           else
             python bin/lessons_learned.py --scan
           fi

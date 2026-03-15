@@ -1,0 +1,11 @@
+{
+  "include": ["bin", "tests"],
+  "exclude": ["**/__pycache__", ".venv", "htmlcov"],
+  "typeCheckingMode": "basic",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["bin", ".venv/Lib/site-packages"]
+    }
+  ]
+}

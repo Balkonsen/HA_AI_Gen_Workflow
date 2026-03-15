@@ -2,7 +2,7 @@
 Unit tests for ha_api_client.py
 Tests the HomeAssistantAPI class with dual-mode support (internal/external).
 """
-import pytest
+
 import os
 import sys
 from unittest.mock import patch, MagicMock
@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 # Add bin directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 
-from ha_api_client import HomeAssistantAPI
+from ha_api_client import HomeAssistantAPI  # noqa: E402
 
 
 class TestHomeAssistantAPIInitialization:
@@ -46,7 +46,13 @@ class TestHomeAssistantAPIInitialization:
 
     def test_init_external_mode_with_env_ha_url(self):
         """Test initialization in external mode with HA_URL environment variable"""
-        with patch.dict(os.environ, {"SUPERVISOR_TOKEN": "test_token", "HA_URL": "http://homeassistant.local:8123"}):
+        with patch.dict(
+            os.environ,
+            {
+                "SUPERVISOR_TOKEN": "test_token",
+                "HA_URL": "http://homeassistant.local:8123",
+            },
+        ):
             api = HomeAssistantAPI()
 
             assert api._token == "test_token"
@@ -200,6 +206,7 @@ class TestHomeAssistantAPIErrorHandling:
         """Test that connection timeout returns None"""
         with patch("requests.request") as mock_request:
             import requests
+
             mock_request.side_effect = requests.exceptions.Timeout("Connection timeout")
 
             api = HomeAssistantAPI(token="test_token")

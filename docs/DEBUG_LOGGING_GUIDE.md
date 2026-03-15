@@ -9,6 +9,7 @@ The enhanced debug logging system provides comprehensive insights into function 
 ## Enabling DEBUG Mode
 
 ### Command Line
+
 ```bash
 # Master script with DEBUG mode
 ./ha_ai_master_script.sh export --log-level DEBUG
@@ -19,6 +20,7 @@ export HA_AI_LOG_LEVEL=DEBUG
 ```
 
 ### Python Scripts
+
 ```python
 from workflow_logger import get_logger, LogLevel
 
@@ -84,11 +86,11 @@ Track function entry and exit with context management:
 ```python
 def my_function(arg1, arg2):
     logger.debug_enter("my_function", args=(arg1, arg2))
-    
+
     try:
         # Function logic here
         result = arg1 + arg2
-        
+
         logger.debug_exit("my_function", return_value=result)
         return result
     except Exception as e:
@@ -148,24 +150,24 @@ logger.set_log_level(LogLevel.DEBUG)
 @trace_calls(logger)
 def export_configuration(config_dir: str, output_dir: str):
     """Export Home Assistant configuration with debug logging."""
-    
+
     logger.debug_var("config_dir", config_dir)
     logger.debug_var("output_dir", output_dir)
-    
+
     # Check if directory exists
     if not os.path.exists(config_dir):
         logger.error(f"Config directory not found: {config_dir}")
         logger.debug_stack()  # Show how we got here
         return False
-    
+
     # Process files
     files = os.listdir(config_dir)
     logger.debug_var("files_found", files)
-    
+
     # Sanitize and export
     sanitized = sanitize_secrets(files)
     logger.debug_var("sanitized_count", len(sanitized))
-    
+
     return True
 
 # Usage
@@ -175,12 +177,14 @@ success = export_configuration("/config", "/tmp/export")
 ## Output Examples
 
 ### Normal (INFO) Mode
+
 ```
 2026-02-07 16:21:23 [INFO] Starting export workflow
 2026-02-07 16:21:24 [SUCCESS] Export completed
 ```
 
 ### DEBUG Mode
+
 ```
 2026-02-07 16:21:23 [INFO] Starting export workflow
 2026-02-07 16:21:23 [DEBUG] 🔍 Export configuration:
@@ -210,6 +214,7 @@ success = export_configuration("/config", "/tmp/export")
 The enhanced API client now provides detailed error messages:
 
 ### 401 Unauthorized Error
+
 ```
 ❌ Authentication failed (401 Unauthorized)
   SUPERVISOR_TOKEN is invalid or expired.
@@ -220,6 +225,7 @@ The enhanced API client now provides detailed error messages:
 ```
 
 ### Connection Test Output
+
 ```bash
 $ python3 -c "from bin.ha_api_client import HomeAssistantAPI; \
     api = HomeAssistantAPI('your_token'); \
@@ -264,19 +270,19 @@ ha_diagnostic_export.py 2.0.0
 $ python3 /usr/local/ha-ai-workflow/bin/ha_diagnostic_export.py --help
 HA Diagnostic Export v2.0.0
 
-usage: ha_diagnostic_export.py [-h] [--version] [--output-dir OUTPUT_DIR] 
+usage: ha_diagnostic_export.py [-h] [--version] [--output-dir OUTPUT_DIR]
                                 [--name NAME] [--config-dir CONFIG_DIR] [--quiet]
 ```
 
 ## Troubleshooting
 
-### If DEBUG output is not showing:
+### If DEBUG output is not showing
 
 1. Check log level: `echo $HA_AI_LOG_LEVEL`
 2. Verify command: `./ha_ai_master_script.sh export --log-level DEBUG`
 3. Check log file: `cat /config/ai_exports/workflow.log`
 
-### If seeing version mismatch errors:
+### If seeing version mismatch errors
 
 1. Check installed version: `ha_diagnostic_export.py --version`
 2. Re-run setup: `sudo ./setup.sh`

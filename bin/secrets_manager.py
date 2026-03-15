@@ -5,20 +5,17 @@ Handles encryption, storage and restoration of sensitive data.
 """
 
 import os
-import sys
 import json
 import base64
 import hashlib
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 from datetime import datetime
 
 # Try to import cryptography, fall back to basic encoding if not available
 try:
     from cryptography.fernet import Fernet
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
     CRYPTO_AVAILABLE = True
 except ImportError:
@@ -214,7 +211,11 @@ class SecretsManager:
     def save(self):
         """Save secrets and mapping to files."""
         # Save mapping (metadata only - safe to include in repo with caution)
-        mapping_data = {"counter": self._counter, "mapping": self._mapping, "updated": datetime.now().isoformat()}
+        mapping_data = {
+            "counter": self._counter,
+            "mapping": self._mapping,
+            "updated": datetime.now().isoformat(),
+        }
         with open(self.mapping_file, "w") as f:
             json.dump(mapping_data, f, indent=2)
 
@@ -331,7 +332,7 @@ class SecretsManager:
         return {
             "total_secrets": len(self._secrets),
             "by_type": type_counts,
-            "encryption": "Fernet (AES-128-CBC)" if CRYPTO_AVAILABLE else "Base64 (not secure)",
+            "encryption": ("Fernet (AES-128-CBC)" if CRYPTO_AVAILABLE else "Base64 (not secure)"),
         }
 
     def print_summary(self):
@@ -363,7 +364,17 @@ class SecretsSanitizer:
         "longitude": r"(longitude|lon|lng)\s*[:=]\s*(-?\d+\.?\d*)",
     }
 
-    SKIP_VALUES = ["example", "placeholder", "your_", "xxx", "***", "none", "null", "true", "false"]
+    SKIP_VALUES = [
+        "example",
+        "placeholder",
+        "your_",
+        "xxx",
+        "***",
+        "none",
+        "null",
+        "true",
+        "false",
+    ]
 
     def __init__(self, secrets_manager: SecretsManager):
         """Initialize sanitizer with secrets manager.
@@ -419,7 +430,7 @@ class SecretsSanitizer:
                         try:
                             key = match.group(1)
                             value = match.group(2)
-                        except:
+                        except (IndexError, AttributeError):
                             continue
 
                     if not self.should_skip(value):

@@ -18,27 +18,27 @@ echo ""
 # 1. Python syntax check
 echo -n "Python syntax... "
 if python3 -m py_compile bin/*.py 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
+    echo -e "${GREEN}âœ“${NC}"
 else
-    echo -e "${RED}✗${NC}"
+    echo -e "${RED}âœ—${NC}"
     exit 1
 fi
 
 # 2. Shell syntax check
 echo -n "Shell syntax... "
 if bash -n *.sh 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
+    echo -e "${GREEN}âœ“${NC}"
 else
-    echo -e "${RED}✗${NC}"
+    echo -e "${RED}âœ—${NC}"
     exit 1
 fi
 
 # 3. Quick tests
 echo -n "Quick tests... "
 if pytest tests/ -x -q 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
+    echo -e "${GREEN}âœ“${NC}"
 else
-    echo -e "${RED}✗${NC}"
+    echo -e "${RED}âœ—${NC}"
     exit 1
 fi
 

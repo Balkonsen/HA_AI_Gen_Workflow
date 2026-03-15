@@ -332,7 +332,12 @@ class WorkflowLogger:
 
             self.debug(f"Variable: {var_name} = {formatted_value}")
 
-    def debug_call(self, func_name: str, args: tuple = (), kwargs: dict = None):
+    def debug_call(
+        self,
+        func_name: str,
+        args: tuple[Any, ...] = (),
+        kwargs: dict[str, Any] | None = None,
+    ):
         """Log a function call with its arguments at DEBUG level.
 
         Args:
@@ -364,7 +369,12 @@ class WorkflowLogger:
 
             self.debug(f"Returned from {func_name}: {formatted_value}")
 
-    def debug_enter(self, func_name: str, args: tuple = (), kwargs: dict = None):
+    def debug_enter(
+        self,
+        func_name: str,
+        args: tuple[Any, ...] = (),
+        kwargs: dict[str, Any] | None = None,
+    ):
         """Log entering a function at DEBUG level.
 
         Args:
@@ -521,7 +531,7 @@ def configure_logger(
 
 if __name__ == "__main__":
     # Test the logger
-    logger = configure_logger(log_level="DEBUG", log_file="/tmp/workflow_test.log")
+    logger = configure_logger(log_level="DEBUG", log_file="/tmp/workflow_test.log")  # nosec B108
 
     logger.banner("Testing Workflow Logger")
     logger.debug("This is a debug message")
@@ -543,7 +553,7 @@ if __name__ == "__main__":
     except Exception as e:
         logger.log_exception(e, "Exception test")
 
-    logger.create_diagnostic_report("/tmp/diagnostic_test.md")
+    logger.create_diagnostic_report("/tmp/diagnostic_test.md")  # nosec B108
 
     print("\nLog file created at: /tmp/workflow_test.log")
     print("Diagnostic report created at: /tmp/diagnostic_test.md")

@@ -122,6 +122,7 @@ else:
 The implementation matches the working example script pattern:
 
 ### Example Script (External Mode)
+
 ```bash
 HA_URL="http://192.168.178.22:8123"
 HA_TOKEN="eyJhbGc..."
@@ -131,6 +132,7 @@ curl -H "Authorization: Bearer ${HA_TOKEN}" \
 ```
 
 ### This Workflow (External Mode)
+
 ```python
 api = HomeAssistantAPI(
     token="eyJhbGc...",
@@ -148,6 +150,7 @@ Both use the same endpoint format: `{HA_URL}/api/hassio/addons`
 **Problem:** API returns 401 status code
 
 **Solutions:**
+
 1. Verify token is valid (check it hasn't expired)
 2. Create a new Long-Lived Access Token
 3. Update your configuration with the new token
@@ -157,6 +160,7 @@ Both use the same endpoint format: `{HA_URL}/api/hassio/addons`
 **Problem:** Cannot connect to Home Assistant
 
 **Solutions:**
+
 1. Verify Home Assistant is running
 2. Check the URL/port are correct
 3. Ensure firewall allows connection
@@ -167,6 +171,7 @@ Both use the same endpoint format: `{HA_URL}/api/hassio/addons`
 **Problem:** Supervisor endpoints return 404
 
 **Solutions:**
+
 1. Verify you're running Home Assistant OS (not Container/Core)
 2. Supervisor API is only available in Home Assistant OS
 3. Some features require supervisor - they won't work in Container/Core installations
@@ -176,6 +181,7 @@ Both use the same endpoint format: `{HA_URL}/api/hassio/addons`
 **Problem:** `get_addons()` returns empty list
 
 **Possible Causes:**
+
 1. No add-ons are installed
 2. Using Core/Container (no supervisor)
 3. Token lacks required permissions
@@ -187,7 +193,7 @@ Both use the same endpoint format: `{HA_URL}/api/hassio/addons`
 ```python
 class HomeAssistantAPI:
     def __init__(self, token: str | None = None, ha_url: str | None = None)
-    
+
     # Core API Methods
     def get_config() -> dict | None
     def get_states() -> list[dict] | None
@@ -195,13 +201,13 @@ class HomeAssistantAPI:
     def call_service(domain: str, service: str, data: dict = None) -> bool
     def check_config() -> dict | None
     def restart_core() -> bool
-    
+
     # Supervisor API Methods
     def get_supervisor_info() -> dict | None
     def get_core_info() -> dict | None
     def get_addons() -> dict | None
     def get_addon_info(slug: str) -> dict | None
-    
+
     # Utility Methods
     def test_connection() -> tuple[bool, str]
     @property
@@ -218,7 +224,7 @@ class HAConfigExporter:
         config_dir: str | None = None,
         ha_url: str | None = None
     )
-    
+
     # Uses same dual-mode logic as HomeAssistantAPI
     # Internal methods automatically use correct endpoints
 ```
@@ -237,12 +243,14 @@ class HAConfigExporter:
 If you were using the old implementation that only supported internal mode:
 
 **Before:**
+
 ```python
 # Only worked as add-on
 exporter = HAConfigExporter()
 ```
 
 **After:**
+
 ```python
 # Still works as add-on (backward compatible)
 exporter = HAConfigExporter()
@@ -256,5 +264,6 @@ No changes needed to existing add-on usage - it remains fully backward compatibl
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues
-- Documentation: https://github.com/Balkonsen/HA_AI_Gen_Workflow/tree/main/docs
+
+- GitHub Issues: <https://github.com/Balkonsen/HA_AI_Gen_Workflow/issues>
+- Documentation: <https://github.com/Balkonsen/HA_AI_Gen_Workflow/tree/main/docs>

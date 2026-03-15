@@ -11,6 +11,7 @@ Through version 1.0.5, the installation and command system worked reliably becau
 ### 1. setup.sh - Simple Installation
 
 **Through 1.0.5, setup.sh:**
+
 - Created necessary directories
 - Installed Python dependencies
 - Copied scripts to install location
@@ -27,6 +28,7 @@ ln -sf "${INSTALL_DIR}/ha_ai_master_script.sh" /usr/local/bin/ha-ai-workflow
 ```
 
 **DON'T:**
+
 ```bash
 # ❌ BAD - Causes confusion
 # Renaming scripts during installation
@@ -36,6 +38,7 @@ mv ha_ai_master_script.sh ha_ai_master.sh  # Don't rename!
 ### 2. ha_ai_master_script.sh - Clear Paths
 
 **Through 1.0.5, the master script:**
+
 - Had clear, predictable paths for bin directory
 - Used straightforward environment variable loading
 - Exited with clear error messages if paths not found
@@ -52,6 +55,7 @@ fi
 ```
 
 **DON'T:**
+
 ```bash
 # ❌ BAD - Silent failure
 BIN_DIR="${BASE_DIR}/bin"  # If this doesn't exist...
@@ -61,6 +65,7 @@ BIN_DIR="${BASE_DIR}/bin"  # If this doesn't exist...
 ### 3. Environment Variables - Predictable Locations
 
 **Through 1.0.5, .env file loading:**
+
 - Checked a few logical locations
 - Didn't overcomplicate with many fallbacks
 - Made it clear where to put the file
@@ -78,6 +83,7 @@ done
 ### 4. Command Verification - Actually Test It
 
 **Through 1.0.5, setup verification:**
+
 - Actually ran the command with `--help` to verify it works
 - Didn't just check if symlink exists
 
@@ -93,6 +99,7 @@ fi
 ```
 
 **DON'T:**
+
 ```bash
 # ❌ BAD - Only checks PATH
 if command -v ha-ai-workflow; then
@@ -115,9 +122,11 @@ These made setup reliable through 1.0.5:
 ## Common Setup Issues After 1.0.5
 
 ### Issue: Command Not Found
+
 **Symptom:** `ha-ai-workflow: command not found`
 
 **Through 1.0.5 solution:**
+
 ```bash
 # Check symlink exists and points to right file
 ls -la /usr/local/bin/ha-ai-workflow
@@ -131,9 +140,11 @@ ln -sf /usr/local/ha-ai-workflow/ha_ai_master_script.sh /usr/local/bin/ha-ai-wor
 ```
 
 ### Issue: Python Scripts Not Found
+
 **Symptom:** `Cannot locate bin directory`
 
 **Through 1.0.5 solution:**
+
 ```bash
 # BIN_DIR should be simple and predictable
 BIN_DIR="/usr/local/ha-ai-workflow/bin"
@@ -147,9 +158,11 @@ cp -r /path/to/repo/bin/ /usr/local/ha-ai-workflow/
 ```
 
 ### Issue: Environment Variables Not Loaded
+
 **Symptom:** SUPERVISOR_TOKEN not found
 
 **Through 1.0.5 solution:**
+
 ```bash
 # .env file should be in predictable location
 # Either: /usr/local/ha-ai-workflow/.env
@@ -177,6 +190,7 @@ When installing or troubleshooting:
 ## What NOT to Do
 
 ### ❌ Over-Engineering
+
 ```bash
 # BAD - Too many fallback paths, hard to debug
 for location in /opt /usr /usr/local /var /home ~/.local ~/.config /tmp; do
@@ -188,6 +202,7 @@ done
 ```
 
 ### ❌ Silent Failures
+
 ```bash
 # BAD - Continues with wrong path
 BIN_DIR="${BASE_DIR}/bin"
@@ -196,6 +211,7 @@ python3 "${BIN_DIR}/script.py"  # Fails later with confusing error
 ```
 
 ### ❌ File Renaming
+
 ```bash
 # BAD - Creates confusion between filename and command
 cp ha_ai_master_script.sh ha_ai_workflow.sh  # Now which file is it?
@@ -214,6 +230,7 @@ ln -s ha_ai_workflow.sh ha-ai-workflow       # Points to renamed file
 5. **Clear errors:** If something wrong, script says exactly what and where
 
 **When things break**, it's usually because we:
+
 - Added too many fallback paths (confusing)
 - Renamed files (broke references)
 - Made errors silent (hard to debug)
@@ -224,10 +241,12 @@ ln -s ha_ai_workflow.sh ha-ai-workflow       # Points to renamed file
 **Before changing setup.sh or ha_ai_master_script.sh:**
 
 Ask: "Did this work in 1.0.5?"
+
 - If YES → Don't change it unless absolutely necessary
 - If NO → Make change minimal and add clear error messages
 
 **After changing:**
+
 - Test actual installation from scratch
 - Verify `ha-ai-workflow --help` works
 - Check error messages are helpful

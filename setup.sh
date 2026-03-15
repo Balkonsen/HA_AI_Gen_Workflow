@@ -60,31 +60,31 @@ log_to_file() {
     echo "${timestamp} $*" >> "${SETUP_LOG}"
 }
 
-info() { 
-    echo -e "${BLUE}ℹ${NC} $*"
+info() {
+    echo -e "${BLUE}â„¹${NC} $*"
     log_to_file "[INFO] $*"
 }
 
-success() { 
-    echo -e "${GREEN}✓${NC} $*"
+success() {
+    echo -e "${GREEN}âœ“${NC} $*"
     log_to_file "[SUCCESS] $*"
 }
 
-warn() { 
-    echo -e "${YELLOW}⚠${NC} $*"
+warn() {
+    echo -e "${YELLOW}âš ${NC} $*"
     log_to_file "[WARN] $*"
 }
 
-error() { 
-    echo -e "${RED}✗${NC} $*"
+error() {
+    echo -e "${RED}âœ—${NC} $*"
     log_to_file "[ERROR] $*"
 }
 
 banner() {
     echo ""
-    echo "═══════════════════════════════════════════════════════════════════"
+    echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
     echo "  $*"
-    echo "═══════════════════════════════════════════════════════════════════"
+    echo "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
     echo ""
     log_to_file "===== $* ====="
 }
@@ -100,7 +100,7 @@ echo "Home Assistant config: ${CONFIG_DIR}"
 echo ""
 
 # Check if running as root
-if [ "$EUID" -ne 0 ]; then 
+if [ "$EUID" -ne 0 ]; then
     error "Please run as root (sudo)"
     exit 1
 fi
@@ -173,7 +173,7 @@ info "Step 3/11: Installing Python dependencies..."
 # Read requirements.txt and install all dependencies
 if [ -f "${SCRIPT_DIR}/requirements.txt" ]; then
     info "Found requirements.txt, installing Python packages..."
-    
+
     # Try different installation methods
     if python3 -m pip install -r "${SCRIPT_DIR}/requirements.txt" --break-system-packages 2>/dev/null; then
         success "Python dependencies installed"
@@ -188,7 +188,7 @@ if [ -f "${SCRIPT_DIR}/requirements.txt" ]; then
     fi
 else
     warn "requirements.txt not found, installing essential packages only"
-    
+
     # Install PyYAML at minimum
     if python3 -c "import yaml" 2>/dev/null; then
         success "PyYAML already installed"
@@ -265,10 +265,10 @@ if [ "$VERBOSE" = true ]; then
         if [ -f "$script" ]; then
             if [ -x "$script" ]; then
                 if [ "$VERBOSE" = true ]; then
-                    info "  ✓ $(basename "$script") is executable"
+                    info "  âœ“ $(basename "$script") is executable"
                 fi
             else
-                warn "  ⚠ $(basename "$script") is not executable"
+                warn "  âš  $(basename "$script") is not executable"
                 chmod +x "$script"
             fi
         fi
@@ -279,7 +279,12 @@ fi
 info "Step 5/11: Installing shell scripts..."
 
 if [ -f "${SCRIPT_DIR}/ha_ai_master_script.sh" ]; then
+    cp "${SCRIPT_DIR}/ha_ai_master_script.sh" "${INSTALL_DIR}/ha_ai_master_script.sh"
+    chmod +x "${INSTALL_DIR}/ha_ai_master_script.sh"
+    success "Installed ha_ai_master_script.sh"
 
+    ln -sf "${INSTALL_DIR}/ha_ai_master_script.sh" /usr/local/bin/ha-ai-workflow
+    success "Created command link: /usr/local/bin/ha-ai-workflow"
 else
     error "Master script not found: ${SCRIPT_DIR}/ha_ai_master_script.sh"
     error "Cannot continue without the master script"
@@ -297,7 +302,7 @@ fi
 if command -v shellcheck &> /dev/null; then
     info "Validating shell scripts with shellcheck..."
     validation_failed=0
-    
+
     for script in "${INSTALL_DIR}/ha_ai_master.sh" "${SCRIPT_DIR}/setup.sh"; do
         if [ -f "$script" ]; then
             # Run shellcheck and capture exit code
@@ -314,7 +319,7 @@ if command -v shellcheck &> /dev/null; then
             fi
         fi
     done
-    
+
     if [ $validation_failed -eq 0 ]; then
         success "Shell script validation passed"
     else
@@ -341,16 +346,16 @@ elif [ -f "${ENV_FILE}" ] && grep -q "SUPERVISOR_TOKEN=" "${ENV_FILE}" 2>/dev/nu
     fi
 else
     echo ""
-    echo "╔════════════════════════════════════════════════════════════════╗"
-    echo "║  HOME ASSISTANT API TOKEN REQUIRED                             ║"
-    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
+    echo "â•‘  HOME ASSISTANT API TOKEN REQUIRED                             â•‘"
+    echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
     echo ""
-    echo "  ℹ️  A Home Assistant Long-Lived Access Token is required to:"
-    echo "     • Read entities, devices, and add-ons via the HA REST API"
-    echo "     • Enable full automation features"
-    echo "     • Test API connectivity"
+    echo "  â„¹ï¸  A Home Assistant Long-Lived Access Token is required to:"
+    echo "     â€¢ Read entities, devices, and add-ons via the HA REST API"
+    echo "     â€¢ Enable full automation features"
+    echo "     â€¢ Test API connectivity"
     echo ""
-    echo "  📝 How to create a token:"
+    echo "  ðŸ“ How to create a token:"
     echo "     1. Open Home Assistant web interface"
     echo "     2. Click your profile (bottom left)"
     echo "     3. Scroll to 'Long-Lived Access Tokens'"
@@ -358,12 +363,12 @@ else
     echo "     5. Give it a name (e.g., 'HA AI Workflow')"
     echo "     6. Copy the generated token"
     echo ""
-    echo "  ⚠️  NOTE: In add-on mode, this is NOT needed"
+    echo "  âš ï¸  NOTE: In add-on mode, this is NOT needed"
     echo "     (SUPERVISOR_TOKEN is automatically injected)"
     echo ""
     warn "Without a token, API features will not work!"
     echo ""
-    read -r -p "  ➤ Enter your HA Long-Lived Access Token (or press Enter to skip): " ha_token
+    read -r -p "  âž¤ Enter your HA Long-Lived Access Token (or press Enter to skip): " ha_token
 
     if [ -n "${ha_token}" ]; then
         # Write token to env file (readable only by root)
@@ -376,16 +381,16 @@ else
         fi
         echo "SUPERVISOR_TOKEN=${ha_token}" >> "${ENV_FILE}"
         chmod 600 "${ENV_FILE}"
-        success "✓ Token saved to ${ENV_FILE} (permissions: 600)"
-        success "✓ API access configured successfully"
+        success "âœ“ Token saved to ${ENV_FILE} (permissions: 600)"
+        success "âœ“ API access configured successfully"
     else
-        warn "⚠️  Token configuration skipped"
-        warn "⚠️  API features will NOT work until you configure a token"
+        warn "âš ï¸  Token configuration skipped"
+        warn "âš ï¸  API features will NOT work until you configure a token"
         echo ""
         echo "  You can set it later via:"
-        echo "    • GUI: Configuration → HA API Token"
-        echo "    • CLI: echo 'SUPERVISOR_TOKEN=your_token' >> ${ENV_FILE}"
-        echo "    • Or re-run: sudo ${SCRIPT_DIR}/setup.sh"
+        echo "    â€¢ GUI: Configuration â†’ HA API Token"
+        echo "    â€¢ CLI: echo 'SUPERVISOR_TOKEN=your_token' >> ${ENV_FILE}"
+        echo "    â€¢ Or re-run: sudo ${SCRIPT_DIR}/setup.sh"
         echo ""
     fi
 fi
@@ -400,7 +405,7 @@ if [ -d ".git" ]; then
 else
     git config --global init.defaultBranch main 2>/dev/null || true
     git init
-    
+
     # Create .gitignore
     cat > .gitignore << 'EOF'
 # Home Assistant
@@ -430,10 +435,10 @@ debug_report_*.md
 *.swo
 *~
 EOF
-    
+
     git add .gitignore
     git commit -m "Initial commit: HA AI Workflow setup" || true
-    
+
     success "Git repository initialized"
 fi
 
@@ -629,7 +634,7 @@ fi
 # Test master script can be executed
 if [ -x "${INSTALL_DIR}/ha_ai_master_script.sh" ]; then
     success "Master script is executable"
-    
+
     # Try to get help (this should not fail)
     if "${INSTALL_DIR}/ha_ai_master_script.sh" --help &> /dev/null; then
         success "Master script help command works"
@@ -665,10 +670,10 @@ missing_dirs=0
 for dir in "${required_dirs[@]}"; do
     if [ -d "$dir" ]; then
         if [ "$VERBOSE" = true ]; then
-            success "  ✓ $dir exists"
+            success "  âœ“ $dir exists"
         fi
     else
-        error "  ✗ $dir missing"
+        error "  âœ— $dir missing"
         ((missing_dirs++))
     fi
 done
@@ -697,18 +702,18 @@ banner "Setup Complete!"
 echo ""
 success "Installation successful!"
 echo ""
-echo "📁 Installation directory: ${INSTALL_DIR}"
-echo "📁 Config directory: ${CONFIG_DIR}"
-echo "📁 Log directory: ${LOG_DIR}"
+echo "ðŸ“ Installation directory: ${INSTALL_DIR}"
+echo "ðŸ“ Config directory: ${CONFIG_DIR}"
+echo "ðŸ“ Log directory: ${LOG_DIR}"
 echo ""
 
 # Verify command availability and provide clear guidance
 if command -v ha-ai-workflow &> /dev/null; then
-    echo "🔧 Command: ha-ai-workflow ✓ Available"
+    echo "ðŸ”§ Command: ha-ai-workflow âœ“ Available"
 else
-    echo "🔧 Command: ha-ai-workflow ⚠️  Not in PATH"
+    echo "ðŸ”§ Command: ha-ai-workflow âš ï¸  Not in PATH"
     echo ""
-    echo "   ⚠️  The 'ha-ai-workflow' command was not found in your PATH."
+    echo "   âš ï¸  The 'ha-ai-workflow' command was not found in your PATH."
     echo "   This is likely because /usr/local/bin is not in your PATH."
     echo ""
     echo "   You have two options:"
@@ -722,13 +727,13 @@ else
     echo ""
 fi
 
-echo "📋 Setup log: ${SETUP_LOG}"
+echo "ðŸ“‹ Setup log: ${SETUP_LOG}"
 echo ""
-echo "📖 Documentation:"
+echo "ðŸ“– Documentation:"
 echo "   Quick Start: ${INSTALL_DIR}/docs/QUICKSTART.md"
 echo "   Troubleshooting: ${INSTALL_DIR}/docs/TROUBLESHOOTING.md"
 echo ""
-echo "🚀 Next Steps:"
+echo "ðŸš€ Next Steps:"
 echo ""
 
 if command -v ha-ai-workflow &> /dev/null; then
@@ -757,7 +762,7 @@ else
 fi
 
 echo ""
-echo "💡 Pro tips:"
+echo "ðŸ’¡ Pro tips:"
 
 if command -v ha-ai-workflow &> /dev/null; then
     echo "   - Use 'ha-ai-workflow --help' for all options"

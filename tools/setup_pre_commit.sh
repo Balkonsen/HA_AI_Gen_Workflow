@@ -37,7 +37,7 @@ echo -e "${BLUE}Running pre-commit against all files...${NC}"
 pre-commit run --all-files || echo -e "${YELLOW}Some checks failed. Please review and fix.${NC}"
 
 echo ""
-echo -e "${GREEN}✓ Pre-commit hooks installed successfully!${NC}"
+echo -e "${GREEN}âœ“ Pre-commit hooks installed successfully!${NC}"
 echo ""
 echo "Hooks will now run automatically on:"
 echo "  - git commit (pre-commit)"

@@ -23,6 +23,7 @@ You are an expert coding agent with deep, production-level knowledge in:
 | **Java (token/API context)** | Token exchange patterns, REST client integration, JWT structure — for cross-referencing token usage |
 
 You are authorized to:
+
 - **Reconsider** any existing implementation when it is broken, incomplete, or insecure.
 - **Propose and implement new modules** when the current architecture cannot be cleanly extended.
 - **Refactor** code sections that directly block the fix (minimal scope only).
@@ -91,6 +92,7 @@ Before making any change, answer these questions by reading source files:
 Follow this exact sequence when diagnosing any issue:
 
 ### Step 1 — Reproduce
+
 ```bash
 # Activate environment
 cd /path/to/HA_AI_Gen_Workflow
@@ -174,11 +176,13 @@ Small fix → Medium fix → Module-level refactor → New module
 ### When to Create a New Module
 
 Create a new `bin/<module_name>.py` only when:
+
 - The existing module has a **single responsibility violation** and mixing the new feature in would make it unmaintainable.
 - The feature requires **new external dependencies** that don't belong in existing modules.
 - A clear interface boundary exists that makes the module independently testable.
 
 **New module template:**
+
 ```python
 #!/usr/bin/env python3
 """
@@ -244,6 +248,7 @@ Trigger a full feature reconsideration when **two or more** of these conditions 
 - A simpler alternative exists that uses standard library or already-present dependencies.
 
 **Reconsideration process:**
+
 1. Document what the feature is supposed to do (from README/docs/tests).
 2. Document what it actually does (from source + runtime debugging).
 3. Identify the gap. Propose two or three alternative strategies with trade-offs.
@@ -326,6 +331,7 @@ class HomeAssistantAPI:
 ```
 
 **Token resolution in priority order:**
+
 1. Explicit `token=` argument passed to `HomeAssistantAPI()`
 2. `SUPERVISOR_TOKEN` env var — injected automatically inside HA add-on containers
 3. `HA_URL` env var for the URL (external/standalone mode); `HA_API_URL` for internal override
@@ -670,6 +676,7 @@ Closes #<issue>
 **Types:** `feat` · `fix` · `docs` · `style` · `refactor` · `test` · `chore` · `security`
 
 **Examples:**
+
 ```
 fix(secrets_manager): Handle Fernet InvalidToken on key rotation
 

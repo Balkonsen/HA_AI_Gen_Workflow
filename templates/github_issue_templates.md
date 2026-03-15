@@ -66,11 +66,13 @@ cat /config/ai_exports/debug_report_*.md
 <!-- Add any other context about the problem -->
 
 ## Checklist
+
 - [ ] I have checked existing issues
 - [ ] I have included error messages
 - [ ] I have included environment details
 - [ ] I have removed all sensitive information
 - [ ] I have tried basic troubleshooting steps
+
 ```
 
 ---
@@ -122,15 +124,18 @@ ha-ai-workflow new-feature --option value
 <!-- Screenshots, mockups, related issues, etc. -->
 
 ## Priority
+
 - [ ] Nice to have
 - [ ] Important for my workflow
 - [ ] Critical missing feature
 
 ## I'm willing to
+
 - [ ] Test beta versions of this feature
 - [ ] Contribute code if guided
 - [ ] Help with documentation
 - [ ] Provide additional feedback
+
 ```
 
 ---
@@ -169,11 +174,13 @@ assignees: ''
 <!-- Screenshots, examples, related documentation -->
 
 ## Impact
+
 - [ ] Prevents new users from getting started
 - [ ] Causes confusion during use
 - [ ] Missing important information
 - [ ] Contains outdated information
 - [ ] Minor typo or formatting
+
 ```
 
 ---
@@ -197,16 +204,16 @@ assignees: ''
 ## What I've Tried
 <!-- What have you already attempted? -->
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Context
 <!-- Provide context about what you're trying to achieve -->
 
 ## Environment
-- **Home Assistant Version:** 
-- **HA AI Workflow Version:** 
+- **Home Assistant Version:**
+- **HA AI Workflow Version:**
 
 ## Relevant Configuration
 ```yaml
@@ -214,15 +221,18 @@ assignees: ''
 ```
 
 ## Logs/Output
+
 ```
 # Paste relevant logs or command output
 ```
 
 ## Checklist
+
 - [ ] I've read the documentation
 - [ ] I've checked existing issues/discussions
 - [ ] I've tried basic troubleshooting
 - [ ] This isn't covered in FAQ
+
 ```
 
 ---
@@ -252,6 +262,7 @@ ha-ai-workflow export
 ```
 
 ## Error Output
+
 ```
 # Full error output
 ```
@@ -259,12 +270,14 @@ ha-ai-workflow export
 ## Export/Import Details
 
 ### For Export Issues
+
 - **Export succeeded:** Yes / No
 - **Verification passed:** Yes / No
 - **AI context generated:** Yes / No
 - **Secrets backed up:** Yes / No
 
 ### For Import Issues
+
 - **Files in pending directory:** <!-- Count -->
 - **Branch created:** Yes / No
 - **Validation passed:** Yes / No
@@ -282,12 +295,14 @@ ha-ai-workflow export
 ```
 
 ## Workflow Log
+
 ```
 # Last 50 lines of workflow log
 tail -50 /config/ai_exports/workflow.log
 ```
 
 ## Git Status
+
 ```
 cd /config
 git status
@@ -295,10 +310,11 @@ git log --oneline -5
 ```
 
 ## Environment
-- **Home Assistant Version:** 
-- **Supervisor Version:** 
-- **Available Disk Space:** 
-- **Python Version:** 
+
+- **Home Assistant Version:**
+- **Supervisor Version:**
+- **Available Disk Space:**
+- **Python Version:**
 
 ## Additional Information
 <!-- Any other relevant details -->
@@ -337,11 +353,13 @@ assignees: ''
 ```
 
 ## AI Response
+
 ```yaml
 <!-- What the AI generated -->
 ```
 
 ## Error Encountered
+
 ```
 <!-- Error when trying to use AI response -->
 ```
@@ -350,6 +368,7 @@ assignees: ''
 <!-- What should have happened -->
 
 ## Files Shared with AI
+
 - [ ] AI_PROMPT.md
 - [ ] AI_CONTEXT.json
 - [ ] Configuration files
@@ -366,9 +385,11 @@ assignees: ''
 <!-- How could the AI interaction be better? -->
 
 ## Home Assistant Setup
-- **Total Entities:** 
-- **Total Devices:** 
-- **Integrations:** 
+
+- **Total Entities:**
+- **Total Devices:**
+- **Integrations:**
+
 ```
 
 ---
@@ -434,15 +455,15 @@ contact_links:
   - name: 💬 Community Discussions
     url: https://github.com/yourusername/ha-ai-workflow/discussions
     about: Ask questions and discuss with the community
-  
+
   - name: 📖 Documentation
     url: https://github.com/yourusername/ha-ai-workflow/wiki
     about: Read the full documentation
-  
+
   - name: 🐛 Troubleshooting Guide
     url: https://github.com/yourusername/ha-ai-workflow/blob/main/docs/TROUBLESHOOTING.md
     about: Check common issues and solutions
-  
+
   - name: 💡 Feature Ideas
     url: https://github.com/yourusername/ha-ai-workflow/discussions/categories/ideas
     about: Share and discuss feature ideas
@@ -483,9 +504,9 @@ Related to #(issue number)
 - [ ] Updated documentation
 
 ## Test Configuration
-- **Home Assistant Version:** 
-- **Python Version:** 
-- **Installation Type:** 
+- **Home Assistant Version:**
+- **Python Version:**
+- **Installation Type:**
 
 ## Screenshots
 <!-- If applicable -->

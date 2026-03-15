@@ -15,6 +15,7 @@ Complete test and validation framework for HA AI Gen Workflow.
 ## 🚀 Quick Start
 
 ### Initial Setup
+
 ```bash
 # Install dependencies
 make install
@@ -30,6 +31,7 @@ make test
 ```
 
 ### Daily Development
+
 ```bash
 # Before making changes
 make quick-validate
@@ -45,6 +47,7 @@ make validate
 ## 🧪 Test Suite
 
 ### Test Organization
+
 ```
 tests/
 ├── __init__.py
@@ -60,6 +63,7 @@ tests/
 ### Running Tests
 
 #### All Tests
+
 ```bash
 pytest -v
 # or
@@ -67,21 +71,25 @@ make test
 ```
 
 #### Specific Test File
+
 ```bash
 pytest tests/test_context_gen.py -v
 ```
 
 #### Specific Test Class
+
 ```bash
 pytest tests/test_context_gen.py::TestHAContextGenerator -v
 ```
 
 #### Specific Test Function
+
 ```bash
 pytest tests/test_context_gen.py::TestHAContextGenerator::test_init -v
 ```
 
 #### With Coverage
+
 ```bash
 pytest --cov=bin --cov-report=html --cov-report=term
 # or
@@ -89,6 +97,7 @@ make coverage
 ```
 
 #### Watch Mode
+
 ```bash
 make test-watch
 ```
@@ -96,21 +105,25 @@ make test-watch
 ### Test Categories
 
 #### Unit Tests
+
 ```bash
 pytest -v -m unit
 ```
 
 #### Integration Tests
+
 ```bash
 pytest -v -m integration
 ```
 
 #### Security Tests
+
 ```bash
 pytest -v -m security
 ```
 
 ### Shell Script Tests
+
 ```bash
 # Validate all shell scripts
 ./tests/validate_shell_scripts.sh
@@ -124,6 +137,7 @@ bats tests/test_bash_scripts.bats
 ## ✅ Validation Tools
 
 ### Quick Validation (Fast)
+
 ```bash
 ./tools/quick_validate.sh
 # or
@@ -131,6 +145,7 @@ make quick-validate
 ```
 
 Checks:
+
 - Python syntax
 - Shell syntax
 - Quick test run
@@ -138,6 +153,7 @@ Checks:
 **Use this**: During rapid development cycles
 
 ### Full Validation (Comprehensive)
+
 ```bash
 ./tools/validate_all.sh
 # or
@@ -145,6 +161,7 @@ make validate
 ```
 
 Checks:
+
 1. Environment setup
 2. Code formatting (Black)
 3. Code linting (Flake8)
@@ -165,6 +182,7 @@ Checks:
 ### Pre-commit Hooks
 
 Automatically run on every commit:
+
 ```bash
 # Setup (one-time)
 ./tools/setup_pre_commit.sh
@@ -178,6 +196,7 @@ make pre-commit-run
 ```
 
 Hooks include:
+
 - Trailing whitespace removal
 - End-of-file fixer
 - YAML/JSON validation
@@ -195,12 +214,13 @@ Hooks include:
 
 Located in: `.github/workflows/ci-cd.yml`
 
-#### Triggered By:
+#### Triggered By
+
 - Push to `main`, `develop`, `feature/*`
 - Pull requests to `main`, `develop`
 - Manual trigger
 
-#### Jobs:
+#### Jobs
 
 1. **lint** - Code quality checks
    - Black formatting
@@ -240,6 +260,7 @@ Located in: `.github/workflows/ci-cd.yml`
 ### Running CI Locally
 
 #### Using Act (GitHub Actions locally)
+
 ```bash
 # Install act
 curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
@@ -255,6 +276,7 @@ act -s GITHUB_TOKEN=your_token
 ```
 
 #### Simulate CI
+
 ```bash
 make ci
 ```
@@ -264,6 +286,7 @@ make ci
 ### Standard Workflow
 
 1. **Create Feature Branch**
+
    ```bash
    git checkout -b feature/my-feature
    ```
@@ -274,21 +297,25 @@ make ci
    - Update docs
 
 3. **Quick Validation**
+
    ```bash
    make quick-validate
    ```
 
 4. **Run Tests**
+
    ```bash
    make test
    ```
 
 5. **Full Validation**
+
    ```bash
    make validate
    ```
 
 6. **Commit**
+
    ```bash
    git add .
    git commit -m "feat(module): Add feature"
@@ -296,6 +323,7 @@ make ci
    ```
 
 7. **Push & Create PR**
+
    ```bash
    git push origin feature/my-feature
    # Create PR on GitHub
@@ -305,20 +333,24 @@ make ci
 ### Using VSCode
 
 #### Run Tests
+
 - Press `Ctrl+Shift+P`
 - Select "Tasks: Run Task"
 - Choose "Run All Tests"
 
 Or use keyboard shortcuts:
+
 - `Ctrl+Shift+T` - Run tests
 - `F5` - Debug current file
 
 #### Debug Tests
+
 - Set breakpoint in test file
 - Press `F5`
 - Select "Python: Pytest Current File"
 
 #### Format Code
+
 - Save file (auto-formats with Black)
 - Or: `Ctrl+Shift+P` → "Format Document"
 
@@ -342,12 +374,14 @@ make clean             # Clean temp files
 ## 🐳 Docker Testing
 
 ### Why Docker?
+
 - Isolated environment
 - Reproducible tests
 - No local dependency conflicts
 - Same as CI environment
 
 ### Build Test Image
+
 ```bash
 docker build -f Dockerfile.test -t ha-ai-workflow-test .
 # or
@@ -355,6 +389,7 @@ make docker-build
 ```
 
 ### Run Tests in Docker
+
 ```bash
 ./tools/run_docker_tests.sh
 # or
@@ -362,6 +397,7 @@ make docker-test
 ```
 
 Runs:
+
 1. Unit tests with coverage
 2. Linting checks
 3. Shell validation
@@ -381,6 +417,7 @@ make docker-shell
 ```
 
 ### Docker Development
+
 ```bash
 # Start dev environment
 make docker-shell
@@ -398,6 +435,7 @@ flake8 bin/
 Complete instructions for AI agents: [docs/AGENT_INSTRUCTIONS.md](docs/AGENT_INSTRUCTIONS.md)
 
 Key points:
+
 - **Security First**: Never commit secrets
 - **Test Everything**: Write tests for all code
 - **Follow Conventions**: PEP 8, proper commit messages
@@ -410,6 +448,7 @@ Complete guide: [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
 ## 📊 Coverage Reports
 
 ### Generate Coverage
+
 ```bash
 pytest --cov=bin --cov-report=html --cov-report=term
 # or
@@ -417,6 +456,7 @@ make coverage
 ```
 
 ### View HTML Report
+
 ```bash
 # Report location: htmlcov/index.html
 open htmlcov/index.html  # macOS
@@ -424,12 +464,14 @@ xdg-open htmlcov/index.html  # Linux
 ```
 
 ### Coverage in VSCode
+
 1. Install "Coverage Gutters" extension
 2. Run: `pytest --cov=bin --cov-report=xml`
 3. Click "Watch" in status bar
 4. See coverage inline in editor
 
 ### Coverage Targets
+
 - **Minimum**: 50% (CI enforced)
 - **Target**: 80%
 - **Ideal**: 90%+
@@ -439,6 +481,7 @@ xdg-open htmlcov/index.html  # Linux
 ### Security Scanning
 
 #### Python (Bandit)
+
 ```bash
 bandit -r bin/ -ll -i
 # or
@@ -446,17 +489,20 @@ make security
 ```
 
 #### Secrets Detection
+
 ```bash
 detect-secrets scan > .secrets.baseline
 detect-secrets scan --baseline .secrets.baseline
 ```
 
 #### Vulnerability Scanning (Trivy)
+
 ```bash
 trivy fs --severity HIGH,CRITICAL .
 ```
 
 ### Security Best Practices
+
 - Never commit secrets
 - Sanitize all sensitive data
 - Validate all inputs
@@ -468,21 +514,25 @@ trivy fs --severity HIGH,CRITICAL .
 ### Python Debugging
 
 #### Using pdb
+
 ```python
 import pdb; pdb.set_trace()
 ```
 
 #### Using pytest with pdb
+
 ```bash
 pytest --pdb
 ```
 
 #### Using VSCode Debugger
+
 - Set breakpoint (F9)
 - Press F5
 - Select debug configuration
 
 ### Shell Debugging
+
 ```bash
 # Debug mode
 bash -x script.sh
@@ -505,6 +555,7 @@ shellcheck script.sh
 ```
 
 **Types**:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -514,6 +565,7 @@ shellcheck script.sh
 - `chore`: Build/tools
 
 **Example**:
+
 ```
 feat(context-gen): Add device statistics
 
@@ -565,11 +617,13 @@ pip install -e .
 ## 📖 Additional Resources
 
 ### Documentation
+
 - [AGENT_INSTRUCTIONS.md](docs/AGENT_INSTRUCTIONS.md) - For AI agents
 - [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) - For developers
 - [README.md](README.md) - Project overview
 
 ### External Resources
+
 - [Pytest Documentation](https://docs.pytest.org/)
 - [Black Documentation](https://black.readthedocs.io/)
 - [Flake8 Rules](https://flake8.pycqa.org/)
@@ -607,14 +661,14 @@ make clean
 
 This infrastructure provides:
 
-✅ Comprehensive test coverage  
-✅ Automated code quality checks  
-✅ Security scanning  
-✅ Pre-commit validation  
-✅ CI/CD pipeline  
-✅ Docker-based testing  
-✅ VSCode integration  
-✅ Agent instructions  
-✅ Developer guides  
+✅ Comprehensive test coverage
+✅ Automated code quality checks
+✅ Security scanning
+✅ Pre-commit validation
+✅ CI/CD pipeline
+✅ Docker-based testing
+✅ VSCode integration
+✅ Agent instructions
+✅ Developer guides
 
 Everything needed for professional, secure development! 🚀
