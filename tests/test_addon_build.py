@@ -8,7 +8,7 @@ for automated updates.
 
 import os
 import re
-import shutil
+import subprocess
 from typing import Any
 
 import pytest
@@ -284,10 +284,15 @@ class TestBuildWorkflow:
         with open(WORKFLOW_FILE, "r") as f:
             content = f.read()
         # Check that the workflow copies requirements.txt and app directories
-        assert "CHANGELOG.md" in content and "ha_ai_workflow_addon/CHANGELOG.md" in content, (
-            "Workflow should stage root CHANGELOG.md into add-on build context "
-            "to keep release notes up to date in builds"
+        assert "Generate add-on changelog for build context" in content, (
+            "Workflow should generate add-on CHANGELOG.md during builds"
         )
+        assert "git log" in content and "--no-merges" in content and "--pretty=" in content, (
+            "Workflow changelog generation should be lightweight and based on recent commit messages"
+        )
+        assert "## [${VERSION}] - ${BUILD_DATE}" in content, "Generated changelog should include version/date heading"
+        assert "- %s (%h)" in content, "Generated changelog should format commit lines as '- message (sha)'"
+        assert "ha_ai_workflow_addon/CHANGELOG.md" in content, "Workflow should produce add-on changelog in build context"
         assert "requirements.txt" in content, "Workflow should stage requirements.txt"
         assert "bin/" in content, "Workflow should stage bin/ directory"
 
@@ -295,24 +300,18 @@ class TestBuildWorkflow:
         """Add-on directory should not have a duplicate committed CHANGELOG file."""
         assert not os.path.exists(
             ADDON_CHANGELOG
-        ), "ha_ai_workflow_addon/CHANGELOG.md should not be committed; root CHANGELOG.md is the source of truth"
+        ), "ha_ai_workflow_addon/CHANGELOG.md should not be committed; it is generated during workflow builds"
 
-    def test_root_changelog_can_be_staged_into_addon_context(self):
-        """Build workflow changelog staging command should produce add-on CHANGELOG.md at runtime."""
-        root_changelog = os.path.join(REPO_ROOT, "CHANGELOG.md")
-        assert os.path.isfile(root_changelog), "Root CHANGELOG.md should exist"
-
-        try:
-            shutil.copyfile(root_changelog, ADDON_CHANGELOG)
-            assert os.path.isfile(ADDON_CHANGELOG), "Staging should create add-on CHANGELOG.md"
-            with open(root_changelog, "r", encoding="utf-8") as root_file:
-                root_content = root_file.read()
-            with open(ADDON_CHANGELOG, "r", encoding="utf-8") as staged_file:
-                staged_content = staged_file.read()
-            assert staged_content == root_content, "Staged changelog should match root CHANGELOG.md exactly"
-        finally:
-            if os.path.exists(ADDON_CHANGELOG):
-                os.remove(ADDON_CHANGELOG)
+    def test_workflow_removes_auto_bump(self):
+        """Workflow should no longer auto-bump add-on versions."""
+        with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        assert "auto-version-bump:" not in content, "Auto-bump workflow job should be removed"
+        assert "auto-bump add-on version" not in content, "Auto-bump commit logic should be removed"
+        assert "needs: [auto-version-bump, validate]" not in content, "Build job should no longer depend on auto-bump"
+        assert "git add ha_ai_workflow_addon/config.yaml" not in content, (
+            "Workflow should not stage config.yaml version changes in CI"
+        )
 
     def test_workflow_builds_declared_archs(self):
         """Workflow build architectures should match config.yaml."""
@@ -323,6 +322,20 @@ class TestBuildWorkflow:
             # Match --arch as a standalone flag (word boundary via whitespace/newline)
             pattern = rf"--{re.escape(arch)}(\s|\\|$)"
             assert re.search(pattern, content), f"Workflow should build for '{arch}' as declared in config.yaml"
+
+    def test_git_log_format_for_changelog(self):
+        """Build changelog format should produce concise '- message (sha)' entries."""
+        result = subprocess.run(
+            ["git", "log", "--no-merges", "-n", "1", "--pretty=- %s (%h)"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        first_line = result.stdout.strip().splitlines()[0]
+        assert re.match(r"^- \S.* \([0-9a-f]{7,}\)$", first_line), (
+            "Lightweight changelog entries should be '- commit subject (short sha)'"
+        )
 
 
 @pytest.mark.unit
