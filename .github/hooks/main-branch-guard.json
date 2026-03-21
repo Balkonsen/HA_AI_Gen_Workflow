@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "windows": "python .github/hooks/block_main_commit.py",
+        "linux": "python3 .github/hooks/block_main_commit.py",
+        "osx": "python3 .github/hooks/block_main_commit.py",
+        "timeout": 15
+      }
+    ]
+  }
+}

@@ -96,6 +96,13 @@ tmp/
 .github/*
 !.github/workflows/
 !.github/copilot-instructions.md
+!.github/agents/
+!.github/agents/*.md
+!.github/hooks/
+!.github/hooks/*.json
+!.github/hooks/*.py
+!.github/prompts/
+!.github/prompts/*.prompt.md
 
 # Build artifacts
 *.tar.gz
