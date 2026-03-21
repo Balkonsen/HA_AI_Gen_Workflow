@@ -319,6 +319,19 @@ Before submitting ANY pull request:
 12. [ ] All .sh files are executable
 13. [ ] Backward compatibility maintained
 
+## Commit Gate Requirements
+
+Before any commit is created, run these checks in order:
+
+1. `pyright` (or `python -m pyright`)
+2. Targeted pytest for changed areas first (for example: `python -m pytest tests/test_workflow_config.py -v`)
+
+Rules:
+
+- Do not commit if pyright fails.
+- Do not commit if targeted tests for modified files fail.
+- If failures are unrelated pre-existing issues, document them explicitly in the commit/PR notes.
+
 ## Common Pitfalls to AVOID
 
 | Pitfall | Consequence | Prevention |
