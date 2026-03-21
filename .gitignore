@@ -102,3 +102,6 @@ tmp/
 *.zip
 *.deb
 *.rpm
+
+# .NET build outputs (generated)
+**/obj/
