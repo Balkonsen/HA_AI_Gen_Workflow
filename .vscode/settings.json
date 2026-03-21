@@ -65,7 +65,7 @@
   "python.analysis.diagnosticMode": "workspace",
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
   "terminal.integrated.env.windows": {
-    "PATH": "${workspaceFolder}\\.venv\\Scripts;${env:PATH}"
+    "PATH": "C:\\Program Files\\dotnet;${workspaceFolder}\\.venv\\Scripts;${env:PATH}"
   },
   "debug.javascript.autoAttachFilter": "disabled",
   "python-envs.defaultEnvManager": "ms-python.python:system",
