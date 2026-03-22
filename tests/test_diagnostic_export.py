@@ -12,7 +12,7 @@ import os
 # Add bin directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 
-from ha_diagnostic_export import HAConfigExporter  # noqa: E402
+from ha_diagnostic_export import HAConfigExporter, DEFAULT_EXPORT_DIR  # noqa: E402
 
 
 class TestHAConfigExporter:
@@ -32,7 +32,7 @@ class TestHAConfigExporter:
         """Test initialization with default output directory"""
         exporter = HAConfigExporter()
 
-        assert exporter.output_dir == "/tmp/ha_export"
+        assert exporter.output_dir == DEFAULT_EXPORT_DIR
 
     def test_init_custom_config_dir(self, temp_dir):
         """Test initialization with custom config_dir"""
@@ -51,7 +51,9 @@ class TestHAConfigExporter:
 
     def test_init_external_mode(self, temp_dir):
         """Test initialization in external mode (standalone)"""
-        exporter = HAConfigExporter(output_dir=temp_dir, ha_url="http://192.168.1.100:8123")
+        exporter = HAConfigExporter(
+            output_dir=temp_dir, ha_url="http://192.168.1.100:8123"
+        )
 
         assert exporter._is_external_mode is True
         assert exporter._api_base_url == "http://192.168.1.100:8123/api"
@@ -64,7 +66,10 @@ class TestHAConfigExporter:
 
             assert exporter._is_external_mode is True
             assert exporter._api_base_url == "http://homeassistant.local:8123/api"
-            assert exporter._supervisor_base_url == "http://homeassistant.local:8123/api/hassio"
+            assert (
+                exporter._supervisor_base_url
+                == "http://homeassistant.local:8123/api/hassio"
+            )
 
     def test_init_loads_token_from_env_file(self, temp_dir):
         """Test initialization loads SUPERVISOR_TOKEN from .env file when not in environment."""
@@ -85,8 +90,12 @@ class TestHAConfigExporter:
         exporter._update_paths()
 
         assert exporter.export_path == os.path.join(temp_dir, "custom_export_name")
-        assert exporter.ai_upload_path == os.path.join(temp_dir, "custom_export_name", "ai_upload")
-        assert exporter.secrets_path == os.path.join(temp_dir, "custom_export_name", "secrets")
+        assert exporter.ai_upload_path == os.path.join(
+            temp_dir, "custom_export_name", "ai_upload"
+        )
+        assert exporter.secrets_path == os.path.join(
+            temp_dir, "custom_export_name", "secrets"
+        )
         assert exporter.ai_upload_path != original_ai_path
 
     def test_sensitive_patterns_defined(self, temp_dir):
@@ -239,7 +248,9 @@ class TestExportYamlFile:
         """Test exporting non-existent file"""
         exporter = HAConfigExporter(output_dir=temp_dir)
 
-        result = exporter.export_yaml_file(str(Path(temp_dir) / "nonexistent.yaml"), str(Path(temp_dir) / "dest.yaml"))
+        result = exporter.export_yaml_file(
+            str(Path(temp_dir) / "nonexistent.yaml"), str(Path(temp_dir) / "dest.yaml")
+        )
 
         assert result is False
 

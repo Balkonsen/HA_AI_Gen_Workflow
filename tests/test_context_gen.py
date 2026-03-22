@@ -73,16 +73,14 @@ class TestSafeYamlLoad:
     def test_safe_yaml_load_with_ha_tags(self, temp_dir):
         """Test loading YAML with Home Assistant specific tags"""
         yaml_file = Path(temp_dir) / "config.yaml"
-        yaml_file.write_text(
-            """
+        yaml_file.write_text("""
 homeassistant:
   name: Test Home
   latitude: !secret latitude
   longitude: !secret longitude
 automation: !include automations.yaml
 script: !include scripts.yaml
-"""
-        )
+""")
 
         generator = HAContextGenerator(temp_dir)
         result = generator.safe_yaml_load(str(yaml_file))

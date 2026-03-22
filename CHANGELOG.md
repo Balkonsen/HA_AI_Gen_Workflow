@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-03-22
+
+### Fixed
+
+- **Security scan findings in temp paths** — Replaced hardcoded temp directory defaults with cross-platform `tempfile.gettempdir()` usage to satisfy Bandit B108 checks.
+- **Default export path compatibility test** — Updated tests to validate against the module default export directory constant instead of a Linux-only path literal.
+- **Strict gate reliability** — Ensured strict full PR gate completes without warnings in formatting, lint, tests, and security checks.
+
+## [1.1.0] - 2026-03-22
+
+### Added
+
+- **Workspace HA skills** — Added reusable workspace skills for export pipeline execution, release version synchronization, and strict PR quality gating.
+- **Numbered skill invocation menus** — Added context-aware selectable options so workflows can be run by option number directly.
+
+### Changed
+
+- **Export pipeline policy** — Enforced full-pipeline-first execution with stepwise fallback only on failure.
+- **Strict quality policy** — Warnings are treated as failures in pipeline and PR gate workflows.
+- **Import safety gate** — Export flow now includes required import dry-run verification before completion.
+
 ## [1.0.15] - 2026-02-08
 
 ### Changed

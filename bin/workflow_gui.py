@@ -833,14 +833,12 @@ def render_full_pipeline():
         st.info(f"Will use remote path: {source_path}")
 
     st.markdown("### Pipeline Steps")
-    st.markdown(
-        """
+    st.markdown("""
     1. **Export** - Download/copy HA configuration
     2. **Sanitize** - Replace secrets with labels
     3. **AI Context** - Generate context for AI
     4. **Validate** - Verify export completeness
-    """
-    )
+    """)
 
     if st.button("🚀 Run Full Pipeline", type="primary"):
         with st.spinner("Running pipeline..."):
