@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: ha-ai-local-test
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./ha_config:/config
+    environment:
+      - TZ=UTC

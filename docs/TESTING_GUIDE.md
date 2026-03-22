@@ -44,6 +44,26 @@ make lint
 make validate
 ```
 
+## 🏠 Local Home Assistant Test Platform
+
+Use the virtual local Home Assistant sandbox for dry-run workflow validation.
+
+```bash
+# Start local HA
+python tools/ha_local_test/manage_local_ha_test.py up
+
+# Check container status
+python tools/ha_local_test/manage_local_ha_test.py status
+
+# Run full dry-run validation flow
+python tools/ha_local_test/manage_local_ha_test.py dry-run
+
+# Stop local HA
+python tools/ha_local_test/manage_local_ha_test.py down
+```
+
+See full details in `tools/ha_local_test/README.md`.
+
 ## 🧪 Test Suite
 
 ### Test Organization

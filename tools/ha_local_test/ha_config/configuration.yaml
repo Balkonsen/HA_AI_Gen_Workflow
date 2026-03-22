@@ -1,0 +1,20 @@
+homeassistant:
+  name: HA AI Local Test Platform
+  latitude: !secret latitude
+  longitude: !secret longitude
+  elevation: 120
+  unit_system: metric
+  time_zone: UTC
+
+default_config:
+
+logger:
+  default: warning
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+
+input_boolean:
+  test_toggle:
+    name: Test Toggle
+    icon: mdi:toggle-switch
