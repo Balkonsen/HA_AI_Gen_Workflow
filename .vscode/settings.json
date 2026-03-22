@@ -43,7 +43,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
   },
-  "shellcheck.enable": true,
+  "shellcheck.enable": false,
   "shellcheck.executablePath": "shellcheck",
   "shellcheck.run": "onSave",
   "coverage-gutters.coverageFileNames": ["coverage.xml", "htmlcov/index.html"],

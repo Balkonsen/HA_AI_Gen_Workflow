@@ -7,8 +7,9 @@
   "waitFor": "postCreateCommand",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/dhouj/features/shellcheck:0": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    }
   },
   "forwardPorts": [8501],
   "portsAttributes": {
@@ -22,7 +23,7 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "PYTHONUNBUFFERED": "1"
   },
-  "postCreateCommand": "bash -lc 'sudo apt-get update && sudo apt-get install -y --no-install-recommends jq make git && python -m pip install --upgrade pip && python -m pip install -r requirements.txt -r requirements-test.txt && pre-commit install || true'",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
   "postStartCommand": "bash -lc 'chmod +x *.sh .devcontainer/*.sh tools/*.sh tests/validate_shell_scripts.sh 2>/dev/null || true'",
   "customizations": {
     "vscode": {
