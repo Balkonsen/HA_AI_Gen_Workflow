@@ -382,6 +382,18 @@
         "panel": "new"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "🐳 Devcontainer: Smoke Check",
+      "type": "shell",
+      "command": "bash",
+      "args": [".devcontainer/smoke-test.sh"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [

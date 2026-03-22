@@ -1,13 +1,34 @@
 {
   "name": "HA AI Gen Workflow Dev",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
-  "postCreateCommand": "pip install -r requirements-test.txt && pip install -r requirements.txt",
+  "updateRemoteUserUID": true,
+  "remoteUser": "vscode",
+  "runArgs": ["--init"],
+  "waitFor": "postCreateCommand",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/dhouj/features/shellcheck:0": {}
+  },
+  "forwardPorts": [8501],
+  "portsAttributes": {
+    "8501": {
+      "label": "HA Workflow GUI (Streamlit)",
+      "onAutoForward": "notify"
+    }
+  },
+  "containerEnv": {
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "postCreateCommand": "bash -lc 'sudo apt-get update && sudo apt-get install -y --no-install-recommends jq make git && python -m pip install --upgrade pip && python -m pip install -r requirements.txt -r requirements-test.txt && pre-commit install || true'",
+  "postStartCommand": "bash -lc 'chmod +x *.sh .devcontainer/*.sh tools/*.sh tests/validate_shell_scripts.sh 2>/dev/null || true'",
   "customizations": {
     "vscode": {
       "extensions": [
         "davidanson.vscode-markdownlint",
         "eamodio.gitlens",
-        "formulahendry.docker-explorer",
         "foxundermoon.shell-format",
         "github.copilot",
         "github.copilot-chat",
@@ -19,7 +40,6 @@
         "ms-azuretools.vscode-docker",
         "redhat.vscode-yaml",
         "rogalmic.bash-debug",
-        "rohaquinlop.complexipy",
         "ryanluker.vscode-coverage-gutters",
         "tamasfe.even-better-toml",
         "timonwong.shellcheck",
@@ -27,24 +47,28 @@
         "yzhang.markdown-all-in-one"
       ],
       "settings": {
-        "TRUSTIFY_DA_PYTHON_VIRTUAL_ENV": false,
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.analysis.typeCheckingMode": "basic",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": ["tests"],
+        "editor.formatOnSave": true,
         "files.exclude": {
-          "**/.venv": true
+          "**/.venv": true,
+          "**/__pycache__": true
         },
         "files.watcherExclude": {
-          "**/.venv/**": true
+          "**/.venv/**": true,
+          "**/__pycache__/**": true
         },
         "search.exclude": {
-          "**/.venv/**": true
+          "**/.venv/**": true,
+          "**/__pycache__/**": true
         }
       }
     },
     "codespaces": {
-      "openFiles": [".github/copilot-instructions.md"]
+      "openFiles": ["README.md", ".github/copilot-instructions.md"]
     }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/dhouj/features/shellcheck:0": {}
   }
 }
