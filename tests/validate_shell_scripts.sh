@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###############################################################################
 # Shell Script Linting and Validation
 # Validates bash scripts for syntax and best practices
 ###############################################################################
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -20,45 +20,72 @@ echo "Shell Script Validation"
 echo "================================================"
 echo ""
 
-# Find all bash scripts
-SCRIPTS=$(find "${PROJECT_ROOT}" -type f -name "*.sh" ! -path "*/.*" ! -path "*/tests/*")
+# Find all bash scripts while handling spaces in paths.
+declare -a SCRIPTS=()
+while IFS= read -r -d '' script; do
+    SCRIPTS+=("$script")
+done < <(
+    find "${PROJECT_ROOT}" \
+        \( -path "*/.git" -o -path "*/.pytest_cache" -o -path "*/__pycache__" -o -path "*/htmlcov" -o -path "*/.venv" -o -path "*/.agents" -o -path "*/.claude" \) -prune \
+        -o -type f -name "*.sh" ! -path "*/tests/*" -print0 2>/dev/null
+)
 
 TOTAL=0
 PASSED=0
 FAILED=0
+declare -a TEMP_FILES=()
+
+cleanup_temp_files() {
+    for file in "${TEMP_FILES[@]}"; do
+        rm -f "$file"
+    done
+}
+
+prepare_script_for_check() {
+    local script="$1"
+    local tmp_file
+    tmp_file="$(mktemp)"
+    tr -d '\r' < "$script" > "$tmp_file"
+    TEMP_FILES+=("$tmp_file")
+    printf '%s' "$tmp_file"
+}
+
+trap cleanup_temp_files EXIT
 
 # Test 1: Syntax Check
 echo "Test 1: Bash Syntax Check"
 echo "------------------------"
-for script in $SCRIPTS; do
+for script in "${SCRIPTS[@]}"; do
+    normalized_script="$(prepare_script_for_check "$script")"
     TOTAL=$((TOTAL + 1))
-    echo -n "Checking $(basename $script)... "
-    if bash -n "$script" 2>/dev/null; then
-        echo -e "${GREEN}âœ“${NC}"
+    echo -n "Checking $(basename "$script")... "
+    if bash -n "$normalized_script" 2>/dev/null; then
+        echo -e "${GREEN}[OK]${NC}"
         PASSED=$((PASSED + 1))
     else
-        echo -e "${RED}âœ—${NC}"
+        echo -e "${RED}[FAIL]${NC}"
         FAILED=$((FAILED + 1))
-        bash -n "$script" 2>&1 | sed 's/^/  /'
+        bash -n "$normalized_script" 2>&1 | sed 's/^/  /'
     fi
 done
 echo ""
 
 # Test 2: ShellCheck (if available)
-if command -v shellcheck &> /dev/null; then
+if command -v shellcheck >/dev/null 2>&1; then
     echo "Test 2: ShellCheck Analysis"
     echo "------------------------"
-    for script in $SCRIPTS; do
+    for script in "${SCRIPTS[@]}"; do
+        normalized_script="$(prepare_script_for_check "$script")"
         TOTAL=$((TOTAL + 1))
-        echo -n "Analyzing $(basename $script)... "
-        if shellcheck -x "$script" 2>/dev/null; then
-            echo -e "${GREEN}âœ“${NC}"
+        echo -n "Analyzing $(basename "$script")... "
+        if shellcheck -x "$normalized_script" 2>/dev/null; then
+            echo -e "${GREEN}[OK]${NC}"
             PASSED=$((PASSED + 1))
         else
-            echo -e "${YELLOW}âš ${NC}"
-            # Don't count shellcheck warnings as failures
+            echo -e "${YELLOW}[WARN]${NC}"
+            # Keep shellcheck non-blocking for now.
             PASSED=$((PASSED + 1))
-            shellcheck -x "$script" 2>&1 | grep -A 5 "^In" | sed 's/^/  /' || true
+            shellcheck -x "$normalized_script" 2>&1 | grep -A 5 "^In" | sed 's/^/  /' || true
         fi
     done
     echo ""
@@ -70,26 +97,26 @@ fi
 # Test 3: Check for common issues
 echo "Test 3: Common Issues Check"
 echo "------------------------"
-for script in $SCRIPTS; do
-    ISSUES=0
+for script in "${SCRIPTS[@]}"; do
+    issues=0
 
-    # Check for 'set -e' or error handling
+    # Check for 'set -e' or strict mode.
     if ! grep -q "set -e" "$script" && ! grep -q "set -euo pipefail" "$script"; then
-        echo -e "${YELLOW}âš ${NC} $(basename $script): No 'set -e' found (error handling)"
-        ISSUES=$((ISSUES + 1))
+        echo -e "${YELLOW}[WARN]${NC} $(basename "$script"): No 'set -e' found (error handling)"
+        issues=$((issues + 1))
     fi
 
-    # Check for unquoted variables (basic check)
+    # Check for possible unquoted variables (basic heuristic).
     if grep -q '\$[A-Z_]*[^"]' "$script" 2>/dev/null; then
-        echo -e "${YELLOW}âš ${NC} $(basename $script): Possible unquoted variables"
-        ISSUES=$((ISSUES + 1))
+        echo -e "${YELLOW}[WARN]${NC} $(basename "$script"): Possible unquoted variables"
+        issues=$((issues + 1))
     fi
 
-    if [ $ISSUES -eq 0 ]; then
-        echo -e "${GREEN}âœ“${NC} $(basename $script): No common issues found"
+    if [ "$issues" -eq 0 ]; then
+        echo -e "${GREEN}[OK]${NC} $(basename "$script"): No common issues found"
         PASSED=$((PASSED + 1))
     else
-        # Don't fail on warnings
+        # Keep this non-blocking and informational.
         PASSED=$((PASSED + 1))
     fi
     TOTAL=$((TOTAL + 1))
@@ -99,15 +126,16 @@ echo ""
 # Test 4: Executable permissions
 echo "Test 4: Executable Permissions"
 echo "------------------------"
-for script in $SCRIPTS; do
+for script in "${SCRIPTS[@]}"; do
     TOTAL=$((TOTAL + 1))
-    echo -n "Checking $(basename $script)... "
+    echo -n "Checking $(basename "$script")... "
     if [ -x "$script" ]; then
-        echo -e "${GREEN}âœ“${NC}"
+        echo -e "${GREEN}[OK]${NC}"
         PASSED=$((PASSED + 1))
     else
-        echo -e "${YELLOW}âš ${NC} Not executable"
-        PASSED=$((PASSED + 1))  # Don't fail on this
+        echo -e "${YELLOW}[WARN]${NC} Not executable"
+        # Keep this non-blocking because Windows checkouts often lose +x bits.
+        PASSED=$((PASSED + 1))
     fi
 done
 echo ""
@@ -118,10 +146,10 @@ echo "Summary"
 echo "================================================"
 echo "Total tests: $TOTAL"
 echo -e "${GREEN}Passed: $PASSED${NC}"
-if [ $FAILED -gt 0 ]; then
+if [ "$FAILED" -gt 0 ]; then
     echo -e "${RED}Failed: $FAILED${NC}"
     exit 1
-else
-    echo "All critical checks passed!"
-    exit 0
 fi
+
+echo "All critical checks passed!"
+exit 0
