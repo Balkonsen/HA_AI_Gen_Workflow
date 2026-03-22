@@ -69,6 +69,6 @@
   },
   "debug.javascript.autoAttachFilter": "disabled",
   "python-envs.defaultEnvManager": "ms-python.python:system",
-  "python-envs.defaultPackageManager": "ms-python.python:conda",
+  "python-envs.defaultPackageManager": "ms-python.python:pip",
   "TRUSTIFY_DA_PYTHON_VIRTUAL_ENV": false
 }

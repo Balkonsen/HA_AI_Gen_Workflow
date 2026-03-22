@@ -517,3 +517,32 @@ The project uses pre-commit hooks that automatically run:
 - **Consider both local and SSH modes** when adding features
 - **Test with actual Home Assistant** when possible (or use docker-test)
 - **Respect the minimal change philosophy** — don't refactor unnecessarily
+
+## Workspace Custom Skills (Use by Default)
+
+The workspace includes custom HA skills in both `.agents/skills/` and `.claude/skills/`.
+
+### 1) ha-ai-export-pipeline
+
+- Path: `.agents/skills/ha-ai-export-pipeline/SKILL.md`
+- Use for: export -> sanitize -> context -> validate -> import dry-run
+- Policy: full pipeline command first, stepwise fallback only on failure, strict no-warnings
+- Selection: this skill exposes numbered options with context; users can select by option number.
+
+### 2) ha-release-version-sync
+
+- Path: `.agents/skills/ha-release-version-sync/SKILL.md`
+- Use for: version bump synchronization across addon metadata + CHANGELOG in same change set
+- Selection: this skill exposes numbered release options (patch/minor/major/audits).
+
+### 3) ha-pr-quality-gate
+
+- Path: `.agents/skills/ha-pr-quality-gate/SKILL.md`
+- Use for: strict pre-PR validation sequence (format, lint, tests, security)
+- Policy: warnings in required checks are treated as failures
+- Selection: this skill exposes numbered gate-depth options with context.
+
+### Invocation Convention
+
+When a skill provides numbered options, ask for or accept the option number directly and execute that option.
+Example: "Run option 2 for HA PR quality gate."
