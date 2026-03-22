@@ -1,0 +1,7 @@
+notify_test_platform_ready:
+  alias: Notify Test Platform Ready
+  sequence:
+    - service: persistent_notification.create
+      data:
+        title: Local Test Platform
+        message: HA AI local test platform booted successfully.

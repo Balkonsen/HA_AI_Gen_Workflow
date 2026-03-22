@@ -17,6 +17,7 @@
     "ms-azuretools.vscode-docker",
     "rogalmic.bash-debug",
     "rohaquinlop.complexipy",
-    "github.copilot-chat"
+    "github.copilot-chat",
+    "formulahendry.docker-explorer"
   ]
 }

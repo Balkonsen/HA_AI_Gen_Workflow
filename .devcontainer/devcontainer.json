@@ -4,6 +4,28 @@
   "postCreateCommand": "pip install -r requirements-test.txt && pip install -r requirements.txt",
   "customizations": {
     "vscode": {
+      "extensions": [
+        "davidanson.vscode-markdownlint",
+        "eamodio.gitlens",
+        "formulahendry.docker-explorer",
+        "foxundermoon.shell-format",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-pull-request-github",
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "rogalmic.bash-debug",
+        "rohaquinlop.complexipy",
+        "ryanluker.vscode-coverage-gutters",
+        "tamasfe.even-better-toml",
+        "timonwong.shellcheck",
+        "vivaxy.vscode-conventional-commits",
+        "yzhang.markdown-all-in-one"
+      ],
       "settings": {
         "TRUSTIFY_DA_PYTHON_VIRTUAL_ENV": false,
         "files.exclude": {
