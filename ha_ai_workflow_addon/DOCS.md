@@ -42,31 +42,31 @@ If you are currently running Home Assistant on 32-bit hardware or OS:
 
 ### Required Settings
 
-| Setting | Description | Default |
-| ------- | ----------- | ------- |
-| `export_path` | Directory for exported configurations | `/config/ai_exports` |
-| `import_path` | Directory for configurations to import | `/config/ai_imports` |
+| Setting        | Description                             | Default              |
+| -------------- | --------------------------------------- | -------------------- |
+| `export_path`  | Directory for exported configurations   | `/config/ai_exports` |
+| `import_path`  | Directory for configurations to import  | `/config/ai_imports` |
 | `secrets_path` | Directory for encrypted secrets storage | `/config/ai_secrets` |
 
 ### SSH Settings (Optional)
 
-| Setting | Description | Default |
-| ------- | ----------- | ------- |
-| `ssh_enabled` | Enable SSH for remote HA | `false` |
-| `ssh_host` | SSH host address | (empty) |
-| `ssh_user` | SSH username | `root` |
-| `ssh_port` | SSH port | `22` |
-| `ssh_key_path` | Path to SSH private key | (empty) |
-| `remote_config_path` | Remote config directory | `/config` |
+| Setting              | Description              | Default   |
+| -------------------- | ------------------------ | --------- |
+| `ssh_enabled`        | Enable SSH for remote HA | `false`   |
+| `ssh_host`           | SSH host address         | (empty)   |
+| `ssh_user`           | SSH username             | `root`    |
+| `ssh_port`           | SSH port                 | `22`      |
+| `ssh_key_path`       | Path to SSH private key  | (empty)   |
+| `remote_config_path` | Remote config directory  | `/config` |
 
 ### Logging and Debug Settings (Optional)
 
-| Setting | Description | Default |
-| ------- | ----------- | ------- |
-| `debug_mode` | Enable detailed debug logging | `false` |
-| `verbose` | Enable verbose output | `false` |
-| `trace_log_enabled` | Enable full structured JSONL trace logging | `false` |
-| `trace_log_path` | Optional absolute path override for trace file | (empty = `/config/ai_exports/workflow_trace.log`) |
+| Setting             | Description                                    | Default                                           |
+| ------------------- | ---------------------------------------------- | ------------------------------------------------- |
+| `debug_mode`        | Enable detailed debug logging                  | `false`                                           |
+| `verbose`           | Enable verbose output                          | `false`                                           |
+| `trace_log_enabled` | Enable full structured JSONL trace logging     | `false`                                           |
+| `trace_log_path`    | Optional absolute path override for trace file | (empty = `/config/ai_exports/workflow_trace.log`) |
 
 **Note**: Enable `debug_mode` or `verbose` to troubleshoot startup issues. This provides detailed logs about configuration loading, API connectivity, and initialization steps.
 

@@ -78,7 +78,11 @@ def cmd_reset() -> int:
     if rc != 0:
         return rc
 
-    for generated in [HA_CONFIG_DIR / ".storage", HA_CONFIG_DIR / ".cloud", DRY_RUN_TARGET]:
+    for generated in [
+        HA_CONFIG_DIR / ".storage",
+        HA_CONFIG_DIR / ".cloud",
+        DRY_RUN_TARGET,
+    ]:
         if generated.exists():
             shutil.rmtree(generated, ignore_errors=True)
 
@@ -90,7 +94,9 @@ def cmd_dry_run() -> int:
     ensure_paths()
 
     # 1) Full local pipeline against the sandbox config
-    rc = run_command([sys.executable, str(ORCHESTRATOR), "full", "--source", str(HA_CONFIG_DIR)])
+    rc = run_command(
+        [sys.executable, str(ORCHESTRATOR), "full", "--source", str(HA_CONFIG_DIR)]
+    )
     if rc != 0:
         return rc
 
@@ -100,7 +106,9 @@ def cmd_dry_run() -> int:
         return 1
 
     # 2) Validate produced export
-    rc = run_command([sys.executable, str(ORCHESTRATOR), "validate", "--source", str(latest)])
+    rc = run_command(
+        [sys.executable, str(ORCHESTRATOR), "validate", "--source", str(latest)]
+    )
     if rc != 0:
         return rc
 
@@ -193,7 +201,9 @@ def commands_map() -> dict[str, Callable[[], int]]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Local Home Assistant dry-run test platform manager")
+    parser = argparse.ArgumentParser(
+        description="Local Home Assistant dry-run test platform manager"
+    )
     parser.add_argument(
         "command",
         choices=[

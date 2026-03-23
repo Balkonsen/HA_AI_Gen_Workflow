@@ -21,6 +21,12 @@ from workflow_logger import (  # noqa: E402
 )
 
 
+def _required_path(path_value: str | None) -> str:
+    """Type-narrow optional logger paths for static analyzers."""
+    assert path_value is not None
+    return path_value
+
+
 @pytest.fixture(autouse=True)
 def reset_fixed_logger_files():
     """Remove fixed logger artifacts before each test for deterministic assertions."""
@@ -94,7 +100,7 @@ class TestWorkflowLogger:
         logger.error("Test error message")
 
         # Check file exists and has content
-        effective_log_file = Path(logger.log_file)
+        effective_log_file = Path(_required_path(logger.log_file))
         assert effective_log_file.exists()
         content = effective_log_file.read_text(encoding="utf-8")
         assert "Test info message" in content
@@ -123,7 +129,7 @@ class TestWorkflowLogger:
         logger.success("Success message")
         logger.progress("Progress message")
 
-        content = Path(logger.log_file).read_text(encoding="utf-8")
+        content = Path(_required_path(logger.log_file)).read_text(encoding="utf-8")
         assert "Debug message" in content
         assert "Verbose message" in content
         assert "Info message" in content
@@ -146,7 +152,7 @@ class TestWorkflowLogger:
 
         logger.info("Test JSON message")
 
-        content = Path(logger.log_file).read_text(encoding="utf-8")
+        content = Path(_required_path(logger.log_file)).read_text(encoding="utf-8")
         lines = content.strip().split("\n")
 
         # Parse first line as JSON
@@ -172,12 +178,12 @@ class TestWorkflowLogger:
         logger.error("Emitted error message")
 
         # Normal log should include only emitted messages based on level.
-        content = Path(logger.log_file).read_text(encoding="utf-8")
+        content = Path(_required_path(logger.log_file)).read_text(encoding="utf-8")
         assert "Filtered info message" not in content
         assert "Emitted error message" in content
 
         # Trace log should include both calls with emitted flags.
-        trace_lines = Path(logger.trace_log_file).read_text(encoding="utf-8").strip().split("\n")
+        trace_lines = Path(_required_path(logger.trace_log_file)).read_text(encoding="utf-8").strip().split("\n")
         assert len(trace_lines) == 2
 
         first = json.loads(trace_lines[0])
@@ -200,7 +206,7 @@ class TestWorkflowLogger:
 
         logger.trace_event("integrated_agent_workflow.phase", {"phase": "phase_1", "status": "started"})
 
-        trace_lines = Path(logger.trace_log_file).read_text(encoding="utf-8").strip().split("\n")
+        trace_lines = Path(_required_path(logger.trace_log_file)).read_text(encoding="utf-8").strip().split("\n")
         assert len(trace_lines) == 1
 
         record = json.loads(trace_lines[0])
@@ -224,7 +230,7 @@ class TestWorkflowLogger:
         logger.info("Test with context")
 
         # Read first log entry
-        with open(logger.log_file, "r", encoding="utf-8") as f:
+        with open(_required_path(logger.log_file), "r", encoding="utf-8") as f:
             content = f.read()
         log_entry = json.loads(content.strip())
         assert log_entry["context"] == ["Context1", "Context2"]
@@ -233,7 +239,7 @@ class TestWorkflowLogger:
         logger.info("Test after pop")
 
         # Re-read file to verify second entry
-        with open(logger.log_file, "r", encoding="utf-8") as f:
+        with open(_required_path(logger.log_file), "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         # Check second line has correct context (only Context1 after pop)
@@ -257,7 +263,7 @@ class TestWorkflowLogger:
         assert logger._should_log(LogLevel.DEBUG)
 
         logger.debug("Should appear")
-        content = Path(logger.log_file).read_text(encoding="utf-8")
+        content = Path(_required_path(logger.log_file)).read_text(encoding="utf-8")
         assert "Should appear" in content
         assert "Should not appear" not in content
 
@@ -275,7 +281,7 @@ class TestWorkflowLogger:
         except Exception as e:
             logger.log_exception(e, "Test context")
 
-        content = Path(logger.log_file).read_text(encoding="utf-8")
+        content = Path(_required_path(logger.log_file)).read_text(encoding="utf-8")
         assert "ValueError" in content
         assert "Test exception" in content
 
@@ -419,7 +425,7 @@ class TestLoggerIntegration:
         logger1.info("From logger1")
         logger2.info("From logger2")
 
-        content = Path(logger1.log_file).read_text(encoding="utf-8")
+        content = Path(_required_path(logger1.log_file)).read_text(encoding="utf-8")
         assert "From logger1" in content
         assert "From logger2" in content
 
@@ -451,7 +457,7 @@ class TestLoggerIntegration:
 
         # This should work initially
         logger.info("Test message")
-        assert Path(logger.log_file).exists()
+        assert Path(_required_path(logger.log_file)).exists()
 
         # Make directory read-only
         log_dir.chmod(0o444)
