@@ -340,6 +340,7 @@ bandit -r bin/
 ✅ Follow project conventions
 ✅ Run tests before committing
 ✅ Break large changes into smaller commits
+✅ Run quality gates and validate changes with sandbox dry-runs (see API_CONFIGURATION_GUIDE.md)
 
 ### DON'T
 
@@ -405,9 +406,11 @@ def test_entity_statistics(self, temp_dir, mock_export_data):
 
 ```markdown
 # In docs/complete_readme.md
+
 ## Entity Statistics
 
 The context generator now includes detailed statistics:
+
 - Total entity count
 - Entities grouped by domain
 - Entities grouped by state
@@ -426,6 +429,8 @@ flake8 bin/ha_ai_context_gen.py
 ### Documentation
 
 - [docs/complete_readme.md](../docs/complete_readme.md) - Complete documentation
+- [docs/INTEGRATED_AGENT_WORKFLOW.md](../docs/INTEGRATED_AGENT_WORKFLOW.md) - Unified agent workflow
+- [docs/WORKSPACE_OPTIMIZATION_USER_GUIDE.md](../docs/WORKSPACE_OPTIMIZATION_USER_GUIDE.md) - Prompt/instruction usage guide
 - [docs/deployment_guide.md](../docs/deployment_guide.md) - Deployment instructions
 - [docs/quick_reference.md](../docs/quick_reference.md) - Quick reference
 

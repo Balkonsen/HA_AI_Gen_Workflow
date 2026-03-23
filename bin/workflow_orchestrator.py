@@ -388,9 +388,15 @@ This export contains placeholder labels for sensitive data:
         print(f"\n🔍 Validating export: {export_path}")
 
         verifier = ExportVerifier(export_path)
-        verifier.run()
+        success = verifier.run()
 
-        return verifier.generate_report()
+        return {
+            "success": success,
+            "export_version": verifier.export_version,
+            "stats": verifier.stats,
+            "issues": verifier.issues,
+            "warnings": verifier.warnings,
+        }
 
     def run_full_workflow(self, source: str, mode: str = "local") -> bool:
         """Run the complete workflow.
@@ -433,7 +439,10 @@ This export contains placeholder labels for sensitive data:
 
         # Step 4: Validate
         print("\n[4/4] Validating export...")
-        self.validate_export(export_path)
+        validation_report = self.validate_export(export_path)
+        if not validation_report.get("success", False):
+            print("✗ Validation failed")
+            return False
 
         print("\n" + "=" * 60)
         print("✓ Workflow Complete!")
@@ -561,8 +570,8 @@ Examples:
         if not args.source:
             print("Error: --source required")
             return 1
-        orchestrator.validate_export(args.source)
-        return 0
+        result = orchestrator.validate_export(args.source)
+        return 0 if result.get("success", False) else 1
 
     elif args.command == "full":
         mode = "remote" if args.remote else "local"

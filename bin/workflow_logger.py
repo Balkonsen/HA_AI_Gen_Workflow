@@ -98,9 +98,7 @@ class WorkflowLogger:
         """Check if a message at the given level should be logged."""
         return level.value >= self.log_level.value
 
-    def _format_message(
-        self, level: LogLevel, message: str, icon: Optional[str] = None
-    ) -> str:
+    def _format_message(self, level: LogLevel, message: str, icon: Optional[str] = None) -> str:
         """Format a log message for console output."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -140,9 +138,7 @@ class WorkflowLogger:
                 with open(self.log_file, "a", encoding="utf-8") as f:
                     f.write(formatted_message + "\n")
             except Exception as e:
-                print(
-                    f"Failed to write to log file {self.log_file}: {e}", file=sys.stderr
-                )
+                print(f"Failed to write to log file {self.log_file}: {e}", file=sys.stderr)
 
     def _log(self, level: LogLevel, message: str, icon: Optional[str] = None):
         """Internal logging method."""
@@ -242,18 +238,14 @@ class WorkflowLogger:
 
         if self.log_level.value <= LogLevel.DEBUG.value:
             # Include full traceback in debug mode
-            tb_lines = traceback.format_exception(
-                type(exception), exception, exception.__traceback__
-            )
+            tb_lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
             for line in tb_lines:
                 self._write_to_file(line.rstrip())
 
         if context:
             self.pop_context()
 
-    def create_diagnostic_report(
-        self, output_path: str, include_context: bool = True
-    ) -> str:
+    def create_diagnostic_report(self, output_path: str, include_context: bool = True) -> str:
         """
         Create a diagnostic report for troubleshooting.
 
@@ -525,9 +517,7 @@ def configure_logger(
         try:
             level = LogLevel[log_level.upper()]
         except KeyError:
-            print(
-                f"Warning: Invalid log level '{log_level}', using INFO", file=sys.stderr
-            )
+            print(f"Warning: Invalid log level '{log_level}', using INFO", file=sys.stderr)
 
     _global_logger = WorkflowLogger(
         log_level=level,
