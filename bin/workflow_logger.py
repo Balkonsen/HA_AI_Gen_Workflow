@@ -67,21 +67,16 @@ class WorkflowLogger:
     @classmethod
     def _sanitize_log_path(cls, path_value: str) -> str:
         """Resolve and constrain log paths to known-safe roots."""
-        expanded = os.path.expanduser(os.path.expandvars(path_value.strip()))
-        resolved = os.path.realpath(os.path.abspath(expanded))
         allowed_roots = [
             os.path.realpath(os.path.abspath(".")),
             os.path.realpath(os.path.abspath("./exports")),
             os.path.realpath(os.path.abspath("./logs")),
             os.path.realpath("/config"),
-            os.path.realpath(tempfile.gettempdir()),
         ]
 
-        if not any(cls._is_within_root(resolved, root) for root in allowed_roots):
-            fallback_name = "workflow_trace.log" if resolved.endswith(".jsonl") else "workflow.log"
-            return os.path.join(allowed_roots[1], fallback_name)
-
-        return resolved
+        filename = "workflow_trace.log" if path_value.strip().endswith(".jsonl") else "workflow.log"
+        resolved = os.path.join(allowed_roots[1], filename)
+        return os.path.realpath(resolved)
 
     # Icons for different message types
     ICONS = {
