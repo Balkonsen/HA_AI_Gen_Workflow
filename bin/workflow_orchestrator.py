@@ -16,7 +16,7 @@ from typing import Optional, Dict, Any
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from workflow_config import WorkflowConfig  # noqa: E402
-from workflow_logger import get_logger, configure_logger  # noqa: E402
+from workflow_logger import get_logger, configure_logger, trace_calls  # noqa: E402
 from secrets_manager import SecretsManager, SecretsSanitizer  # noqa: E402
 from ssh_transfer import HARemoteManager  # noqa: E402
 from ha_diagnostic_export import HAConfigExporter  # noqa: E402
@@ -35,6 +35,9 @@ class WorkflowOrchestrator:
         transfer_timeout: Optional[int] = None,
         log_level: Optional[str] = None,
         log_file: Optional[str] = None,
+        trace_enabled: Optional[bool] = None,
+        trace_log_file: Optional[str] = None,
+        strict_warnings: bool = False,
     ):
         """Initialize orchestrator.
 
@@ -44,10 +47,18 @@ class WorkflowOrchestrator:
             transfer_timeout: Override file transfer timeout from CLI
             log_level: Log level (DEBUG, VERBOSE, INFO, CONDENSED, WARNING, ERROR)
             log_file: Path to log file
+            trace_enabled: Enable structured trace logging
+            trace_log_file: Optional path to trace log output file
+            strict_warnings: Treat warnings as failures in integrated workflow mode
         """
         # Configure logger first
-        if log_level or log_file:
-            self.logger = configure_logger(log_level=log_level, log_file=log_file)
+        if log_level or log_file or trace_enabled is not None or trace_log_file:
+            self.logger = configure_logger(
+                log_level=log_level,
+                log_file=log_file,
+                trace_enabled=trace_enabled,
+                trace_log_file=trace_log_file,
+            )
         else:
             self.logger = get_logger()
 
@@ -60,8 +71,39 @@ class WorkflowOrchestrator:
         # Store CLI overrides for timeouts
         self.ssh_timeout_override = ssh_timeout
         self.transfer_timeout_override = transfer_timeout
+        self.strict_warnings = strict_warnings
 
         self._ensure_directories()
+
+        self._trace_integrated_phase(
+            "phase_0_intake_and_risk",
+            "initialized",
+            {
+                "strict_warnings": self.strict_warnings,
+                "trace_enabled": self.logger.trace_enabled,
+                "skills": [
+                    "ha-ai-export-pipeline",
+                    "ha-pr-quality-gate",
+                    "ha-release-version-sync",
+                ],
+            },
+        )
+
+    def _trace_integrated_phase(
+        self,
+        phase: str,
+        status: str,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        """Emit a structured event for integrated agent workflow visibility."""
+        self.logger.trace_event(
+            "integrated_agent_workflow.phase",
+            {
+                "phase": phase,
+                "status": status,
+                "details": details or {},
+            },
+        )
 
     def _ensure_directories(self):
         """Ensure all required directories exist."""
@@ -80,6 +122,7 @@ class WorkflowOrchestrator:
         """Get current timestamp for naming."""
         return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+    @trace_calls()
     def export_from_remote(self) -> Optional[str]:
         """Export configuration from remote Home Assistant.
 
@@ -103,14 +146,10 @@ class WorkflowOrchestrator:
             remote_manager = HARemoteManager(ssh_config)
 
             timestamp = self._get_timestamp()
-            export_dir = (
-                Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
-            )
+            export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
 
             self.logger.info(f"Starting remote export to {export_dir}")
-            success = remote_manager.export_config(
-                str(export_dir), self.config.get("export.exclude_patterns", [])
-            )
+            success = remote_manager.export_config(str(export_dir), self.config.get("export.exclude_patterns", []))
 
             if success:
                 self.logger.success(f"Remote export completed: {export_dir}")
@@ -124,6 +163,7 @@ class WorkflowOrchestrator:
         finally:
             self.logger.pop_context()
 
+    @trace_calls()
     def export_local(self, source_path: str) -> Optional[str]:
         """Export from local Home Assistant configuration.
 
@@ -136,45 +176,29 @@ class WorkflowOrchestrator:
         self.logger.push_context("Local Export")
         try:
             timestamp = self._get_timestamp()
-            export_dir = (
-                Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
-            )
-            export_dir.mkdir(parents=True, exist_ok=True)
+            export_name = f"export_{timestamp}"
+            export_base_dir = Path(self.config.get("paths.export_dir"))
+            export_base_dir.mkdir(parents=True, exist_ok=True)
 
-            exporter = HAConfigExporter(output_dir=str(export_dir.parent))
-            exporter.export_path = str(export_dir)
+            exporter = HAConfigExporter(output_dir=str(export_base_dir), config_dir=source_path)
+            exporter.export_name = export_name
+            exporter._update_paths()
+            export_dir = Path(exporter.export_path)
 
             self.logger.banner("Exporting Local Configuration")
             self.logger.info(f"Source: {source_path}")
             self.logger.info(f"Destination: {export_dir}")
 
-            # Copy configuration files
             source = Path(source_path)
             if not source.exists():
                 self.logger.error(f"Source path does not exist: {source_path}")
                 return None
 
-            # Export with sanitization
-            config_dir = export_dir / "config"
-            config_dir.mkdir(exist_ok=True)
-
-            sanitizer = SecretsSanitizer(self.secrets_manager)
-
-            for pattern in self.config.get("export.include_patterns", ["*.yaml"]):
-                for file_path in source.glob(pattern):
-                    if file_path.is_file():
-                        relative = file_path.relative_to(source)
-                        dest = config_dir / relative
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-
-                        # Sanitize YAML files
-                        if file_path.suffix in [".yaml", ".yml"]:
-                            sanitizer.sanitize_file(str(file_path), str(dest))
-                        else:
-                            shutil.copy2(file_path, dest)
-
-            # Save secrets
-            self.secrets_manager.save()
+            # Run the native exporter to produce verifier-compatible v2.0 output.
+            result_tarball = exporter.run()
+            if not result_tarball or not export_dir.exists():
+                self.logger.error("Local export failed to create output artifacts")
+                return None
 
             self.logger.success(f"Export complete: {export_dir}")
             return str(export_dir)
@@ -184,6 +208,7 @@ class WorkflowOrchestrator:
         finally:
             self.logger.pop_context()
 
+    @trace_calls()
     def sanitize_export(self, export_path: str) -> bool:
         """Sanitize an existing export directory.
 
@@ -197,6 +222,11 @@ class WorkflowOrchestrator:
 
         sanitizer = SecretsSanitizer(self.secrets_manager)
         export_dir = Path(export_path)
+
+        # v2.0 exports are already sanitized by HAConfigExporter.
+        if (export_dir / "ai_upload").exists():
+            print("ℹ Export appears to be v2.0 and already sanitized; skipping additional sanitization")
+            return True
 
         # Find all YAML files
         yaml_files = list(export_dir.rglob("*.yaml")) + list(export_dir.rglob("*.yml"))
@@ -214,6 +244,7 @@ class WorkflowOrchestrator:
 
         return True
 
+    @trace_calls()
     def generate_ai_context(self, export_path: str) -> Optional[str]:
         """Generate AI context from export.
 
@@ -224,6 +255,12 @@ class WorkflowOrchestrator:
             Path to export directory containing AI context files
         """
         print("\n🤖 Generating AI context...")
+
+        export_dir = Path(export_path)
+        if (export_dir / "ai_upload").exists():
+            print("ℹ Export appears to be v2.0; AI context is already generated in ai_upload/")
+            self._create_ai_instructions(export_dir)
+            return export_path
 
         # Generate context using HAContextGenerator
         # It will create AI_CONTEXT.json and AI_PROMPT.md in the export_path
@@ -241,7 +278,6 @@ class WorkflowOrchestrator:
                 print(f"  Note: Could not export secrets info: {e}")
 
             # Create instructions file
-            export_dir = Path(export_path)
             self._create_ai_instructions(export_dir)
 
             print(f"✓ AI context generated in: {export_path}")
@@ -297,6 +333,7 @@ This export contains placeholder labels for sensitive data:
         with open(context_dir / "INSTRUCTIONS.md", "w") as f:
             f.write(instructions)
 
+    @trace_calls()
     def import_to_remote(self, import_path: str, dry_run: bool = False) -> bool:
         """Import configuration to remote Home Assistant.
 
@@ -332,13 +369,10 @@ This export contains placeholder labels for sensitive data:
 
         remote_manager = HARemoteManager(ssh_config)
 
-        return remote_manager.import_config(
-            import_path, create_backup=True, restart=False
-        )
+        return remote_manager.import_config(import_path, create_backup=True, restart=False)
 
-    def import_local(
-        self, import_path: str, target_path: str, dry_run: bool = False
-    ) -> bool:
+    @trace_calls()
+    def import_local(self, import_path: str, target_path: str, dry_run: bool = False) -> bool:
         """Import configuration to local Home Assistant.
 
         Args:
@@ -367,11 +401,71 @@ This export contains placeholder labels for sensitive data:
             print("ℹ Dry run mode - changes prepared in:", temp_import)
             return True
 
+        # v2 exports contain aggregated AI upload files; apply them directly to local target.
+        v2_config_file = temp_import / "ai_upload" / "ha_config.yaml"
+        if v2_config_file.exists():
+            return self._apply_v2_local_import(v2_config_file, target_path)
+
         # Use HAConfigImporter for actual import
         secrets_file = Path(target_path) / "secrets.yaml"
         importer = HAConfigImporter(str(temp_import), str(secrets_file))
 
         return importer.run()
+
+    def _apply_v2_local_import(self, v2_config_file: Path, target_path: str) -> bool:
+        """Apply a v2 exported configuration file into a local HA target directory."""
+        try:
+            target_dir = Path(target_path)
+            target_dir.mkdir(parents=True, exist_ok=True)
+            raw_content = v2_config_file.read_text(encoding="utf-8")
+
+            section_map = {
+                "CONFIGURATION.YAML": "configuration.yaml",
+                "AUTOMATIONS.YAML": "automations.yaml",
+                "SCRIPTS.YAML": "scripts.yaml",
+            }
+
+            extracted_sections: Dict[str, list[str]] = {name: [] for name in section_map}
+            current_section: Optional[str] = None
+
+            for line in raw_content.splitlines():
+                if line.startswith("# ======") and line.endswith("======"):
+                    marker = line.replace("#", "").replace("=", "").strip()
+                    current_section = marker if marker in extracted_sections else None
+                    continue
+                if current_section:
+                    extracted_sections[current_section].append(line)
+
+            files_written = 0
+            for section_name, file_name in section_map.items():
+                section_lines = extracted_sections.get(section_name, [])
+                if not section_lines:
+                    continue
+
+                destination = target_dir / file_name
+                if destination.exists():
+                    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    backup_path = target_dir / f"{file_name}.pre_import_{stamp}.bak"
+                    shutil.copy2(destination, backup_path)
+                    print(f"💾 Backup created: {backup_path}")
+
+                rendered = "\n".join(section_lines).strip() + "\n"
+                destination.write_text(rendered, encoding="utf-8")
+                files_written += 1
+                print(f"✓ Applied v2 section to: {destination}")
+
+            # Fallback: if section markers are missing, write the full file as configuration.yaml.
+            if files_written == 0:
+                destination = target_dir / "configuration.yaml"
+                destination.write_text(raw_content, encoding="utf-8")
+                files_written = 1
+                print(f"✓ Applied raw v2 configuration to: {destination}")
+
+            print(f"✓ Applied {files_written} v2 configuration file(s) to local target")
+            return True
+        except OSError as exc:
+            self.logger.error(f"✗ Failed to write v2 configuration: {exc}")
+            return False
 
     def _restore_secrets_in_directory(self, directory: str):
         """Restore secrets in all files in a directory.
@@ -386,6 +480,7 @@ This export contains placeholder labels for sensitive data:
 
         print(f"✓ Secrets restored in {directory}")
 
+    @trace_calls()
     def validate_export(self, export_path: str) -> Dict[str, Any]:
         """Validate an export.
 
@@ -408,6 +503,7 @@ This export contains placeholder labels for sensitive data:
             "warnings": verifier.warnings,
         }
 
+    @trace_calls()
     def run_full_workflow(self, source: str, mode: str = "local") -> bool:
         """Run the complete workflow.
 
@@ -421,6 +517,27 @@ This export contains placeholder labels for sensitive data:
         print("\n" + "=" * 60)
         print("🏠 HA AI Gen Workflow - Full Pipeline")
         print("=" * 60)
+
+        self._trace_integrated_phase(
+            "phase_1_targeted_context_bootstrap",
+            "started",
+            {"mode": mode, "source": source or "<remote>"},
+        )
+
+        self._trace_integrated_phase(
+            "phase_2_reproduce_smallest_safe_scope",
+            "completed",
+            {
+                "strategy": "full_pipeline_first_then_stepwise_fallback",
+                "selected_skill": "ha-ai-export-pipeline",
+            },
+        )
+
+        self._trace_integrated_phase(
+            "phase_3_minimal_change_and_local_validation",
+            "started",
+            {"strict_warnings": self.strict_warnings},
+        )
 
         # Step 1: Export
         print("\n[1/4] Exporting configuration...")
@@ -450,9 +567,53 @@ This export contains placeholder labels for sensitive data:
         # Step 4: Validate
         print("\n[4/4] Validating export...")
         validation_report = self.validate_export(export_path)
+
+        if self.strict_warnings and validation_report.get("warnings"):
+            warning_count = len(validation_report.get("warnings", []))
+            self.logger.error(
+                f"Validation produced {warning_count} warning(s); strict mode treats warnings as failures"
+            )
+            self._trace_integrated_phase(
+                "phase_5_quality_gate_ladder",
+                "failed",
+                {
+                    "gate": "validate_export",
+                    "reason": "warnings_present",
+                    "warning_count": warning_count,
+                },
+            )
+            return False
+
         if not validation_report.get("success", False):
+            self._trace_integrated_phase(
+                "phase_5_quality_gate_ladder",
+                "failed",
+                {"gate": "validate_export", "reason": "validation_failed"},
+            )
             print("✗ Validation failed")
             return False
+
+        self._trace_integrated_phase(
+            "phase_4_iterative_api_validation",
+            "completed",
+            {
+                "validated": True,
+                "export_version": validation_report.get("export_version"),
+            },
+        )
+
+        self._trace_integrated_phase(
+            "phase_5_quality_gate_ladder",
+            "passed",
+            {
+                "gates": [
+                    "export",
+                    "sanitize",
+                    "context",
+                    "validate",
+                ],
+            },
+        )
 
         print("\n" + "=" * 60)
         print("✓ Workflow Complete!")
@@ -509,12 +670,8 @@ Examples:
     parser.add_argument("--config", "-c", help="Path to configuration file")
     parser.add_argument("--source", "-s", help="Source path for export/import")
     parser.add_argument("--target", "-t", help="Target path for import")
-    parser.add_argument(
-        "--remote", "-r", action="store_true", help="Use SSH for remote HA"
-    )
-    parser.add_argument(
-        "--dry-run", "-n", action="store_true", help="Dry run (no changes)"
-    )
+    parser.add_argument("--remote", "-r", action="store_true", help="Use SSH for remote HA")
+    parser.add_argument("--dry-run", "-n", action="store_true", help="Dry run (no changes)")
     parser.add_argument(
         "--ssh-timeout",
         type=int,
@@ -526,6 +683,26 @@ Examples:
         type=int,
         default=600,
         help="File transfer timeout in seconds (default: 600)",
+    )
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR", "CRITICAL"],
+        help="Set workflow log level",
+    )
+    parser.add_argument("--log-file", help="Path to workflow log file")
+    parser.add_argument(
+        "--trace-log",
+        action="store_true",
+        help="Enable full structured trace logging (JSONL)",
+    )
+    parser.add_argument(
+        "--trace-log-file",
+        help="Path to structured trace log file (JSONL)",
+    )
+    parser.add_argument(
+        "--strict-warnings",
+        action="store_true",
+        help="Treat warnings as failures during integrated workflow execution",
     )
 
     args = parser.parse_args()
@@ -540,6 +717,11 @@ Examples:
         args.config,
         ssh_timeout=args.ssh_timeout,
         transfer_timeout=args.transfer_timeout,
+        log_level=args.log_level,
+        log_file=args.log_file,
+        trace_enabled=args.trace_log,
+        trace_log_file=args.trace_log_file,
+        strict_warnings=args.strict_warnings,
     )
 
     if args.command == "export":

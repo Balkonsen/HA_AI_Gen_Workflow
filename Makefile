@@ -1,7 +1,7 @@
 # Makefile for HA AI Gen Workflow Development
 # Provides convenient shortcuts for common development tasks
 
-.PHONY: help install test lint format clean docker-test validate quick-validate coverage docs lessons-scan lessons-report iterate-quality
+.PHONY: help install test lint format clean docker-test validate quick-validate coverage docs lessons-scan lessons-report iterate-quality ha-sandbox-gate
 
 # Default target
 help:
@@ -23,6 +23,7 @@ help:
 	@echo "  make docs            - Build documentation"
 	@echo "  make pre-commit      - Setup pre-commit hooks"
 	@echo "  make iterate-quality - Run iterative quality gate with auto-remediation"
+	@echo "  make ha-sandbox-gate - Run local HA sandbox quality gate"
 	@echo "  make lessons-scan    - Scan repo for anti-patterns"
 	@echo "  make lessons-report  - Show lessons learned report"
 	@echo ""
@@ -124,6 +125,10 @@ pre-commit-run:
 iterate-quality:
 	@echo "Running iterative quality gate..."
 	bash tools/iterate_quality_gate.sh
+
+ha-sandbox-gate:
+	@echo "Running local HA sandbox quality gate..."
+	python tools/ha_local_test/manage_local_ha_test.py quality-gate
 
 # Documentation
 docs:

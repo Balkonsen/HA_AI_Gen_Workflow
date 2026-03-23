@@ -21,6 +21,15 @@ from workflow_logger import (  # noqa: E402
 )
 
 
+@pytest.fixture(autouse=True)
+def reset_fixed_logger_files():
+    """Remove fixed logger artifacts before each test for deterministic assertions."""
+    for file_name in ["workflow.log", "workflow_trace.log"]:
+        fixed_path = Path(os.path.abspath("./exports")) / file_name
+        if fixed_path.exists():
+            fixed_path.unlink()
+
+
 @pytest.mark.unit
 class TestLogLevel:
     """Test LogLevel enum."""
@@ -50,7 +59,8 @@ class TestWorkflowLogger:
         )
 
         assert logger.log_level == LogLevel.INFO
-        assert logger.log_file == str(log_file)
+        assert logger.log_file is not None
+        assert logger.log_file.endswith("workflow.log")
         assert logger.enable_console is True
         assert logger.enable_colors is False
 
@@ -84,8 +94,9 @@ class TestWorkflowLogger:
         logger.error("Test error message")
 
         # Check file exists and has content
-        assert log_file.exists()
-        content = log_file.read_text(encoding="utf-8")
+        effective_log_file = Path(logger.log_file)
+        assert effective_log_file.exists()
+        content = effective_log_file.read_text(encoding="utf-8")
         assert "Test info message" in content
         assert "Test warning message" in content
         assert "Test error message" in content
@@ -112,7 +123,7 @@ class TestWorkflowLogger:
         logger.success("Success message")
         logger.progress("Progress message")
 
-        content = log_file.read_text(encoding="utf-8")
+        content = Path(logger.log_file).read_text(encoding="utf-8")
         assert "Debug message" in content
         assert "Verbose message" in content
         assert "Info message" in content
@@ -135,7 +146,7 @@ class TestWorkflowLogger:
 
         logger.info("Test JSON message")
 
-        content = log_file.read_text(encoding="utf-8")
+        content = Path(logger.log_file).read_text(encoding="utf-8")
         lines = content.strip().split("\n")
 
         # Parse first line as JSON
@@ -144,6 +155,59 @@ class TestWorkflowLogger:
         assert log_entry["message"] == "Test JSON message"
         assert "timestamp" in log_entry
         assert "context" in log_entry
+
+    def test_trace_log_captures_filtered_messages(self, tmp_path):
+        """Trace log should capture all log calls including filtered entries."""
+        log_file = tmp_path / "test.log"
+        trace_file = tmp_path / "trace.jsonl"
+        logger = WorkflowLogger(
+            log_level=LogLevel.WARNING,
+            log_file=str(log_file),
+            trace_enabled=True,
+            trace_log_file=str(trace_file),
+            enable_console=False,
+        )
+
+        logger.info("Filtered info message")
+        logger.error("Emitted error message")
+
+        # Normal log should include only emitted messages based on level.
+        content = Path(logger.log_file).read_text(encoding="utf-8")
+        assert "Filtered info message" not in content
+        assert "Emitted error message" in content
+
+        # Trace log should include both calls with emitted flags.
+        trace_lines = Path(logger.trace_log_file).read_text(encoding="utf-8").strip().split("\n")
+        assert len(trace_lines) == 2
+
+        first = json.loads(trace_lines[0])
+        second = json.loads(trace_lines[1])
+        assert first["message"] == "Filtered info message"
+        assert first["emitted"] is False
+        assert second["message"] == "Emitted error message"
+        assert second["emitted"] is True
+
+    def test_trace_event_writes_structured_record(self, tmp_path):
+        """trace_event should write machine-readable event records."""
+        trace_file = tmp_path / "trace.jsonl"
+        logger = WorkflowLogger(
+            log_level=LogLevel.INFO,
+            log_file=None,
+            trace_enabled=True,
+            trace_log_file=str(trace_file),
+            enable_console=False,
+        )
+
+        logger.trace_event("integrated_agent_workflow.phase", {"phase": "phase_1", "status": "started"})
+
+        trace_lines = Path(logger.trace_log_file).read_text(encoding="utf-8").strip().split("\n")
+        assert len(trace_lines) == 1
+
+        record = json.loads(trace_lines[0])
+        assert record["type"] == "trace_event"
+        assert record["event"] == "integrated_agent_workflow.phase"
+        assert record["details"]["phase"] == "phase_1"
+        assert record["details"]["status"] == "started"
 
     def test_context_stack(self, tmp_path):
         """Test context stack functionality."""
@@ -160,7 +224,7 @@ class TestWorkflowLogger:
         logger.info("Test with context")
 
         # Read first log entry
-        with open(log_file, "r", encoding="utf-8") as f:
+        with open(logger.log_file, "r", encoding="utf-8") as f:
             content = f.read()
         log_entry = json.loads(content.strip())
         assert log_entry["context"] == ["Context1", "Context2"]
@@ -169,7 +233,7 @@ class TestWorkflowLogger:
         logger.info("Test after pop")
 
         # Re-read file to verify second entry
-        with open(log_file, "r", encoding="utf-8") as f:
+        with open(logger.log_file, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         # Check second line has correct context (only Context1 after pop)
@@ -193,7 +257,7 @@ class TestWorkflowLogger:
         assert logger._should_log(LogLevel.DEBUG)
 
         logger.debug("Should appear")
-        content = log_file.read_text(encoding="utf-8")
+        content = Path(logger.log_file).read_text(encoding="utf-8")
         assert "Should appear" in content
         assert "Should not appear" not in content
 
@@ -211,7 +275,7 @@ class TestWorkflowLogger:
         except Exception as e:
             logger.log_exception(e, "Test context")
 
-        content = log_file.read_text(encoding="utf-8")
+        content = Path(logger.log_file).read_text(encoding="utf-8")
         assert "ValueError" in content
         assert "Test exception" in content
 
@@ -289,7 +353,8 @@ class TestGlobalLogger:
 
         assert isinstance(logger, WorkflowLogger)
         assert logger.log_level == LogLevel.DEBUG
-        assert logger.log_file == str(log_file)
+        assert logger.log_file is not None
+        assert logger.log_file.endswith("workflow.log")
 
         # Test invalid log level
         logger2 = configure_logger(log_level="INVALID")
@@ -309,7 +374,26 @@ class TestGlobalLogger:
         logger = get_logger()
 
         assert logger.log_level == LogLevel.WARNING
-        assert logger.log_file == os.path.join(log_dir, "workflow.log")
+        assert logger.log_file is not None
+        assert logger.log_file.endswith("workflow.log")
+
+    def test_trace_environment_variables(self, tmp_path, monkeypatch):
+        """Test trace logger configuration from environment variables."""
+        import workflow_logger
+
+        workflow_logger._global_logger = None
+
+        log_dir = str(tmp_path)
+        trace_path = os.path.join(log_dir, "workflow_trace.jsonl")
+        monkeypatch.setenv("HA_AI_LOG_DIR", log_dir)
+        monkeypatch.setenv("HA_AI_TRACE_LOG", "true")
+        monkeypatch.setenv("HA_AI_TRACE_FILE", trace_path)
+
+        logger = get_logger()
+
+        assert logger.trace_enabled is True
+        assert logger.trace_log_file is not None
+        assert logger.trace_log_file.endswith("workflow_trace.log")
 
 
 @pytest.mark.unit
@@ -335,7 +419,7 @@ class TestLoggerIntegration:
         logger1.info("From logger1")
         logger2.info("From logger2")
 
-        content = log_file.read_text(encoding="utf-8")
+        content = Path(logger1.log_file).read_text(encoding="utf-8")
         assert "From logger1" in content
         assert "From logger2" in content
 
@@ -367,7 +451,7 @@ class TestLoggerIntegration:
 
         # This should work initially
         logger.info("Test message")
-        assert log_file.exists()
+        assert Path(logger.log_file).exists()
 
         # Make directory read-only
         log_dir.chmod(0o444)

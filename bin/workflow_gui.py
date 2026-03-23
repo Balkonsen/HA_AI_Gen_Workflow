@@ -90,6 +90,19 @@ def resolve_and_verify_path(path_str: str) -> tuple:
     )
 
 
+def is_path_within_roots(path_str: str, allowed_roots: list[str]) -> bool:
+    """Return True if path_str resolves within one of the allowed roots."""
+    resolved = os.path.realpath(os.path.abspath(path_str))
+    for root in allowed_roots:
+        try:
+            root_resolved = os.path.realpath(os.path.abspath(root))
+            if os.path.commonpath([resolved, root_resolved]) == root_resolved:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def find_standard_root() -> str:
     """Find the first available standard HA root directory.
 
@@ -198,35 +211,20 @@ def render_path_input_with_validation(label: str, config_key: str, config: Workf
         key_suffix: Optional suffix for unique Streamlit widget keys.
 
     Returns:
-        The resolved absolute path string.
+        The configured path string.
     """
     current_value = config.get(config_key, "")
     widget_key = f"path_{config_key}_{key_suffix}" if key_suffix else f"path_{config_key}"
 
     path_value = st.text_input(label, value=current_value, key=widget_key) or ""
 
-    resolved, exists, creatable, message = resolve_and_verify_path(path_value)
-
     if path_value:
-        if exists:
-            st.caption(message)
-        elif creatable:
-            st.caption(message)
-            if st.button(f"📁 Create '{os.path.basename(resolved)}'", key=f"create_{widget_key}"):
-                try:
-                    Path(resolved).mkdir(parents=True, exist_ok=True)
-                    st.success(f"✅ Created: {resolved}")
-                    st.rerun()
-                except OSError as e:
-                    st.error(f"❌ Failed to create directory: {e}")
-        else:
-            st.caption(message)
-
-        config.set(config_key, resolved)
+        st.caption("ℹ️ Path saved. Validation happens during workflow execution.")
+        config.set(config_key, path_value.strip())
     else:
         st.caption("⚠️ Path is empty")
 
-    return resolved
+    return path_value.strip()
 
 
 def init_session_state():
@@ -248,8 +246,21 @@ def init_session_state():
         export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         base_dir = os.path.dirname(export_dir)
         log_file = os.path.join(base_dir, "workflow.log")
+        trace_enabled = os.environ.get("HA_AI_TRACE_LOG", "false").strip().lower() in [
+            "1",
+            "true",
+            "yes",
+            "on",
+            "enabled",
+        ]
+        trace_log_file = os.environ.get("HA_AI_TRACE_FILE", os.path.join(base_dir, "workflow_trace.log"))
         Path(base_dir).mkdir(parents=True, exist_ok=True)
-        st.session_state.logger = configure_logger(log_level=st.session_state.log_level, log_file=log_file)
+        st.session_state.logger = configure_logger(
+            log_level=st.session_state.log_level,
+            log_file=log_file,
+            trace_enabled=trace_enabled,
+            trace_log_file=trace_log_file,
+        )
 
 
 def render_sidebar():
@@ -483,15 +494,8 @@ def render_configuration():
     else:
         default_base = os.path.dirname(current_export) if current_export else os.path.abspath("./ha_workflow")
 
-    base_path = st.text_input(
-        "Storage Base Path",
-        value=default_base,
-        placeholder="/config/ai_workflow",
-        key="storage_base_path",
-        help="All workflow directories (exports, imports, secrets, backups, logs) will be created here.",
-    )
-    resolved_base, base_exists, base_creatable, base_message = resolve_and_verify_path(base_path)
-    st.caption(base_message)
+    resolved_base = os.path.abspath(default_base)
+    st.caption(f"ℹ️ Storage Base Path: {resolved_base}")
 
     if resolved_base:
         # Derive and set all sub-paths from the base
@@ -510,21 +514,20 @@ def render_configuration():
             st.text(f"  AI Context: {os.path.join(resolved_base, 'ai_context')}")
             st.text(f"  Logs:       {os.path.join(resolved_base, 'workflow.log')}")
 
-        if not base_exists and base_creatable:
-            if st.button("📁 Create Storage Directory"):
-                try:
-                    for sub in [
-                        "exports",
-                        "imports",
-                        "secrets",
-                        "backups",
-                        "ai_context",
-                    ]:
-                        Path(os.path.join(resolved_base, sub)).mkdir(parents=True, exist_ok=True)
-                    st.success(f"✅ Created storage directory: {resolved_base}")
-                    st.rerun()
-                except OSError as e:
-                    st.error(f"❌ Failed to create directory: {e}")
+        if st.button("📁 Create Storage Directory"):
+            try:
+                for sub in [
+                    "exports",
+                    "imports",
+                    "secrets",
+                    "backups",
+                    "ai_context",
+                ]:
+                    Path(os.path.join(resolved_base, sub)).mkdir(parents=True, exist_ok=True)
+                st.success(f"✅ Created storage directory: {resolved_base}")
+                st.rerun()
+            except OSError as e:
+                st.error(f"❌ Failed to create directory: {e}")
 
     st.markdown("---")
 
@@ -840,19 +843,48 @@ def render_full_pipeline():
     4. **Validate** - Verify export completeness
     """)
 
+    st.markdown("### Strict Trace Mode")
+    strict_mode = st.checkbox(
+        "Treat warnings as failures (--strict-warnings)",
+        value=True,
+        help="Recommended for bugfixing and PR quality gates.",
+    )
+    enable_trace = st.checkbox(
+        "Enable structured trace log (--trace-log)",
+        value=True,
+        help="Writes JSONL trace records for deep diagnostics.",
+    )
+    trace_log_file = st.text_input(
+        "Trace Log File",
+        value=os.path.join(
+            config.get("paths.export_dir", os.path.abspath("./exports")),
+            "workflow_trace_gui.jsonl",
+        ),
+        disabled=not enable_trace,
+    )
+
     if st.button("🚀 Run Full Pipeline", type="primary"):
         with st.spinner("Running pipeline..."):
             from workflow_orchestrator import WorkflowOrchestrator
 
-            orchestrator = WorkflowOrchestrator()
+            orchestrator = WorkflowOrchestrator(
+                log_level=st.session_state.log_level,
+                trace_enabled=enable_trace,
+                trace_log_file=trace_log_file if enable_trace else None,
+                strict_warnings=strict_mode,
+            )
             mode = "remote" if pipeline_mode == "SSH Remote" else "local"
             success, output = capture_runtime_output(orchestrator.run_full_workflow, source_path, mode)
 
             st.session_state.runtime_output = output
             if success:
                 st.success("✅ Pipeline complete!")
+                if enable_trace:
+                    st.info(f"Trace written to: {trace_log_file}")
                 st.balloons()
             else:
+                if enable_trace:
+                    st.info(f"Trace written to: {trace_log_file}")
                 st.error("❌ Pipeline failed")
 
         render_terminal_output(st.session_state.runtime_output)
@@ -916,7 +948,33 @@ def render_logs():
     with col2:
         export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         log_dir = os.path.dirname(export_dir)
-        log_file = st.text_input("Log File Path", value=os.path.join(log_dir, "workflow.log"))
+        log_file = os.path.join(log_dir, "workflow.log")
+        st.text_input("Log File Path", value=log_file, disabled=True)
+
+    trace_log_file = os.path.join(log_dir, "workflow_trace.log")
+    st.text_input(
+        "Trace Log Path (JSONL)",
+        value=trace_log_file,
+        disabled=True,
+    )
+
+    selected_log_type = st.radio(
+        "Viewer",
+        ["Workflow Log", "Trace Log"],
+        horizontal=True,
+    )
+    active_log_file = trace_log_file if selected_log_type == "Trace Log" else log_file
+    resolved_log_file = active_log_file
+    log_exists = os.path.exists(resolved_log_file)
+    allowed_roots = [
+        os.path.abspath("."),
+        export_dir,
+        log_dir,
+        "/config",
+    ]
+    if not is_path_within_roots(resolved_log_file, allowed_roots):
+        st.error(f"❌ Refusing to access log path outside allowed roots: {resolved_log_file}")
+        return
 
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -926,7 +984,7 @@ def render_logs():
     st.markdown("---")
 
     # Display log file
-    if Path(log_file).exists():
+    if log_exists and Path(resolved_log_file).exists():
         col1, col2 = st.columns([3, 1])
 
         with col1:
@@ -936,7 +994,7 @@ def render_logs():
             num_lines = st.number_input("Show last N lines", min_value=10, max_value=1000, value=100, step=10)
 
         try:
-            with open(log_file, "r", encoding="utf-8") as f:
+            with open(resolved_log_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()
 
             # Show last N lines
@@ -953,14 +1011,14 @@ def render_logs():
             st.download_button(
                 label="⬇️ Download Full Log",
                 data="".join(lines),
-                file_name="workflow.log",
+                file_name=Path(active_log_file).name,
                 mime="text/plain",
             )
 
         except Exception as e:
             st.error(f"❌ Error reading log file: {e}")
     else:
-        st.warning(f"⚠️ Log file not found: {log_file}")
+        st.warning(f"⚠️ Log file not found: {resolved_log_file}")
         st.info("Run a workflow operation to generate logs.")
 
     st.markdown("---")
@@ -974,7 +1032,7 @@ def render_logs():
     with col1:
         report_path = st.text_input(
             "Report Output Path",
-            value=os.path.join(log_dir, f"diagnostic_report_{Path(log_file).stem}.md"),
+            value=os.path.join(log_dir, f"diagnostic_report_{Path(active_log_file).stem}.md"),
         )
 
     with col2:
@@ -1068,7 +1126,8 @@ def render_path_explorer():
 
     # Directory browser
     st.subheader("📁 Directory Browser")
-    browse_path = st.text_input("Browse path", value=ha_root, key="explorer_browse_path")
+    browse_path = ha_root
+    st.text_input("Browse path", value=browse_path, key="explorer_browse_path", disabled=True)
 
     resolved, exists, _creatable, message = resolve_and_verify_path(browse_path)
     st.caption(message)

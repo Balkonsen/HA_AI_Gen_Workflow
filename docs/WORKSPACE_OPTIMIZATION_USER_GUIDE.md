@@ -1,4 +1,4 @@
-# Workspace Optimization User Guide
+﻿# Workspace Optimization User Guide
 
 This is the practical, beginner-safe guide for using the workspace customizations.
 If you are unsure what to do next, start with the Top-Down Walkthrough.
@@ -14,37 +14,43 @@ Follow these steps in order for every task.
    - API/export/import/orchestrator behavior change
    - Release/version metadata change
    - Single-module bug fix
-2. Route to the correct owner first:
+1. Route to the correct owner first:
 
 ```text
 Apply module-owner-map and identify owner file, owner tests, and first 3 commands.
 ```
 
-3. If behavior touches API/workflow, run smoke first:
+1. If behavior touches API/workflow, run smoke first:
 
 ```text
 /ha-api-sandbox-smoke Validate <module.function> in <internal|external> mode.
 ```
 
-4. Implement minimal fix only.
-5. Run targeted tests.
-6. Run quality gates.
-7. If release files changed, enforce version-sync-guard.
-8. Request final evidence report.
+And run the permanent local sandbox quality gate:
+
+```text
+Run tools/ha_local_test/manage_local_ha_test.py quality-gate and include pass/fail with exit code.
+```
+
+1. Implement minimal fix only.
+1. Run targeted tests.
+1. Run quality gates.
+1. If release files changed, enforce version-sync-guard.
+1. Request final evidence report.
 
 ## Who This Is For
 
 1. New contributor: You want safe defaults and copy-paste prompts.
-2. Regular contributor: You want faster coding with fewer regressions.
-3. Release maintainer: You need strict version and changelog safety.
+1. Regular contributor: You want faster coding with fewer regressions.
+1. Release maintainer: You need strict version and changelog safety.
 
 ## What Is Installed
 
 1. Integrated workflow guide:
    - docs/INTEGRATED_AGENT_WORKFLOW.md
-2. Prompt:
+1. Prompt:
    - .github/prompts/ha-api-sandbox-smoke.prompt.md
-3. Instructions:
+1. Instructions:
    - .github/instructions/version-sync-guard.instructions.md
    - .github/instructions/module-owner-map.instructions.md
 
@@ -57,37 +63,37 @@ Use this exact decision tree.
 1. Are you changing `config.yaml`, `build.yaml`, Docker labels, or `CHANGELOG.md`?
    - Yes: Run version-sync-guard first.
    - No: Continue.
-2. Are you changing API/export/import/orchestrator behavior?
+1. Are you changing API/export/import/orchestrator behavior?
    - Yes: Run /ha-api-sandbox-smoke, then module-owner-map.
    - No: Continue.
-3. Is this a bug in one module?
+1. Is this a bug in one module?
    - Yes: Use module-owner-map and run module-targeted tests first.
    - No: Use integrated workflow.
-4. Are you ready to finish?
+1. Are you ready to finish?
    - Require evidence format output with commands, pass/fail, and exit codes.
 
 ## 5-Minute Quick Start
 
 1. Open Copilot Chat in this repository.
-2. Start with this prompt:
+1. Start with this prompt:
 
 ```text
 /ha-api-sandbox-smoke Validate ha_api_client.get_addons in internal mode and return pass/fail evidence.
 ```
 
-3. Ask for owner routing:
+1. Ask for owner routing:
 
 ```text
 Apply module-owner-map and identify the owner module and targeted tests before editing.
 ```
 
-4. If you changed release files, run:
+1. If you changed release files, run:
 
 ```text
 Apply version-sync-guard and verify config/build/changelog are synchronized.
 ```
 
-5. Run quality gates.
+1. Run quality gates.
 
 Linux/macOS:
 
@@ -116,23 +122,23 @@ Use this for almost all code changes.
 1. Define scope:
    - What file/function is broken?
    - What behavior should change?
-2. Route to owner:
+1. Route to owner:
 
 ```text
 Apply module-owner-map and limit changes to owner module and direct callers only.
 ```
 
-3. Run fast sandbox smoke:
+1. Run fast sandbox smoke:
 
 ```text
 /ha-api-sandbox-smoke Validate <module.function> in <internal|external> mode.
 ```
 
-4. Implement minimal fix.
-5. Run targeted tests.
-6. Run quality gates (quick -> full).
-7. If release files changed, enforce version-sync-guard.
-8. Request final evidence report.
+1. Implement minimal fix.
+1. Run targeted tests.
+1. Run quality gates (quick -> full).
+1. If release files changed, enforce version-sync-guard.
+1. Request final evidence report.
 
 ## Case-by-Case Playbooks
 
@@ -146,13 +152,13 @@ Use when methods in ha_api_client or API-dependent exporters fail.
 /ha-api-sandbox-smoke Validate HomeAssistantAPI.test_connection in external mode and provide root cause plus minimal fix.
 ```
 
-2. Prompt:
+1. Prompt:
 
 ```text
 Apply module-owner-map and keep changes in bin/ha_api_client.py unless a direct caller requires updates.
 ```
 
-3. Run targeted tests:
+1. Run targeted tests:
 
 ```bash
 python -m pytest tests/test_ha_api_client.py -v
@@ -168,18 +174,27 @@ Use for issues in export, sanitize, context, import, or validate flow.
 /ha-api-sandbox-smoke Validate export->validate->import dry-run flow and report failing stage.
 ```
 
-2. Prompt:
+1. Prompt:
 
 ```text
 Apply module-owner-map and fix only owner module plus direct orchestrator integration points.
 ```
 
-3. Runtime commands:
+1. Runtime commands:
 
 ```bash
+python tools/ha_local_test/manage_local_ha_test.py quality-gate
 python bin/workflow_orchestrator.py full --source tools/ha_local_test/ha_config
 python bin/workflow_orchestrator.py validate --source <latest_export_path>
 python bin/workflow_orchestrator.py import --source <latest_export_path> --target imports/dry_run_target --dry-run
+```
+
+1. Token rotation and cleanup for repeated runs:
+
+```bash
+HA_TEST_TOKEN=<current_token> python tools/ha_local_test/manage_local_ha_test.py token-bootstrap
+HA_TEST_TOKEN=<new_token> python tools/ha_local_test/manage_local_ha_test.py token-prune
+HA_TEST_TOKEN=<new_token> python tools/ha_local_test/manage_local_ha_test.py api-smoke
 ```
 
 ### Case 3: Release Version Bump
@@ -192,8 +207,8 @@ Use when changing addon version.
 Apply version-sync-guard and bump version to <X.Y.Z>. Update build metadata and changelog in the same change set.
 ```
 
-2. Validate that all required version files match.
-3. Ensure changelog has concrete Fixed/Added/Changed entries.
+1. Validate that all required version files match.
+1. Ensure changelog has concrete Fixed/Added/Changed entries.
 
 ### Case 4: Unsure Which File Owns The Bug
 
@@ -203,8 +218,8 @@ Apply version-sync-guard and bump version to <X.Y.Z>. Update build metadata and 
 Apply module-owner-map and identify owner module, owner tests, and minimal edit plan before coding.
 ```
 
-2. Approve plan.
-3. Continue with targeted edits and tests.
+1. Approve plan.
+1. Continue with targeted edits and tests.
 
 ### Case 5: Need Highest Confidence Before PR
 
@@ -214,7 +229,7 @@ Apply module-owner-map and identify owner module, owner tests, and minimal edit 
 Run integrated workflow with evidence format: owner mapping, sandbox smoke, targeted tests, full quality ladder, and residual risks.
 ```
 
-2. Verify command outputs include pass/fail and exit codes.
+1. Verify command outputs include pass/fail and exit codes.
 
 ## Compact Prompt Library
 
@@ -224,22 +239,28 @@ Run integrated workflow with evidence format: owner mapping, sandbox smoke, targ
 /ha-api-sandbox-smoke Validate ha_diagnostic_export API fallback behavior in internal mode.
 ```
 
-2. Owner-first bug fix:
+1. Owner-first bug fix:
 
 ```text
 Apply module-owner-map and fix retry behavior in ssh_transfer with targeted tests first.
 ```
 
-3. Release-safe update:
+1. Release-safe update:
 
 ```text
 Apply version-sync-guard while updating addon version and changelog. Block completion until all version fields are synchronized.
 ```
 
-4. Full audit:
+1. Full audit:
 
 ```text
 Use the integrated workflow and return: scope, commands run, pass/fail per command, files changed, risks, and next recommendation.
+```
+
+1. Sandbox quality gate:
+
+```text
+Run tools/ha_local_test/manage_local_ha_test.py quality-gate and include exit code evidence.
 ```
 
 ## Required Evidence Format
@@ -247,12 +268,12 @@ Use the integrated workflow and return: scope, commands run, pass/fail per comma
 Ask for this exact output format after each task.
 
 1. Scope and owner file
-2. Commands run
-3. Pass/fail and exit code per command
-4. Root cause and fix summary
-5. Files changed
-6. Risks and blockers
-7. Next action
+1. Commands run
+1. Pass/fail and exit code per command
+1. Root cause and fix summary
+1. Files changed
+1. Risks and blockers
+1. Next action
 
 Prompt:
 
@@ -265,18 +286,18 @@ Return results using the required evidence format with exact command outputs sum
 1. Problem: Prompt command not visible.
    - Fix: Confirm file exists at .github/prompts/ha-api-sandbox-smoke.prompt.md.
    - Fix: Reload VS Code window.
-2. Problem: Instruction not applied.
+1. Problem: Instruction not applied.
    - Fix: Confirm path matches applyTo scope.
    - Fix: Keep changed file inside bin/, tests/, or ha_ai_workflow_addon/ when using module-owner-map.
-3. Problem: Docker sandbox unavailable.
+1. Problem: Docker sandbox unavailable.
    - Fix: Run targeted pytest and orchestrator dry-run commands as fallback.
-4. Problem: validate shows failures but tooling says success.
+1. Problem: validate shows failures but tooling says success.
    - Fix: Check exit code and ensure command path has non-zero on validation failure.
 
 ## Related Docs
 
 1. docs/INTEGRATED_AGENT_WORKFLOW.md
-2. docs/API_CONFIGURATION_GUIDE.md
-3. docs/TESTING_GUIDE.md
-4. docs/VERSION_CHANGELOG_GUIDE.md
-5. .github/copilot-instructions.md
+1. docs/API_CONFIGURATION_GUIDE.md
+1. docs/TESTING_GUIDE.md
+1. docs/VERSION_CHANGELOG_GUIDE.md
+1. .github/copilot-instructions.md

@@ -1,4 +1,4 @@
-# Workspace Operator Card
+﻿# Workspace Operator Card
 
 Use this as the one-page runbook for daily operations.
 
@@ -8,13 +8,13 @@ Use this as the one-page runbook for daily operations.
    - API/export/import/orchestrator change
    - Release/version change
    - Single module bug
-2. Run owner routing first:
+1. Run owner routing first:
 
 ```text
 Apply module-owner-map and identify owner file, owner tests, and first 3 commands.
 ```
 
-3. If task touches behavior, run smoke first:
+1. If task touches behavior, run smoke first:
 
 ```text
 /ha-api-sandbox-smoke Validate <module.function> in <internal|external> mode.
@@ -30,25 +30,25 @@ Apply module-owner-map and identify owner file, owner tests, and first 3 command
 Apply version-sync-guard and verify config/build/changelog are synchronized.
 ```
 
-2. Editing API/export/import/orchestrator behavior?
+1. Editing API/export/import/orchestrator behavior?
    - Yes: Run `/ha-api-sandbox-smoke`, then apply `module-owner-map`.
 
-3. Single-module bug only?
+1. Single-module bug only?
    - Yes: Apply `module-owner-map`, keep edits in owner + direct callers only.
 
-4. Finalization step for all tasks:
+1. Finalization step for all tasks:
    - Require evidence format output (commands + pass/fail + exit codes).
 
 ## 3) Golden Workflow (Top-Down)
 
 1. Scope issue in one sentence.
-2. Route owner file.
-3. Run smoke validation.
-4. Implement smallest fix.
-5. Run targeted tests.
-6. Run quality ladder.
-7. Enforce release sync if needed.
-8. Request final evidence report.
+1. Route owner file.
+1. Run smoke validation.
+1. Implement smallest fix.
+1. Run targeted tests.
+1. Run quality ladder.
+1. Enforce release sync if needed.
+1. Request final evidence report.
 
 ## 4) Prompt Shortcuts (Copy/Paste)
 
@@ -58,25 +58,25 @@ Apply version-sync-guard and verify config/build/changelog are synchronized.
 Apply module-owner-map and identify owner module, owner tests, and minimal edit plan before coding.
 ```
 
-2. API smoke:
+1. API smoke:
 
 ```text
 /ha-api-sandbox-smoke Validate HomeAssistantAPI.test_connection in external mode and provide root cause plus minimal fix.
 ```
 
-3. Export/import flow:
+1. Export/import flow:
 
 ```text
 /ha-api-sandbox-smoke Validate export->validate->import dry-run flow and report failing stage.
 ```
 
-4. Release guard:
+1. Release guard:
 
 ```text
 Apply version-sync-guard while updating addon version and changelog. Block completion until all version fields are synchronized.
 ```
 
-5. Final audit output:
+1. Final audit output:
 
 ```text
 Use integrated workflow and return: scope, commands run, pass/fail with exit codes, files changed, risks, and next action.
@@ -115,20 +115,20 @@ python bin/workflow_orchestrator.py import --source <latest_export_path> --targe
 ## 7) Done Criteria (Must Be True)
 
 1. Owner module and tests were identified first.
-2. Smoke validation executed for behavior changes.
-3. Targeted tests passed.
-4. Quality ladder passed.
-5. Release sync guard passed when release files changed.
-6. Final report includes pass/fail and exit codes.
+1. Smoke validation executed for behavior changes.
+1. Targeted tests passed.
+1. Quality ladder passed.
+1. Release sync guard passed when release files changed.
+1. Final report includes pass/fail and exit codes.
 
 ## 8) Fast Troubleshooting
 
 1. Prompt not visible:
    - Check `.github/prompts/ha-api-sandbox-smoke.prompt.md` exists.
    - Reload VS Code window.
-2. Instruction not applied:
+1. Instruction not applied:
    - Confirm file path is in instruction `applyTo` scope.
-3. Docker sandbox unavailable:
+1. Docker sandbox unavailable:
    - Use targeted pytest plus orchestrator dry-run commands.
-4. Validation text says fail but command returns success:
+1. Validation text says fail but command returns success:
    - Verify command exit code and CLI failure propagation.

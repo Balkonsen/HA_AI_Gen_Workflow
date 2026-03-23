@@ -91,6 +91,19 @@ workflow_config.yaml
 *.tmp
 temp/
 tmp/
+.pytest_tmp/
+
+# Local HA sandbox runtime artifacts (generated)
+tools/ha_local_test/ha_config/.storage/
+tools/ha_local_test/ha_config/.HA_VERSION
+tools/ha_local_test/ha_config/.ha_run.lock
+tools/ha_local_test/ha_config/*.bak
+tools/ha_local_test/ha_config/*.log
+tools/ha_local_test/ha_config/*.log.*
+tools/ha_local_test/ha_config/*_v2.db
+tools/ha_local_test/ha_config/*_v2.db-shm
+tools/ha_local_test/ha_config/*_v2.db-wal
+tools/ha_local_test/ha_config/blueprints/
 
 # CI/CD
 .github/*

@@ -28,6 +28,78 @@ logger = get_logger()
 logger.set_log_level(LogLevel.DEBUG)
 ```
 
+## Full Verbose Trace Log (JSONL)
+
+The workflow now supports a dedicated structured trace file that captures:
+
+- Every logger call (including messages filtered by current log level)
+- Function-level entry/exit traces for orchestrator workflow methods
+- Integrated agent workflow phase events
+- Rich metadata (timestamp, sequence, pid, thread, caller, context)
+
+### CLI Usage
+
+```bash
+python bin/workflow_orchestrator.py full \
+    --source /config \
+    --log-level DEBUG \
+    --trace-log \
+    --trace-log-file ./exports/workflow_trace.log \
+    --strict-warnings
+```
+
+### Environment Variable Usage
+
+```bash
+export HA_AI_LOG_LEVEL=DEBUG
+export HA_AI_TRACE_LOG=true
+export HA_AI_TRACE_FILE=./exports/workflow_trace.log
+python bin/workflow_orchestrator.py validate --source ./exports/export_20260323_072631
+```
+
+### Trace Record Example
+
+```json
+{
+    "timestamp": "2026-03-23T09:02:18.511",
+    "sequence": 127,
+    "thread": "MainThread",
+    "pid": 4120,
+    "level": "INFO",
+    "icon": null,
+    "message": "Starting remote export to /config/ai_exports/export_20260323_090218",
+    "emitted": true,
+    "log_level": "DEBUG",
+    "context": ["Remote Export"],
+    "caller": {
+        "file": "bin/workflow_orchestrator.py",
+        "function": "export_from_remote",
+        "line": 126
+    }
+}
+```
+
+### Integrated Phase Event Example
+
+```json
+{
+    "timestamp": "2026-03-23T09:02:18.702",
+    "sequence": 132,
+    "thread": "MainThread",
+    "pid": 4120,
+    "type": "trace_event",
+    "event": "integrated_agent_workflow.phase",
+    "context": [],
+    "details": {
+        "phase": "phase_5_quality_gate_ladder",
+        "status": "passed",
+        "details": {
+            "gates": ["export", "sanitize", "context", "validate"]
+        }
+    }
+}
+```
+
 ## New Debug Methods
 
 ### 1. Debug Variables (`debug_var`)
@@ -208,6 +280,7 @@ success = export_configuration("/config", "/tmp/export")
 3. **Log function calls** with `debug_call()` before calling external functions
 4. **Display call stack** with `debug_stack()` when errors occur
 5. **Respect performance** - DEBUG mode adds overhead, use INFO for production
+6. **Use trace log for deep diagnostics** - Enable `--trace-log` only when investigating issues or preparing PR evidence
 
 ## API Error Messages
 

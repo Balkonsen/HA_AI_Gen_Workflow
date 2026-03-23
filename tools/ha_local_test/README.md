@@ -51,6 +51,49 @@ View sandbox logs:
 python tools/ha_local_test/manage_local_ha_test.py logs
 ```
 
+Run quick sandbox health checks:
+
+```bash
+python tools/ha_local_test/health_check.py
+python tools/ha_local_test/manage_local_ha_test.py health
+```
+
+Run token-based API smoke checks (requires HA token):
+
+```bash
+python tools/ha_local_test/api_token_smoke.py --token HA_LONG_LIVED_ACCESS_TOKEN
+HA_TEST_TOKEN=HA_LONG_LIVED_ACCESS_TOKEN python tools/ha_local_test/manage_local_ha_test.py api-smoke
+```
+
+Bootstrap or rotate a sandbox token (prints HA_TEST_TOKEN=generated_token):
+
+```bash
+python tools/ha_local_test/token_bootstrap.py --export-env
+HA_TEST_TOKEN=<CURRENT_TOKEN> python tools/ha_local_test/token_bootstrap.py --export-env
+python tools/ha_local_test/manage_local_ha_test.py token-bootstrap
+```
+
+Prune older sandbox long-lived tokens and keep latest by prefix:
+
+```bash
+HA_TEST_TOKEN=<CURRENT_TOKEN> python tools/ha_local_test/token_prune.py --export-env
+HA_TEST_TOKEN=<CURRENT_TOKEN> python tools/ha_local_test/manage_local_ha_test.py token-prune
+```
+
+Permanent local sandbox quality gate (agent-flow validation):
+
+```bash
+python tools/ha_local_test/manage_local_ha_test.py quality-gate
+HA_TEST_TOKEN=<CURRENT_TOKEN> python tools/ha_local_test/manage_local_ha_test.py quality-gate
+```
+
+Recommended token rotation pattern for repeated runs:
+
+1. Set `HA_TEST_TOKEN` to the current token.
+2. Run `python tools/ha_local_test/manage_local_ha_test.py token-bootstrap`.
+3. Replace `HA_TEST_TOKEN` with the newly printed token.
+4. Optionally run `python tools/ha_local_test/manage_local_ha_test.py token-prune`.
+
 ## Dry-Run Flow Executed by Helper
 
 The `dry-run` command performs:
