@@ -267,13 +267,15 @@ class TestBuildWorkflow:
         with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
             workflow = yaml.safe_load(f)
 
-        on_section = workflow.get("on", workflow.get(True, {}))
+        on_section = workflow.get("on")
+        if on_section is None:
+            on_section = workflow.get(True, {})
         dispatch = on_section.get("workflow_dispatch", {})
         inputs = dispatch.get("inputs", {})
 
         assert "source_ref" in inputs, "workflow_dispatch should expose source_ref input"
         assert "publish" in inputs, "workflow_dispatch should expose publish input"
-        assert inputs["publish"].get("default") == "true", "publish input should default to true"
+        assert inputs["publish"].get("default") in {"true", True}, "publish input should default to true"
 
     def test_workflow_uses_ha_builder(self):
         """Workflow should use home-assistant/builder action."""
