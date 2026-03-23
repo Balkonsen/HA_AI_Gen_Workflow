@@ -146,10 +146,14 @@ class WorkflowOrchestrator:
             remote_manager = HARemoteManager(ssh_config)
 
             timestamp = self._get_timestamp()
-            export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            export_dir = (
+                Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            )
 
             self.logger.info(f"Starting remote export to {export_dir}")
-            success = remote_manager.export_config(str(export_dir), self.config.get("export.exclude_patterns", []))
+            success = remote_manager.export_config(
+                str(export_dir), self.config.get("export.exclude_patterns", [])
+            )
 
             if success:
                 self.logger.success(f"Remote export completed: {export_dir}")
@@ -180,7 +184,9 @@ class WorkflowOrchestrator:
             export_base_dir = Path(self.config.get("paths.export_dir"))
             export_base_dir.mkdir(parents=True, exist_ok=True)
 
-            exporter = HAConfigExporter(output_dir=str(export_base_dir), config_dir=source_path)
+            exporter = HAConfigExporter(
+                output_dir=str(export_base_dir), config_dir=source_path
+            )
             exporter.export_name = export_name
             exporter._update_paths()
             export_dir = Path(exporter.export_path)
@@ -225,7 +231,9 @@ class WorkflowOrchestrator:
 
         # v2.0 exports are already sanitized by HAConfigExporter.
         if (export_dir / "ai_upload").exists():
-            print("ℹ Export appears to be v2.0 and already sanitized; skipping additional sanitization")
+            print(
+                "ℹ Export appears to be v2.0 and already sanitized; skipping additional sanitization"
+            )
             return True
 
         # Find all YAML files
@@ -258,7 +266,9 @@ class WorkflowOrchestrator:
 
         export_dir = Path(export_path)
         if (export_dir / "ai_upload").exists():
-            print("ℹ Export appears to be v2.0; AI context is already generated in ai_upload/")
+            print(
+                "ℹ Export appears to be v2.0; AI context is already generated in ai_upload/"
+            )
             self._create_ai_instructions(export_dir)
             return export_path
 
@@ -369,10 +379,14 @@ This export contains placeholder labels for sensitive data:
 
         remote_manager = HARemoteManager(ssh_config)
 
-        return remote_manager.import_config(import_path, create_backup=True, restart=False)
+        return remote_manager.import_config(
+            import_path, create_backup=True, restart=False
+        )
 
     @trace_calls()
-    def import_local(self, import_path: str, target_path: str, dry_run: bool = False) -> bool:
+    def import_local(
+        self, import_path: str, target_path: str, dry_run: bool = False
+    ) -> bool:
         """Import configuration to local Home Assistant.
 
         Args:
@@ -425,7 +439,9 @@ This export contains placeholder labels for sensitive data:
                 "SCRIPTS.YAML": "scripts.yaml",
             }
 
-            extracted_sections: Dict[str, list[str]] = {name: [] for name in section_map}
+            extracted_sections: Dict[str, list[str]] = {
+                name: [] for name in section_map
+            }
             current_section: Optional[str] = None
 
             for line in raw_content.splitlines():
@@ -670,8 +686,12 @@ Examples:
     parser.add_argument("--config", "-c", help="Path to configuration file")
     parser.add_argument("--source", "-s", help="Source path for export/import")
     parser.add_argument("--target", "-t", help="Target path for import")
-    parser.add_argument("--remote", "-r", action="store_true", help="Use SSH for remote HA")
-    parser.add_argument("--dry-run", "-n", action="store_true", help="Dry run (no changes)")
+    parser.add_argument(
+        "--remote", "-r", action="store_true", help="Use SSH for remote HA"
+    )
+    parser.add_argument(
+        "--dry-run", "-n", action="store_true", help="Dry run (no changes)"
+    )
     parser.add_argument(
         "--ssh-timeout",
         type=int,
@@ -686,7 +706,15 @@ Examples:
     )
     parser.add_argument(
         "--log-level",
-        choices=["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR", "CRITICAL"],
+        choices=[
+            "DEBUG",
+            "VERBOSE",
+            "INFO",
+            "CONDENSED",
+            "WARNING",
+            "ERROR",
+            "CRITICAL",
+        ],
         help="Set workflow log level",
     )
     parser.add_argument("--log-file", help="Path to workflow log file")

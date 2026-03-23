@@ -61,21 +61,21 @@ python bin/workflow_orchestrator.py validate --source ./exports/export_20260323_
 
 ```json
 {
-    "timestamp": "2026-03-23T09:02:18.511",
-    "sequence": 127,
-    "thread": "MainThread",
-    "pid": 4120,
-    "level": "INFO",
-    "icon": null,
-    "message": "Starting remote export to /config/ai_exports/export_20260323_090218",
-    "emitted": true,
-    "log_level": "DEBUG",
-    "context": ["Remote Export"],
-    "caller": {
-        "file": "bin/workflow_orchestrator.py",
-        "function": "export_from_remote",
-        "line": 126
-    }
+  "timestamp": "2026-03-23T09:02:18.511",
+  "sequence": 127,
+  "thread": "MainThread",
+  "pid": 4120,
+  "level": "INFO",
+  "icon": null,
+  "message": "Starting remote export to /config/ai_exports/export_20260323_090218",
+  "emitted": true,
+  "log_level": "DEBUG",
+  "context": ["Remote Export"],
+  "caller": {
+    "file": "bin/workflow_orchestrator.py",
+    "function": "export_from_remote",
+    "line": 126
+  }
 }
 ```
 
@@ -83,20 +83,20 @@ python bin/workflow_orchestrator.py validate --source ./exports/export_20260323_
 
 ```json
 {
-    "timestamp": "2026-03-23T09:02:18.702",
-    "sequence": 132,
-    "thread": "MainThread",
-    "pid": 4120,
-    "type": "trace_event",
-    "event": "integrated_agent_workflow.phase",
-    "context": [],
+  "timestamp": "2026-03-23T09:02:18.702",
+  "sequence": 132,
+  "thread": "MainThread",
+  "pid": 4120,
+  "type": "trace_event",
+  "event": "integrated_agent_workflow.phase",
+  "context": [],
+  "details": {
+    "phase": "phase_5_quality_gate_ladder",
+    "status": "passed",
     "details": {
-        "phase": "phase_5_quality_gate_ladder",
-        "status": "passed",
-        "details": {
-            "gates": ["export", "sanitize", "context", "validate"]
-        }
+      "gates": ["export", "sanitize", "context", "validate"]
     }
+  }
 }
 ```
 

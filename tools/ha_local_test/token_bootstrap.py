@@ -16,18 +16,32 @@ import websocket
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Bootstrap HA sandbox token")
-    parser.add_argument("--url", default="http://localhost:8123", help="Home Assistant base URL")
-    parser.add_argument("--username", default="sandbox_owner", help="Sandbox owner username")
-    parser.add_argument("--password", default="SandboxPass!2026", help="Sandbox owner password")
-    parser.add_argument("--name", default="Sandbox Owner", help="Display name for onboarding user")
-    parser.add_argument("--client-id", default="http://localhost:8123", help="OAuth client_id")
+    parser.add_argument(
+        "--url", default="http://localhost:8123", help="Home Assistant base URL"
+    )
+    parser.add_argument(
+        "--username", default="sandbox_owner", help="Sandbox owner username"
+    )
+    parser.add_argument(
+        "--password", default="SandboxPass!2026", help="Sandbox owner password"
+    )
+    parser.add_argument(
+        "--name", default="Sandbox Owner", help="Display name for onboarding user"
+    )
+    parser.add_argument(
+        "--client-id", default="http://localhost:8123", help="OAuth client_id"
+    )
     parser.add_argument(
         "--client-name",
         default="",
         help="Optional long-lived token client name; defaults to a unique generated name",
     )
-    parser.add_argument("--language", default="en", help="Language used during onboarding")
-    parser.add_argument("--lifespan", type=int, default=3650, help="Long-lived token lifespan in days")
+    parser.add_argument(
+        "--language", default="en", help="Language used during onboarding"
+    )
+    parser.add_argument(
+        "--lifespan", type=int, default=3650, help="Long-lived token lifespan in days"
+    )
     parser.add_argument(
         "--seed-token",
         default=os.environ.get("HA_TEST_TOKEN"),
@@ -41,13 +55,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _http_post_json(url: str, payload: dict[str, Any], timeout: int = 30) -> requests.Response:
+def _http_post_json(
+    url: str, payload: dict[str, Any], timeout: int = 30
+) -> requests.Response:
     response = requests.post(url, json=payload, timeout=timeout)
     response.raise_for_status()
     return response
 
 
-def _http_post_form(url: str, payload: dict[str, Any], timeout: int = 30) -> requests.Response:
+def _http_post_form(
+    url: str, payload: dict[str, Any], timeout: int = 30
+) -> requests.Response:
     response = requests.post(url, data=payload, timeout=timeout)
     response.raise_for_status()
     return response
@@ -95,7 +113,9 @@ def _login_flow_auth_code(args: argparse.Namespace) -> str:
         "password": args.password,
         "client_id": args.client_id,
     }
-    step_response = _http_post_json(f"{args.url}/auth/login_flow/{flow_id}", step_payload)
+    step_response = _http_post_json(
+        f"{args.url}/auth/login_flow/{flow_id}", step_payload
+    )
     data = step_response.json()
 
     if isinstance(data.get("errors"), dict) and data["errors"].get("base"):
@@ -123,7 +143,10 @@ def _exchange_auth_code(args: argparse.Namespace, auth_code: str) -> str:
 
 def _create_long_lived_token(args: argparse.Namespace, auth_token: str) -> str:
     client_name = args.client_name or f"ha-ai-local-test-{int(time.time())}"
-    ws_url = args.url.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
+    ws_url = (
+        args.url.replace("http://", "ws://").replace("https://", "wss://")
+        + "/api/websocket"
+    )
     ws = websocket.create_connection(ws_url, timeout=20)
     try:
         first = json.loads(ws.recv())
@@ -171,7 +194,9 @@ def main() -> int:
     except (requests.RequestException, RuntimeError, ValueError) as exc:
         print(f"FAIL token bootstrap: {exc}")
         if not args.seed_token:
-            print("Tip: set HA_TEST_TOKEN to rotate from an existing token on already-initialized sandboxes.")
+            print(
+                "Tip: set HA_TEST_TOKEN to rotate from an existing token on already-initialized sandboxes."
+            )
         return 1
 
     if args.export_env:

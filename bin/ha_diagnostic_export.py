@@ -58,7 +58,9 @@ def _load_supervisor_token_from_env_file() -> str:
 class HAConfigExporter:
     def __init__(self, output_dir=DEFAULT_EXPORT_DIR, config_dir=None, ha_url=None):
         self.output_dir = output_dir
-        self.config_dir = config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
+        self.config_dir = config_dir or os.environ.get(
+            "HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config")
+        )
         self.secrets_map = {}
         self.secret_counter = 0
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -75,7 +77,9 @@ class HAConfigExporter:
         self.config_files = {}
 
         # HA API configuration for fallback data retrieval
-        self.api_token = os.environ.get("SUPERVISOR_TOKEN") or _load_supervisor_token_from_env_file()
+        self.api_token = (
+            os.environ.get("SUPERVISOR_TOKEN") or _load_supervisor_token_from_env_file()
+        )
         self.ha_url = ha_url or os.environ.get("HA_URL")
 
         # Determine API mode: external (standalone) or internal (add-on)
@@ -297,7 +301,9 @@ class HAConfigExporter:
                     continue
                 if len(original_value) < 3:  # Skip very short matches
                     continue
-                placeholder = self.generate_secret_placeholder(secret_type, original_value)
+                placeholder = self.generate_secret_placeholder(
+                    secret_type, original_value
+                )
                 sanitized = sanitized.replace(original_value, placeholder)
 
         return sanitized
@@ -339,7 +345,9 @@ class HAConfigExporter:
     def export_entities_registry(self):
         """Export entities from core.entity_registry - stores in memory for AI context"""
         print("\n=== Exporting Entity Registry ===")
-        entity_registry_path = os.path.join(self.config_dir, ".storage", "core.entity_registry")
+        entity_registry_path = os.path.join(
+            self.config_dir, ".storage", "core.entity_registry"
+        )
 
         self.entities_data = {
             "total_entities": 0,
@@ -388,7 +396,9 @@ class HAConfigExporter:
                     # Count by platform
                     if platform not in self.entities_data["entities_by_platform"]:
                         self.entities_data["entities_by_platform"][platform] = []
-                    self.entities_data["entities_by_platform"][platform].append(entity_id)
+                    self.entities_data["entities_by_platform"][platform].append(
+                        entity_id
+                    )
 
                     # Track disabled
                     if entity.get("disabled_by"):
@@ -420,7 +430,9 @@ class HAConfigExporter:
     def export_entity_states(self):
         """Export current entity states from core.restore_state"""
         print("\n=== Exporting Entity States ===")
-        restore_state_path = os.path.join(self.config_dir, ".storage", "core.restore_state")
+        restore_state_path = os.path.join(
+            self.config_dir, ".storage", "core.restore_state"
+        )
 
         states_data = {
             "total_states": 0,
@@ -464,7 +476,9 @@ class HAConfigExporter:
                 return True
             except PermissionError:
                 print("  ⚠ Permission denied reading entity states file")
-                print("    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN")
+                print(
+                    "    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN"
+                )
             except Exception as e:
                 print(f"  Error exporting entity states: {e}")
                 return False
@@ -473,13 +487,17 @@ class HAConfigExporter:
         if self.api_token:
             return self._export_entity_states_via_api()
         else:
-            print("  Entity states file not found (set SUPERVISOR_TOKEN for API fallback)")
+            print(
+                "  Entity states file not found (set SUPERVISOR_TOKEN for API fallback)"
+            )
             return False
 
     def export_device_registry(self):
         """Export devices from core.device_registry - stores in memory for AI context"""
         print("\n=== Exporting Device Registry ===")
-        device_registry_path = os.path.join(self.config_dir, ".storage", "core.device_registry")
+        device_registry_path = os.path.join(
+            self.config_dir, ".storage", "core.device_registry"
+        )
 
         self.devices_data = {
             "total_devices": 0,
@@ -501,7 +519,11 @@ class HAConfigExporter:
 
                     # Get primary integration
                     identifiers = device.get("identifiers", [])
-                    integration = identifiers[0][0] if identifiers and len(identifiers[0]) > 0 else "unknown"
+                    integration = (
+                        identifiers[0][0]
+                        if identifiers and len(identifiers[0]) > 0
+                        else "unknown"
+                    )
 
                     device_info = {
                         "id": device.get("id"),
@@ -523,22 +545,32 @@ class HAConfigExporter:
                     self.devices_data["devices_by_integration"][integration] += 1
 
                 print(f"✓ Collected {self.devices_data['total_devices']} devices")
-                print(f"  - Manufacturers: {len(self.devices_data['devices_by_manufacturer'])}")
-                print(f"  - Integrations: {len(self.devices_data['devices_by_integration'])}")
+                print(
+                    f"  - Manufacturers: {len(self.devices_data['devices_by_manufacturer'])}"
+                )
+                print(
+                    f"  - Integrations: {len(self.devices_data['devices_by_integration'])}"
+                )
 
                 return True
             except PermissionError:
                 print("  ⚠ Permission denied reading device registry")
-                print("    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN")
+                print(
+                    "    Ensure the process has read access to .storage/ or set SUPERVISOR_TOKEN"
+                )
                 return False
             except Exception as e:
                 print(f"  Error exporting device registry: {e}")
                 return False
         else:
             if self.api_token:
-                print("  Device registry not found, no device API available in HA REST API")
+                print(
+                    "  Device registry not found, no device API available in HA REST API"
+                )
             else:
-                print("  Device registry not found (set SUPERVISOR_TOKEN for API fallback)")
+                print(
+                    "  Device registry not found (set SUPERVISOR_TOKEN for API fallback)"
+                )
             return False
 
     def export_config_directory(self):
@@ -610,7 +642,9 @@ class HAConfigExporter:
                             with open(file_path, "r", encoding="utf-8") as f:
                                 content = f.read()
                             sanitized = self.sanitize_text(content)
-                            packages_content.append(f"# --- {rel_path} ---\n{sanitized}")
+                            packages_content.append(
+                                f"# --- {rel_path} ---\n{sanitized}"
+                            )
                             exported_count += 1
                         except Exception as e:
                             print(f"  Warning: Could not read {file}: {e}")
@@ -671,7 +705,9 @@ class HAConfigExporter:
                 return
 
         self.integrations_data["addons"] = addon_data
-        print(f"✓ Collected {len(addon_data['installed_addons'])} add-on configurations")
+        print(
+            f"✓ Collected {len(addon_data['installed_addons'])} add-on configurations"
+        )
 
     def collect_system_info(self):
         """Collect system diagnostic information - stores in memory for AI context"""
@@ -688,7 +724,9 @@ class HAConfigExporter:
         if code == 0:
             try:
                 info = json.loads(stdout)
-                self.system_info["ha_version"] = info.get("data", {}).get("version", "unknown")
+                self.system_info["ha_version"] = info.get("data", {}).get(
+                    "version", "unknown"
+                )
             except Exception:
                 pass
 
@@ -697,7 +735,9 @@ class HAConfigExporter:
         if code == 0:
             try:
                 info = json.loads(stdout)
-                self.system_info["supervisor_version"] = info.get("data", {}).get("version", "unknown")
+                self.system_info["supervisor_version"] = info.get("data", {}).get(
+                    "version", "unknown"
+                )
                 self.system_info["installation_type"] = "Home Assistant OS/Supervised"
             except Exception:
                 pass
@@ -706,11 +746,15 @@ class HAConfigExporter:
         if self.system_info["ha_version"] == "unknown" and self.api_token:
             result = self._api_request("/core/info")
             if result and "data" in result:
-                self.system_info["ha_version"] = result["data"].get("version", "unknown")
+                self.system_info["ha_version"] = result["data"].get(
+                    "version", "unknown"
+                )
         if self.system_info["supervisor_version"] == "unknown" and self.api_token:
             result = self._api_request("/supervisor/info")
             if result and "data" in result:
-                self.system_info["supervisor_version"] = result["data"].get("version", "unknown")
+                self.system_info["supervisor_version"] = result["data"].get(
+                    "version", "unknown"
+                )
                 self.system_info["installation_type"] = "Home Assistant OS/Supervised"
 
         print(f"✓ Collected system info (HA {self.system_info['ha_version']})")
@@ -768,7 +812,9 @@ class HAConfigExporter:
         with open(secrets_file, "w") as f:
             json.dump(secrets_data, f, indent=2)
 
-        print(f"✓ Saved {len(self.secrets_map)} secret mappings to secrets/secrets_map.json")
+        print(
+            f"✓ Saved {len(self.secrets_map)} secret mappings to secrets/secrets_map.json"
+        )
         print("⚠️  IMPORTANT: Keep secrets/ folder secure - NEVER upload to AI!")
 
     def generate_ai_context_file(self):
@@ -778,7 +824,9 @@ class HAConfigExporter:
         active_entities = self.entities_data.get("total_entities", 0) - len(
             self.entities_data.get("disabled_entities", [])
         )
-        addons_count = len(self.integrations_data.get("addons", {}).get("installed_addons", []))
+        addons_count = len(
+            self.integrations_data.get("addons", {}).get("installed_addons", [])
+        )
 
         # Build the context markdown
         context = f"""# Home Assistant Configuration Context
@@ -838,7 +886,9 @@ HA Version: {self.system_info.get('ha_version', 'unknown')}
 
         # Add configuration files section
         context += "\n---\n\n## Configuration Files\n\n"
-        context += "The following configuration files are included in `ha_config.yaml`:\n"
+        context += (
+            "The following configuration files are included in `ha_config.yaml`:\n"
+        )
         for key in self.config_files:
             if key != "custom_components":
                 context += f"- {key}.yaml\n"
@@ -893,7 +943,9 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
         }
 
         # Add domain breakdown with entity IDs
-        for domain, entity_ids in self.entities_data.get("entities_by_domain", {}).items():
+        for domain, entity_ids in self.entities_data.get(
+            "entities_by_domain", {}
+        ).items():
             entities_export["entities_by_domain"][domain] = {
                 "count": len(entity_ids),
                 "entity_ids": entity_ids,
@@ -915,7 +967,10 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
             minimal_export = {
                 "total_entities": entities_export["total_entities"],
                 "all_entity_ids": entities_export["all_entity_ids"],
-                "domains": {k: v["count"] for k, v in entities_export["entities_by_domain"].items()},
+                "domains": {
+                    k: v["count"]
+                    for k, v in entities_export["entities_by_domain"].items()
+                },
             }
             json_content = json.dumps(minimal_export, separators=(",", ":"))
 
@@ -961,12 +1016,16 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
 
         # Check file size
         if len(config_content) > MAX_AI_FILE_SIZE:
-            print(f"  ⚠ Config file too large ({len(config_content) / 1024 / 1024:.1f}MB), truncating")
+            print(
+                f"  ⚠ Config file too large ({len(config_content) / 1024 / 1024:.1f}MB), truncating"
+            )
             # Prioritize automations, truncate rest
             truncated_config = []
             if "automations" in self.config_files:
                 truncated_config.append("# ====== AUTOMATIONS.YAML ======\n")
-                truncated_config.append(self.config_files["automations"][: MAX_AI_FILE_SIZE // 2])
+                truncated_config.append(
+                    self.config_files["automations"][: MAX_AI_FILE_SIZE // 2]
+                )
             if "scripts" in self.config_files:
                 remaining = MAX_AI_FILE_SIZE - len("".join(truncated_config))
                 truncated_config.append("\n# ====== SCRIPTS.YAML (truncated) ======\n")
@@ -1008,7 +1067,9 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
             },
         }
 
-        with open(os.path.join(self.export_path, "METADATA.json"), "w", encoding="utf-8") as f:
+        with open(
+            os.path.join(self.export_path, "METADATA.json"), "w", encoding="utf-8"
+        ) as f:
             json.dump(metadata, f, indent=2)
 
         # Create README in export root
@@ -1067,7 +1128,9 @@ python3 ha_config_import.py --source <ai_output> --secrets secrets/secrets_map.j
 ```
 """
 
-        with open(os.path.join(self.export_path, "README.md"), "w", encoding="utf-8") as f:
+        with open(
+            os.path.join(self.export_path, "README.md"), "w", encoding="utf-8"
+        ) as f:
             f.write(readme)
 
         # Create README in ai_upload folder
@@ -1108,7 +1171,9 @@ These files are sanitized and safe to upload to AI assistants.
 - Emails → `<<EMAIL_N>>`
 """
 
-        with open(os.path.join(self.ai_upload_path, "README.md"), "w", encoding="utf-8") as f:
+        with open(
+            os.path.join(self.ai_upload_path, "README.md"), "w", encoding="utf-8"
+        ) as f:
             f.write(ai_readme)
 
     def create_tarball(self):
@@ -1227,8 +1292,12 @@ def main():
         description="Export Home Assistant configuration with sanitization",
         epilog=f"Version: {SCRIPT_VERSION}",
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {SCRIPT_VERSION}")
-    parser.add_argument("--output-dir", default=DEFAULT_EXPORT_DIR, help="Output directory for export")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {SCRIPT_VERSION}"
+    )
+    parser.add_argument(
+        "--output-dir", default=DEFAULT_EXPORT_DIR, help="Output directory for export"
+    )
     parser.add_argument("--name", help="Custom export name")
     parser.add_argument(
         "--config-dir",
@@ -1244,7 +1313,9 @@ def main():
         print(f"HA Diagnostic Export v{SCRIPT_VERSION}")
         print()
 
-    config_dir = args.config_dir or os.environ.get("HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config"))
+    config_dir = args.config_dir or os.environ.get(
+        "HA_CONFIG_DIR", os.environ.get("HA_CONFIG_PATH", "/config")
+    )
 
     geteuid = getattr(os, "geteuid", None)
     if callable(geteuid) and geteuid() != 0 and not args.quiet:
@@ -1265,7 +1336,9 @@ def main():
         if not args.quiet:
             print(f"⚠️  Warning: Cannot read {storage_dir} (permission denied)")
             if os.environ.get("SUPERVISOR_TOKEN"):
-                print("   Will use SUPERVISOR_TOKEN API fallback for entity/device data")
+                print(
+                    "   Will use SUPERVISOR_TOKEN API fallback for entity/device data"
+                )
             else:
                 print("   Set SUPERVISOR_TOKEN environment variable for API fallback")
             print()

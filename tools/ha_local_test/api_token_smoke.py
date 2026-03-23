@@ -17,7 +17,9 @@ from ha_api_client import HomeAssistantAPI  # noqa: E402
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Token-based API smoke checks")
-    parser.add_argument("--url", default="http://localhost:8123", help="Home Assistant base URL")
+    parser.add_argument(
+        "--url", default="http://localhost:8123", help="Home Assistant base URL"
+    )
     parser.add_argument(
         "--token",
         default=os.environ.get("HA_TEST_TOKEN"),
@@ -41,7 +43,13 @@ def main() -> int:
     results.append(("test_connection", success, message))
 
     config = client.get_config()
-    results.append(("get_config", config is not None, "config loaded" if config is not None else "null response"))
+    results.append(
+        (
+            "get_config",
+            config is not None,
+            "config loaded" if config is not None else "null response",
+        )
+    )
 
     states = client.get_states()
     state_count = len(states) if isinstance(states, list) else 0

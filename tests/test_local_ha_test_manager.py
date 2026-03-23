@@ -124,7 +124,9 @@ def test_cmd_quality_gate_runs_expected_sequence(monkeypatch):
     monkeypatch.setattr(manager, "cmd_status", lambda: calls.append("status") or 0)
     monkeypatch.setattr(manager, "cmd_health", lambda: calls.append("health") or 0)
     monkeypatch.setattr(manager, "cmd_dry_run", lambda: calls.append("dry-run") or 0)
-    monkeypatch.setattr(manager, "cmd_api_smoke", lambda: calls.append("api-smoke") or 0)
+    monkeypatch.setattr(
+        manager, "cmd_api_smoke", lambda: calls.append("api-smoke") or 0
+    )
     monkeypatch.setenv("HA_TEST_TOKEN", "token-value")
 
     rc = manager.cmd_quality_gate()
@@ -140,7 +142,9 @@ def test_cmd_quality_gate_skips_api_smoke_without_token(monkeypatch):
     monkeypatch.setattr(manager, "cmd_status", lambda: calls.append("status") or 0)
     monkeypatch.setattr(manager, "cmd_health", lambda: calls.append("health") or 0)
     monkeypatch.setattr(manager, "cmd_dry_run", lambda: calls.append("dry-run") or 0)
-    monkeypatch.setattr(manager, "cmd_api_smoke", lambda: calls.append("api-smoke") or 0)
+    monkeypatch.setattr(
+        manager, "cmd_api_smoke", lambda: calls.append("api-smoke") or 0
+    )
     monkeypatch.delenv("HA_TEST_TOKEN", raising=False)
 
     rc = manager.cmd_quality_gate()
@@ -152,7 +156,9 @@ def test_cmd_quality_gate_skips_api_smoke_without_token(monkeypatch):
 def test_parse_args_supports_new_commands(monkeypatch):
     manager = _load_manager_module()
 
-    monkeypatch.setattr(manager.sys, "argv", ["manage_local_ha_test.py", "token-bootstrap"])
+    monkeypatch.setattr(
+        manager.sys, "argv", ["manage_local_ha_test.py", "token-bootstrap"]
+    )
     args = manager.parse_args()
     assert args.command == "token-bootstrap"
 
@@ -168,6 +174,8 @@ def test_parse_args_supports_new_commands(monkeypatch):
     args = manager.parse_args()
     assert args.command == "token-prune"
 
-    monkeypatch.setattr(manager.sys, "argv", ["manage_local_ha_test.py", "quality-gate"])
+    monkeypatch.setattr(
+        manager.sys, "argv", ["manage_local_ha_test.py", "quality-gate"]
+    )
     args = manager.parse_args()
     assert args.command == "quality-gate"

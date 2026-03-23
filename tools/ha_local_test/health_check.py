@@ -10,7 +10,9 @@ from typing import Optional
 import requests
 
 
-def _probe(url: str, timeout: int, token: Optional[str] = None) -> tuple[bool, str, int]:
+def _probe(
+    url: str, timeout: int, token: Optional[str] = None
+) -> tuple[bool, str, int]:
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:
         response = requests.get(url, headers=headers, timeout=timeout)
@@ -22,8 +24,12 @@ def _probe(url: str, timeout: int, token: Optional[str] = None) -> tuple[bool, s
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Health check for local HA sandbox")
     parser.add_argument("--url", default="http://localhost:8123", help="Base HA URL")
-    parser.add_argument("--timeout", type=int, default=20, help="HTTP timeout in seconds")
-    parser.add_argument("--token", default=None, help="Optional HA long-lived access token")
+    parser.add_argument(
+        "--timeout", type=int, default=20, help="HTTP timeout in seconds"
+    )
+    parser.add_argument(
+        "--token", default=None, help="Optional HA long-lived access token"
+    )
     return parser.parse_args()
 
 

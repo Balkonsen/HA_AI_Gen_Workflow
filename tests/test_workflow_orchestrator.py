@@ -22,7 +22,9 @@ class TestWorkflowMainValidateExitCode:
             def validate_export(self, _source):
                 return {"success": False}
 
-        monkeypatch.setattr(workflow_orchestrator, "WorkflowOrchestrator", FailingOrchestrator)
+        monkeypatch.setattr(
+            workflow_orchestrator, "WorkflowOrchestrator", FailingOrchestrator
+        )
         monkeypatch.setattr(
             sys,
             "argv",
@@ -41,7 +43,9 @@ class TestWorkflowMainValidateExitCode:
             def validate_export(self, _source):
                 return {"success": True}
 
-        monkeypatch.setattr(workflow_orchestrator, "WorkflowOrchestrator", PassingOrchestrator)
+        monkeypatch.setattr(
+            workflow_orchestrator, "WorkflowOrchestrator", PassingOrchestrator
+        )
         monkeypatch.setattr(
             sys,
             "argv",
@@ -58,10 +62,16 @@ class TestRunFullWorkflowValidationResult:
         """Full workflow should fail when validation report has success=False."""
         orchestrator = workflow_orchestrator.WorkflowOrchestrator()
 
-        monkeypatch.setattr(orchestrator, "export_local", lambda _source: "dummy_export")
+        monkeypatch.setattr(
+            orchestrator, "export_local", lambda _source: "dummy_export"
+        )
         monkeypatch.setattr(orchestrator, "sanitize_export", lambda _export: True)
-        monkeypatch.setattr(orchestrator, "generate_ai_context", lambda _export: "dummy_context")
-        monkeypatch.setattr(orchestrator, "validate_export", lambda _export: {"success": False})
+        monkeypatch.setattr(
+            orchestrator, "generate_ai_context", lambda _export: "dummy_context"
+        )
+        monkeypatch.setattr(
+            orchestrator, "validate_export", lambda _export: {"success": False}
+        )
 
         assert orchestrator.run_full_workflow("dummy_source", "local") is False
 
@@ -69,10 +79,16 @@ class TestRunFullWorkflowValidationResult:
         """Full workflow should succeed when validation report has success=True."""
         orchestrator = workflow_orchestrator.WorkflowOrchestrator()
 
-        monkeypatch.setattr(orchestrator, "export_local", lambda _source: "dummy_export")
+        monkeypatch.setattr(
+            orchestrator, "export_local", lambda _source: "dummy_export"
+        )
         monkeypatch.setattr(orchestrator, "sanitize_export", lambda _export: True)
-        monkeypatch.setattr(orchestrator, "generate_ai_context", lambda _export: "dummy_context")
-        monkeypatch.setattr(orchestrator, "validate_export", lambda _export: {"success": True})
+        monkeypatch.setattr(
+            orchestrator, "generate_ai_context", lambda _export: "dummy_context"
+        )
+        monkeypatch.setattr(
+            orchestrator, "validate_export", lambda _export: {"success": True}
+        )
 
         assert orchestrator.run_full_workflow("dummy_source", "local") is True
 
@@ -80,9 +96,13 @@ class TestRunFullWorkflowValidationResult:
         """Strict warning mode should fail full workflow when warnings are present."""
         orchestrator = workflow_orchestrator.WorkflowOrchestrator(strict_warnings=True)
 
-        monkeypatch.setattr(orchestrator, "export_local", lambda _source: "dummy_export")
+        monkeypatch.setattr(
+            orchestrator, "export_local", lambda _source: "dummy_export"
+        )
         monkeypatch.setattr(orchestrator, "sanitize_export", lambda _export: True)
-        monkeypatch.setattr(orchestrator, "generate_ai_context", lambda _export: "dummy_context")
+        monkeypatch.setattr(
+            orchestrator, "generate_ai_context", lambda _export: "dummy_context"
+        )
         monkeypatch.setattr(
             orchestrator,
             "validate_export",
@@ -106,7 +126,9 @@ class TestWorkflowMainCliLoggingOptions:
             def validate_export(self, _source):
                 return {"success": True}
 
-        monkeypatch.setattr(workflow_orchestrator, "WorkflowOrchestrator", CapturingOrchestrator)
+        monkeypatch.setattr(
+            workflow_orchestrator, "WorkflowOrchestrator", CapturingOrchestrator
+        )
         monkeypatch.setattr(
             sys,
             "argv",

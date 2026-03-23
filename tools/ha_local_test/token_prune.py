@@ -14,8 +14,12 @@ import websocket
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Prune older HA sandbox long-lived tokens")
-    parser.add_argument("--url", default="http://localhost:8123", help="Home Assistant base URL")
+    parser = argparse.ArgumentParser(
+        description="Prune older HA sandbox long-lived tokens"
+    )
+    parser.add_argument(
+        "--url", default="http://localhost:8123", help="Home Assistant base URL"
+    )
     parser.add_argument(
         "--seed-token",
         default=os.environ.get("HA_TEST_TOKEN"),
@@ -41,7 +45,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def _ws_url(base_url: str) -> str:
-    return base_url.replace("http://", "ws://").replace("https://", "wss://") + "/api/websocket"
+    return (
+        base_url.replace("http://", "ws://").replace("https://", "wss://")
+        + "/api/websocket"
+    )
 
 
 def _parse_created_at(value: str | None) -> datetime:
@@ -88,7 +95,9 @@ def main() -> int:
             and str(t.get("client_name") or "").startswith(args.client_prefix)
         ]
 
-        matching_sorted = sorted(matching, key=lambda t: _parse_created_at(t.get("created_at")), reverse=True)
+        matching_sorted = sorted(
+            matching, key=lambda t: _parse_created_at(t.get("created_at")), reverse=True
+        )
         keep = matching_sorted[: max(args.keep, 0)]
         keep_ids = {t.get("id") for t in keep if t.get("id")}
         keep_ids.update({t.get("id") for t in matching_sorted if t.get("is_current")})
@@ -111,7 +120,9 @@ def main() -> int:
                 print(f"FAIL token-prune: delete failed for {token_id}: {result}")
                 return 1
 
-        print(f"PASS token-prune: kept={len(keep)} deleted={deleted} prefix={args.client_prefix}")
+        print(
+            f"PASS token-prune: kept={len(keep)} deleted={deleted} prefix={args.client_prefix}"
+        )
 
         if args.export_env:
             print(f"HA_TEST_TOKEN={args.seed_token}")
