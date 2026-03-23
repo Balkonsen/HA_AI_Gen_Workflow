@@ -8,6 +8,15 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Git ref (branch, tag, or SHA) to build from"
+        required: false
+        default: ""
+      publish:
+        description: "Publish images to GHCR (false runs build in --test mode)"
+        required: false
+        default: "true"
 
 # Prevent concurrent builds on main from racing (e.g. lessons-learned push).
 # Queue new runs instead of cancelling in-progress ones.
@@ -97,6 +106,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.source_ref || github.ref }}
           fetch-depth: 50
 
       - name: Generate add-on changelog for build context
@@ -133,7 +143,7 @@ jobs:
           ls -la ha_ai_workflow_addon/
 
       - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || github.event.inputs.publish == 'true')
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -144,7 +154,7 @@ jobs:
         uses: home-assistant/builder@2025.11.0
         with:
           args: |
-            ${{ github.event_name == 'pull_request' && '--test' || '' }} \
+            ${{ (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish != 'true')) && '--test' || '' }} \
             --amd64 \
             --aarch64 \
             --target ha_ai_workflow_addon \
