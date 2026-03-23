@@ -21,6 +21,7 @@ PyYAML>=6.0.1
 # HTTP mocking for API tests
 responses>=0.23.3
 requests-mock>=1.11.0
+websocket-client>=1.9.0
 
 # SSH support (for remote HA access)
 paramiko>=3.0.0

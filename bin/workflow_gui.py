@@ -248,8 +248,21 @@ def init_session_state():
         export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         base_dir = os.path.dirname(export_dir)
         log_file = os.path.join(base_dir, "workflow.log")
+        trace_enabled = os.environ.get("HA_AI_TRACE_LOG", "false").strip().lower() in [
+            "1",
+            "true",
+            "yes",
+            "on",
+            "enabled",
+        ]
+        trace_log_file = os.environ.get("HA_AI_TRACE_FILE", os.path.join(base_dir, "workflow_trace.log"))
         Path(base_dir).mkdir(parents=True, exist_ok=True)
-        st.session_state.logger = configure_logger(log_level=st.session_state.log_level, log_file=log_file)
+        st.session_state.logger = configure_logger(
+            log_level=st.session_state.log_level,
+            log_file=log_file,
+            trace_enabled=trace_enabled,
+            trace_log_file=trace_log_file,
+        )
 
 
 def render_sidebar():
@@ -840,19 +853,45 @@ def render_full_pipeline():
     4. **Validate** - Verify export completeness
     """)
 
+    st.markdown("### Strict Trace Mode")
+    strict_mode = st.checkbox(
+        "Treat warnings as failures (--strict-warnings)",
+        value=True,
+        help="Recommended for bugfixing and PR quality gates.",
+    )
+    enable_trace = st.checkbox(
+        "Enable structured trace log (--trace-log)",
+        value=True,
+        help="Writes JSONL trace records for deep diagnostics.",
+    )
+    trace_log_file = st.text_input(
+        "Trace Log File",
+        value=os.path.join(config.get("paths.export_dir", os.path.abspath("./exports")), "workflow_trace_gui.jsonl"),
+        disabled=not enable_trace,
+    )
+
     if st.button("🚀 Run Full Pipeline", type="primary"):
         with st.spinner("Running pipeline..."):
             from workflow_orchestrator import WorkflowOrchestrator
 
-            orchestrator = WorkflowOrchestrator()
+            orchestrator = WorkflowOrchestrator(
+                log_level=st.session_state.log_level,
+                trace_enabled=enable_trace,
+                trace_log_file=trace_log_file if enable_trace else None,
+                strict_warnings=strict_mode,
+            )
             mode = "remote" if pipeline_mode == "SSH Remote" else "local"
             success, output = capture_runtime_output(orchestrator.run_full_workflow, source_path, mode)
 
             st.session_state.runtime_output = output
             if success:
                 st.success("✅ Pipeline complete!")
+                if enable_trace:
+                    st.info(f"Trace written to: {trace_log_file}")
                 st.balloons()
             else:
+                if enable_trace:
+                    st.info(f"Trace written to: {trace_log_file}")
                 st.error("❌ Pipeline failed")
 
         render_terminal_output(st.session_state.runtime_output)
@@ -918,6 +957,18 @@ def render_logs():
         log_dir = os.path.dirname(export_dir)
         log_file = st.text_input("Log File Path", value=os.path.join(log_dir, "workflow.log"))
 
+    trace_log_file = st.text_input(
+        "Trace Log Path (JSONL)",
+        value=os.path.join(log_dir, "workflow_trace.log"),
+    )
+
+    selected_log_type = st.radio(
+        "Viewer",
+        ["Workflow Log", "Trace Log"],
+        horizontal=True,
+    )
+    active_log_file = trace_log_file if selected_log_type == "Trace Log" else log_file
+
     with col3:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔄 Refresh"):
@@ -926,7 +977,7 @@ def render_logs():
     st.markdown("---")
 
     # Display log file
-    if Path(log_file).exists():
+    if Path(active_log_file).exists():
         col1, col2 = st.columns([3, 1])
 
         with col1:
@@ -936,7 +987,7 @@ def render_logs():
             num_lines = st.number_input("Show last N lines", min_value=10, max_value=1000, value=100, step=10)
 
         try:
-            with open(log_file, "r", encoding="utf-8") as f:
+            with open(active_log_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()
 
             # Show last N lines
@@ -953,14 +1004,14 @@ def render_logs():
             st.download_button(
                 label="⬇️ Download Full Log",
                 data="".join(lines),
-                file_name="workflow.log",
+                file_name=Path(active_log_file).name,
                 mime="text/plain",
             )
 
         except Exception as e:
             st.error(f"❌ Error reading log file: {e}")
     else:
-        st.warning(f"⚠️ Log file not found: {log_file}")
+        st.warning(f"⚠️ Log file not found: {active_log_file}")
         st.info("Run a workflow operation to generate logs.")
 
     st.markdown("---")
@@ -974,7 +1025,7 @@ def render_logs():
     with col1:
         report_path = st.text_input(
             "Report Output Path",
-            value=os.path.join(log_dir, f"diagnostic_report_{Path(log_file).stem}.md"),
+            value=os.path.join(log_dir, f"diagnostic_report_{Path(active_log_file).stem}.md"),
         )
 
     with col2:

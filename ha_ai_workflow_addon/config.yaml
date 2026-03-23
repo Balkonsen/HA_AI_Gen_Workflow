@@ -51,6 +51,8 @@ options:
   remote_config_path: /config
   debug_mode: false
   verbose: false
+  trace_log_enabled: false
+  trace_log_path: ""
 # Schema validation for options
 schema:
   export_path: str
@@ -65,4 +67,6 @@ schema:
   remote_config_path: str?
   debug_mode: bool?
   verbose: bool?
+  trace_log_enabled: bool?
+  trace_log_path: str?
 image: ghcr.io/balkonsen/ha_ai_gen_workflow-{arch}

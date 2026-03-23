@@ -164,3 +164,19 @@ vscode:
 
   # Use integrated terminal
   use_integrated_terminal: true
+
+# =============================================================================
+# Logging and Trace Settings (Optional)
+# =============================================================================
+logging:
+  # Log level for runtime logger
+  level: "INFO"
+
+  # Main operational log file
+  file: "./exports/workflow.log"
+
+  # Enable structured trace logging (JSONL)
+  trace_enabled: false
+
+  # Structured trace file path
+  trace_file: "./exports/workflow_trace.log"

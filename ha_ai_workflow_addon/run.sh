@@ -123,6 +123,8 @@ SSH_PORT=$(get_config 'ssh_port' '22')
 SSH_KEY_PATH=$(get_config 'ssh_key_path' '')
 SSH_PASSWORD=$(get_config 'ssh_password' '')
 REMOTE_CONFIG_PATH=$(get_config 'remote_config_path' '/config')
+TRACE_LOG_ENABLED=$(get_config 'trace_log_enabled' 'false')
+TRACE_LOG_PATH=$(get_config 'trace_log_path' '')
 
 # Failsafe: Create necessary directories with error handling
 log_info "Creating necessary directories..."
@@ -155,6 +157,10 @@ log_debug "  SSH enabled: ${SSH_ENABLED}"
 log_debug "  SSH host: ${SSH_HOST}"
 log_debug "  SSH user: ${SSH_USER}"
 log_debug "  SSH port: ${SSH_PORT}"
+log_debug "  Trace logging enabled: ${TRACE_LOG_ENABLED}"
+if [[ -n "${TRACE_LOG_PATH}" ]]; then
+    log_debug "  Trace log path override: ${TRACE_LOG_PATH}"
+fi
 if [[ -n "${SSH_KEY_PATH}" ]]; then
     log_debug "  SSH authentication: Key-based"
 elif [[ -n "${SSH_PASSWORD}" ]]; then
@@ -346,6 +352,25 @@ export HA_SUPERVISOR_URL="http://supervisor"
 export HA_CONFIG_DIR="/config"
 export HA_CONFIG_PATH="/config"
 export HA_INSTALL_DIR="/app"
+export HA_AI_LOG_DIR="${EXPORT_PATH}"
+
+# Bridge add-on debug/verbose settings to Python logger levels
+if [[ "${DEBUG_MODE}" == "true" ]]; then
+    export HA_AI_LOG_LEVEL="DEBUG"
+elif [[ "${VERBOSE}" == "true" ]]; then
+    export HA_AI_LOG_LEVEL="VERBOSE"
+else
+    export HA_AI_LOG_LEVEL="INFO"
+fi
+
+# Structured trace logging controls for full-fidelity diagnostics
+export HA_AI_TRACE_LOG="${TRACE_LOG_ENABLED}"
+if [[ -n "${TRACE_LOG_PATH}" ]]; then
+    export HA_AI_TRACE_FILE="${TRACE_LOG_PATH}"
+else
+    export HA_AI_TRACE_FILE="${EXPORT_PATH}/workflow_trace.log"
+fi
+
 # Export SSH password securely via environment variable (not in config file)
 if [[ -n "${SSH_PASSWORD}" ]]; then
     export SSH_PASSWORD="${SSH_PASSWORD}"
@@ -356,6 +381,10 @@ log_debug "Environment variables set:"
 log_debug "  HA_API_URL=${HA_API_URL}"
 log_debug "  HA_SUPERVISOR_URL=${HA_SUPERVISOR_URL}"
 log_debug "  HA_CONFIG_DIR=${HA_CONFIG_DIR}"
+log_debug "  HA_AI_LOG_DIR=${HA_AI_LOG_DIR}"
+log_debug "  HA_AI_LOG_LEVEL=${HA_AI_LOG_LEVEL}"
+log_debug "  HA_AI_TRACE_LOG=${HA_AI_TRACE_LOG}"
+log_debug "  HA_AI_TRACE_FILE=${HA_AI_TRACE_FILE}"
 
 # Install ha-ai-workflow CLI command if master script exists
 if [[ -f "/app/bin/ha_ai_master_script.sh" ]]; then

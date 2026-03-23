@@ -145,6 +145,59 @@ class TestWorkflowLogger:
         assert "timestamp" in log_entry
         assert "context" in log_entry
 
+    def test_trace_log_captures_filtered_messages(self, tmp_path):
+        """Trace log should capture all log calls including filtered entries."""
+        log_file = tmp_path / "test.log"
+        trace_file = tmp_path / "trace.jsonl"
+        logger = WorkflowLogger(
+            log_level=LogLevel.WARNING,
+            log_file=str(log_file),
+            trace_enabled=True,
+            trace_log_file=str(trace_file),
+            enable_console=False,
+        )
+
+        logger.info("Filtered info message")
+        logger.error("Emitted error message")
+
+        # Normal log should include only emitted messages based on level.
+        content = log_file.read_text(encoding="utf-8")
+        assert "Filtered info message" not in content
+        assert "Emitted error message" in content
+
+        # Trace log should include both calls with emitted flags.
+        trace_lines = trace_file.read_text(encoding="utf-8").strip().split("\n")
+        assert len(trace_lines) == 2
+
+        first = json.loads(trace_lines[0])
+        second = json.loads(trace_lines[1])
+        assert first["message"] == "Filtered info message"
+        assert first["emitted"] is False
+        assert second["message"] == "Emitted error message"
+        assert second["emitted"] is True
+
+    def test_trace_event_writes_structured_record(self, tmp_path):
+        """trace_event should write machine-readable event records."""
+        trace_file = tmp_path / "trace.jsonl"
+        logger = WorkflowLogger(
+            log_level=LogLevel.INFO,
+            log_file=None,
+            trace_enabled=True,
+            trace_log_file=str(trace_file),
+            enable_console=False,
+        )
+
+        logger.trace_event("integrated_agent_workflow.phase", {"phase": "phase_1", "status": "started"})
+
+        trace_lines = trace_file.read_text(encoding="utf-8").strip().split("\n")
+        assert len(trace_lines) == 1
+
+        record = json.loads(trace_lines[0])
+        assert record["type"] == "trace_event"
+        assert record["event"] == "integrated_agent_workflow.phase"
+        assert record["details"]["phase"] == "phase_1"
+        assert record["details"]["status"] == "started"
+
     def test_context_stack(self, tmp_path):
         """Test context stack functionality."""
         log_file = tmp_path / "test.log"
@@ -310,6 +363,23 @@ class TestGlobalLogger:
 
         assert logger.log_level == LogLevel.WARNING
         assert logger.log_file == os.path.join(log_dir, "workflow.log")
+
+    def test_trace_environment_variables(self, tmp_path, monkeypatch):
+        """Test trace logger configuration from environment variables."""
+        import workflow_logger
+
+        workflow_logger._global_logger = None
+
+        log_dir = str(tmp_path)
+        trace_path = os.path.join(log_dir, "workflow_trace.jsonl")
+        monkeypatch.setenv("HA_AI_LOG_DIR", log_dir)
+        monkeypatch.setenv("HA_AI_TRACE_LOG", "true")
+        monkeypatch.setenv("HA_AI_TRACE_FILE", trace_path)
+
+        logger = get_logger()
+
+        assert logger.trace_enabled is True
+        assert logger.trace_log_file == trace_path
 
 
 @pytest.mark.unit

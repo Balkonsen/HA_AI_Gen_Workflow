@@ -1008,7 +1008,7 @@ Sensitive data has been replaced with placeholders like `<<PASSWORD_1>>`, `<<TOK
             },
         }
 
-        with open(os.path.join(self.export_path, "METADATA.json"), "w") as f:
+        with open(os.path.join(self.export_path, "METADATA.json"), "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
         # Create README in export root
@@ -1067,7 +1067,7 @@ python3 ha_config_import.py --source <ai_output> --secrets secrets/secrets_map.j
 ```
 """
 
-        with open(os.path.join(self.export_path, "README.md"), "w") as f:
+        with open(os.path.join(self.export_path, "README.md"), "w", encoding="utf-8") as f:
             f.write(readme)
 
         # Create README in ai_upload folder
@@ -1108,7 +1108,7 @@ These files are sanitized and safe to upload to AI assistants.
 - Emails → `<<EMAIL_N>>`
 """
 
-        with open(os.path.join(self.ai_upload_path, "README.md"), "w") as f:
+        with open(os.path.join(self.ai_upload_path, "README.md"), "w", encoding="utf-8") as f:
             f.write(ai_readme)
 
     def create_tarball(self):
