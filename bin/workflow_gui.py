@@ -170,9 +170,7 @@ def capture_runtime_output(func, *args, **kwargs):
     stdout_capture = io.StringIO()
     stderr_capture = io.StringIO()
 
-    with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(
-        stderr_capture
-    ):
+    with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(stderr_capture):
         try:
             result = func(*args, **kwargs)
         except Exception as e:
@@ -203,9 +201,7 @@ def render_terminal_output(output: str, title: str = "Runtime Output"):
     st.code(output, language="log")
 
 
-def render_path_input_with_validation(
-    label: str, config_key: str, config: WorkflowConfig, key_suffix: str = ""
-) -> str:
+def render_path_input_with_validation(label: str, config_key: str, config: WorkflowConfig, key_suffix: str = "") -> str:
     """Render a path input with inline validation status.
 
     Args:
@@ -215,39 +211,20 @@ def render_path_input_with_validation(
         key_suffix: Optional suffix for unique Streamlit widget keys.
 
     Returns:
-        The resolved absolute path string.
+        The configured path string.
     """
     current_value = config.get(config_key, "")
-    widget_key = (
-        f"path_{config_key}_{key_suffix}" if key_suffix else f"path_{config_key}"
-    )
+    widget_key = f"path_{config_key}_{key_suffix}" if key_suffix else f"path_{config_key}"
 
     path_value = st.text_input(label, value=current_value, key=widget_key) or ""
 
-    resolved, exists, creatable, message = resolve_and_verify_path(path_value)
-
     if path_value:
-        if exists:
-            st.caption(message)
-        elif creatable:
-            st.caption(message)
-            if st.button(
-                f"📁 Create '{os.path.basename(resolved)}'", key=f"create_{widget_key}"
-            ):
-                try:
-                    Path(resolved).mkdir(parents=True, exist_ok=True)
-                    st.success(f"✅ Created: {resolved}")
-                    st.rerun()
-                except OSError as e:
-                    st.error(f"❌ Failed to create directory: {e}")
-        else:
-            st.caption(message)
-
-        config.set(config_key, resolved)
+        st.caption("ℹ️ Path saved. Validation happens during workflow execution.")
+        config.set(config_key, path_value.strip())
     else:
         st.caption("⚠️ Path is empty")
 
-    return resolved
+    return path_value.strip()
 
 
 def init_session_state():
@@ -266,9 +243,7 @@ def init_session_state():
         st.session_state.runtime_output = ""
     if "logger" not in st.session_state:
         # Determine base storage path for logs
-        export_dir = st.session_state.config.get(
-            "paths.export_dir", os.path.abspath("./exports")
-        )
+        export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         base_dir = os.path.dirname(export_dir)
         log_file = os.path.join(base_dir, "workflow.log")
         trace_enabled = os.environ.get("HA_AI_TRACE_LOG", "false").strip().lower() in [
@@ -278,9 +253,7 @@ def init_session_state():
             "on",
             "enabled",
         ]
-        trace_log_file = os.environ.get(
-            "HA_AI_TRACE_FILE", os.path.join(base_dir, "workflow_trace.log")
-        )
+        trace_log_file = os.environ.get("HA_AI_TRACE_FILE", os.path.join(base_dir, "workflow_trace.log"))
         Path(base_dir).mkdir(parents=True, exist_ok=True)
         st.session_state.logger = configure_logger(
             log_level=st.session_state.log_level,
@@ -328,9 +301,7 @@ def render_sidebar():
     log_level = st.sidebar.selectbox(
         "Log Level",
         ["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR"],
-        index=["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR"].index(
-            st.session_state.log_level
-        ),
+        index=["DEBUG", "VERBOSE", "INFO", "CONDENSED", "WARNING", "ERROR"].index(st.session_state.log_level),
         key="sidebar_log_level",
     )
     if log_level != st.session_state.log_level:
@@ -364,9 +335,7 @@ def render_configuration():
     col1, col2 = st.columns(2)
 
     with col1:
-        ssh_enabled = st.checkbox(
-            "Enable SSH for remote HA", value=config.get("ssh.enabled", False)
-        )
+        ssh_enabled = st.checkbox("Enable SSH for remote HA", value=config.get("ssh.enabled", False))
         config.set("ssh.enabled", ssh_enabled)
 
         if ssh_enabled:
@@ -377,9 +346,7 @@ def render_configuration():
             )
             config.set("ssh.host", ssh_host)
 
-            ssh_user = st.text_input(
-                "SSH Username", value=config.get("ssh.user", "root")
-            )
+            ssh_user = st.text_input("SSH Username", value=config.get("ssh.user", "root"))
             config.set("ssh.user", ssh_user)
 
             # Authentication method selection
@@ -406,9 +373,7 @@ def render_configuration():
             config.set("ssh.port", int(ssh_port))
 
             if auth_method == "SSH Key":
-                ssh_key = st.text_input(
-                    "SSH Key Path", value=config.get("ssh.key_path", "~/.ssh/id_rsa")
-                )
+                ssh_key = st.text_input("SSH Key Path", value=config.get("ssh.key_path", "~/.ssh/id_rsa"))
                 config.set("ssh.key_path", ssh_key)
                 config.set("ssh.password", "")  # Clear password if using key
             else:  # Password
@@ -432,12 +397,8 @@ def render_configuration():
                 host=config.get("ssh.host"),
                 user=config.get("ssh.user"),
                 port=config.get("ssh.port"),
-                key_path=(
-                    config.get("ssh.key_path") if config.get("ssh.key_path") else None
-                ),
-                password=(
-                    config.get("ssh.password") if config.get("ssh.password") else None
-                ),
+                key_path=(config.get("ssh.key_path") if config.get("ssh.key_path") else None),
+                password=(config.get("ssh.password") if config.get("ssh.password") else None),
             )
             success, msg = ssh.test_connection()
 
@@ -483,14 +444,10 @@ def render_configuration():
                         "Authorization": f"Bearer {ha_token}",
                         "Content-Type": "application/json",
                     }
-                    response = requests.get(
-                        f"{api_url}/config", headers=headers, timeout=10
-                    )
+                    response = requests.get(f"{api_url}/config", headers=headers, timeout=10)
                     if response.status_code == 200:
                         ha_config = response.json()
-                        st.success(
-                            f"✅ Connected to HA {ha_config.get('version', 'unknown')}"
-                        )
+                        st.success(f"✅ Connected to HA {ha_config.get('version', 'unknown')}")
                     else:
                         st.error(f"❌ API returned status {response.status_code}")
                 except Exception as e:
@@ -500,28 +457,20 @@ def render_configuration():
         if ha_token and st.button("💾 Save Token"):
             os.environ["SUPERVISOR_TOKEN"] = ha_token
             # Persist to env file for CLI usage
-            env_file = os.path.join(
-                os.environ.get("HA_INSTALL_DIR", "/usr/local/ha-ai-workflow"), ".env"
-            )
+            env_file = os.path.join(os.environ.get("HA_INSTALL_DIR", "/usr/local/ha-ai-workflow"), ".env")
             try:
                 # Read existing env file, update SUPERVISOR_TOKEN line
                 env_lines = []
                 if os.path.exists(env_file):
                     with open(env_file, "r") as f:
-                        env_lines = [
-                            line
-                            for line in f.readlines()
-                            if not line.startswith("SUPERVISOR_TOKEN=")
-                        ]
+                        env_lines = [line for line in f.readlines() if not line.startswith("SUPERVISOR_TOKEN=")]
                 env_lines.append(f"SUPERVISOR_TOKEN={ha_token}\n")
                 with open(env_file, "w") as f:
                     f.writelines(env_lines)
                 os.chmod(env_file, 0o600)
                 st.success(f"✅ Token saved to environment and {env_file}")
             except OSError:
-                st.warning(
-                    "⚠️ Token set for this session only (could not write env file)"
-                )
+                st.warning("⚠️ Token set for this session only (could not write env file)")
                 st.info("Token is active for the current session.")
 
     if ha_token and ha_token != current_token:
@@ -543,23 +492,10 @@ def render_configuration():
     elif current_export.endswith("/ai_exports"):
         default_base = current_export[: -len("/ai_exports")]
     else:
-        default_base = (
-            os.path.dirname(current_export)
-            if current_export
-            else os.path.abspath("./ha_workflow")
-        )
+        default_base = os.path.dirname(current_export) if current_export else os.path.abspath("./ha_workflow")
 
-    base_path = st.text_input(
-        "Storage Base Path",
-        value=default_base,
-        placeholder="/config/ai_workflow",
-        key="storage_base_path",
-        help="All workflow directories (exports, imports, secrets, backups, logs) will be created here.",
-    )
-    resolved_base, base_exists, base_creatable, base_message = resolve_and_verify_path(
-        base_path
-    )
-    st.caption(base_message)
+    resolved_base = os.path.abspath(default_base)
+    st.caption(f"ℹ️ Storage Base Path: {resolved_base}")
 
     if resolved_base:
         # Derive and set all sub-paths from the base
@@ -578,23 +514,20 @@ def render_configuration():
             st.text(f"  AI Context: {os.path.join(resolved_base, 'ai_context')}")
             st.text(f"  Logs:       {os.path.join(resolved_base, 'workflow.log')}")
 
-        if not base_exists and base_creatable:
-            if st.button("📁 Create Storage Directory"):
-                try:
-                    for sub in [
-                        "exports",
-                        "imports",
-                        "secrets",
-                        "backups",
-                        "ai_context",
-                    ]:
-                        Path(os.path.join(resolved_base, sub)).mkdir(
-                            parents=True, exist_ok=True
-                        )
-                    st.success(f"✅ Created storage directory: {resolved_base}")
-                    st.rerun()
-                except OSError as e:
-                    st.error(f"❌ Failed to create directory: {e}")
+        if st.button("📁 Create Storage Directory"):
+            try:
+                for sub in [
+                    "exports",
+                    "imports",
+                    "secrets",
+                    "backups",
+                    "ai_context",
+                ]:
+                    Path(os.path.join(resolved_base, sub)).mkdir(parents=True, exist_ok=True)
+                st.success(f"✅ Created storage directory: {resolved_base}")
+                st.rerun()
+            except OSError as e:
+                st.error(f"❌ Failed to create directory: {e}")
 
     st.markdown("---")
 
@@ -604,9 +537,7 @@ def render_configuration():
     col1, col2 = st.columns(2)
 
     with col1:
-        label_prefix = st.text_input(
-            "Secret Label Prefix", value=config.get("secrets.label_prefix", "HA_SECRET")
-        )
+        label_prefix = st.text_input("Secret Label Prefix", value=config.get("secrets.label_prefix", "HA_SECRET"))
         config.set("secrets.label_prefix", label_prefix)
 
     with col2:
@@ -654,9 +585,7 @@ def render_export():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                export_path, output = capture_runtime_output(
-                    orchestrator.export_local, source_path
-                )
+                export_path, output = capture_runtime_output(orchestrator.export_local, source_path)
 
                 st.session_state.runtime_output = output
                 if export_path:
@@ -684,9 +613,7 @@ def render_export():
                     from workflow_orchestrator import WorkflowOrchestrator
 
                     orchestrator = WorkflowOrchestrator()
-                    export_path, output = capture_runtime_output(
-                        orchestrator.export_from_remote
-                    )
+                    export_path, output = capture_runtime_output(orchestrator.export_from_remote)
 
                     st.session_state.runtime_output = output
                     if export_path:
@@ -706,9 +633,7 @@ def render_export():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                _result, output = capture_runtime_output(
-                    orchestrator.sanitize_export, st.session_state.export_path
-                )
+                _result, output = capture_runtime_output(orchestrator.sanitize_export, st.session_state.export_path)
                 st.session_state.runtime_output = output
                 st.success("✅ Secrets sanitized!")
 
@@ -754,9 +679,7 @@ def render_ai_context():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                context_path, output = capture_runtime_output(
-                    orchestrator.generate_ai_context, export_path
-                )
+                context_path, output = capture_runtime_output(orchestrator.generate_ai_context, export_path)
 
                 st.session_state.runtime_output = output
                 if context_path:
@@ -776,9 +699,7 @@ def render_ai_context():
 
     if st.session_state.context_path:
         st.markdown("---")
-        st.info(
-            "📋 Copy the AI context files to your AI assistant to generate modifications."
-        )
+        st.info("📋 Copy the AI context files to your AI assistant to generate modifications.")
 
         col1, col2 = st.columns(2)
         with col2:
@@ -810,14 +731,10 @@ def render_import():
         dry_run = st.checkbox("Dry run (preview only)", value=True)
 
     with col2:
-        st.checkbox(
-            "Auto-restore secrets", value=config.get("secrets.auto_restore", True)
-        )
+        st.checkbox("Auto-restore secrets", value=config.get("secrets.auto_restore", True))
 
     if import_mode == "Local":
-        target_path = st.text_input(
-            "Target Config Path", value=find_standard_root(), placeholder="/config"
-        )
+        target_path = st.text_input("Target Config Path", value=find_standard_root(), placeholder="/config")
         _resolved, _exists, _creatable, message = resolve_and_verify_path(target_path)
         st.caption(message)
 
@@ -826,9 +743,7 @@ def render_import():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                success, output = capture_runtime_output(
-                    orchestrator.import_local, import_path, target_path, dry_run
-                )
+                success, output = capture_runtime_output(orchestrator.import_local, import_path, target_path, dry_run)
 
                 st.session_state.runtime_output = output
                 if success:
@@ -855,9 +770,7 @@ def render_import():
                     from workflow_orchestrator import WorkflowOrchestrator
 
                     orchestrator = WorkflowOrchestrator()
-                    success, output = capture_runtime_output(
-                        orchestrator.import_to_remote, import_path, dry_run
-                    )
+                    success, output = capture_runtime_output(orchestrator.import_to_remote, import_path, dry_run)
 
                     st.session_state.runtime_output = output
                     if success:
@@ -895,9 +808,7 @@ def render_validate():
                 from workflow_orchestrator import WorkflowOrchestrator
 
                 orchestrator = WorkflowOrchestrator()
-                results, output = capture_runtime_output(
-                    orchestrator.validate_export, validate_path
-                )
+                results, output = capture_runtime_output(orchestrator.validate_export, validate_path)
 
                 st.session_state.runtime_output = output
                 if results:
@@ -917,9 +828,7 @@ def render_full_pipeline():
     pipeline_mode = st.radio("Mode", ["Local", "SSH Remote"], horizontal=True)
 
     if pipeline_mode == "Local":
-        source_path = st.text_input(
-            "Home Assistant Config Path", value=find_standard_root()
-        )
+        source_path = st.text_input("Home Assistant Config Path", value=find_standard_root())
         _resolved, _exists, _creatable, message = resolve_and_verify_path(source_path)
         st.caption(message)
     else:
@@ -927,14 +836,12 @@ def render_full_pipeline():
         st.info(f"Will use remote path: {source_path}")
 
     st.markdown("### Pipeline Steps")
-    st.markdown(
-        """
+    st.markdown("""
     1. **Export** - Download/copy HA configuration
     2. **Sanitize** - Replace secrets with labels
     3. **AI Context** - Generate context for AI
     4. **Validate** - Verify export completeness
-    """
-    )
+    """)
 
     st.markdown("### Strict Trace Mode")
     strict_mode = st.checkbox(
@@ -967,9 +874,7 @@ def render_full_pipeline():
                 strict_warnings=strict_mode,
             )
             mode = "remote" if pipeline_mode == "SSH Remote" else "local"
-            success, output = capture_runtime_output(
-                orchestrator.run_full_workflow, source_path, mode
-            )
+            success, output = capture_runtime_output(orchestrator.run_full_workflow, source_path, mode)
 
             st.session_state.runtime_output = output
             if success:
@@ -1041,17 +946,16 @@ def render_logs():
             st.session_state.logger.set_log_level(LogLevel[log_level])
 
     with col2:
-        export_dir = st.session_state.config.get(
-            "paths.export_dir", os.path.abspath("./exports")
-        )
+        export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
         log_dir = os.path.dirname(export_dir)
-        log_file = st.text_input(
-            "Log File Path", value=os.path.join(log_dir, "workflow.log")
-        )
+        log_file = os.path.join(log_dir, "workflow.log")
+        st.text_input("Log File Path", value=log_file, disabled=True)
 
-    trace_log_file = st.text_input(
+    trace_log_file = os.path.join(log_dir, "workflow_trace.log")
+    st.text_input(
         "Trace Log Path (JSONL)",
-        value=os.path.join(log_dir, "workflow_trace.log"),
+        value=trace_log_file,
+        disabled=True,
     )
 
     selected_log_type = st.radio(
@@ -1060,9 +964,8 @@ def render_logs():
         horizontal=True,
     )
     active_log_file = trace_log_file if selected_log_type == "Trace Log" else log_file
-    resolved_log_file, log_exists, _creatable, _message = resolve_and_verify_path(
-        active_log_file
-    )
+    resolved_log_file = active_log_file
+    log_exists = os.path.exists(resolved_log_file)
     allowed_roots = [
         os.path.abspath("."),
         export_dir,
@@ -1070,9 +973,7 @@ def render_logs():
         "/config",
     ]
     if not is_path_within_roots(resolved_log_file, allowed_roots):
-        st.error(
-            f"❌ Refusing to access log path outside allowed roots: {resolved_log_file}"
-        )
+        st.error(f"❌ Refusing to access log path outside allowed roots: {resolved_log_file}")
         return
 
     with col3:
@@ -1090,9 +991,7 @@ def render_logs():
             st.subheader("Log Contents")
 
         with col2:
-            num_lines = st.number_input(
-                "Show last N lines", min_value=10, max_value=1000, value=100, step=10
-            )
+            num_lines = st.number_input("Show last N lines", min_value=10, max_value=1000, value=100, step=10)
 
         try:
             with open(resolved_log_file, "r", encoding="utf-8") as f:
@@ -1133,9 +1032,7 @@ def render_logs():
     with col1:
         report_path = st.text_input(
             "Report Output Path",
-            value=os.path.join(
-                log_dir, f"diagnostic_report_{Path(active_log_file).stem}.md"
-            ),
+            value=os.path.join(log_dir, f"diagnostic_report_{Path(active_log_file).stem}.md"),
         )
 
     with col2:
@@ -1229,9 +1126,8 @@ def render_path_explorer():
 
     # Directory browser
     st.subheader("📁 Directory Browser")
-    browse_path = st.text_input(
-        "Browse path", value=ha_root, key="explorer_browse_path"
-    )
+    browse_path = ha_root
+    st.text_input("Browse path", value=browse_path, key="explorer_browse_path", disabled=True)
 
     resolved, exists, _creatable, message = resolve_and_verify_path(browse_path)
     st.caption(message)
