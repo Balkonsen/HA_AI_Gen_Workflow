@@ -262,6 +262,19 @@ class TestBuildWorkflow:
             workflow = yaml.safe_load(f)
         assert isinstance(workflow, dict), "Workflow should parse to a dict"
 
+    def test_workflow_dispatch_inputs(self):
+        """workflow_dispatch should support selecting source ref and publish mode."""
+        with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
+            workflow = yaml.safe_load(f)
+
+        on_section = workflow.get("on", workflow.get(True, {}))
+        dispatch = on_section.get("workflow_dispatch", {})
+        inputs = dispatch.get("inputs", {})
+
+        assert "source_ref" in inputs, "workflow_dispatch should expose source_ref input"
+        assert "publish" in inputs, "workflow_dispatch should expose publish input"
+        assert inputs["publish"].get("default") == "true", "publish input should default to true"
+
     def test_workflow_uses_ha_builder(self):
         """Workflow should use home-assistant/builder action."""
         with open(WORKFLOW_FILE, "r") as f:
@@ -323,6 +336,13 @@ class TestBuildWorkflow:
             # Match --arch as a standalone flag (word boundary via whitespace/newline)
             pattern = rf"--{re.escape(arch)}(\s|\\|$)"
             assert re.search(pattern, content), f"Workflow should build for '{arch}' as declared in config.yaml"
+
+    def test_workflow_manual_publish_control(self):
+        """Workflow should support test-only and publish modes for manual dispatch."""
+        with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        assert "github.event.inputs.publish" in content, "Workflow should gate publish behavior on publish input"
+        assert "github.event.inputs.source_ref" in content, "Workflow should allow manual source_ref checkout"
 
     def test_git_log_format_for_changelog(self):
         """Build changelog format should produce concise '- message (sha)' entries."""
