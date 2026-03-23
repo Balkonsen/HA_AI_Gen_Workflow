@@ -54,6 +54,36 @@ class WorkflowLogger:
         "NC": "\033[0m",  # No Color
     }
 
+    @staticmethod
+    def _is_within_root(path_value: str, root_value: str) -> bool:
+        """Return True when path_value is located under root_value."""
+        try:
+            path_real = os.path.realpath(path_value)
+            root_real = os.path.realpath(root_value)
+            return os.path.commonpath([path_real, root_real]) == root_real
+        except ValueError:
+            return False
+
+    @classmethod
+    def _sanitize_log_path(cls, path_value: str) -> str:
+        """Resolve and constrain log paths to known-safe roots."""
+        expanded = os.path.expanduser(os.path.expandvars(path_value.strip()))
+        resolved = os.path.realpath(os.path.abspath(expanded))
+        allowed_roots = [
+            os.path.realpath(os.path.abspath(".")),
+            os.path.realpath(os.path.abspath("./exports")),
+            os.path.realpath(os.path.abspath("./logs")),
+            os.path.realpath("/config"),
+        ]
+
+        if not any(cls._is_within_root(resolved, root) for root in allowed_roots):
+            raise ValueError(
+                f"Log path is outside allowed roots: {resolved}. "
+                "Use a path under workspace, ./exports, ./logs, or /config."
+            )
+
+        return resolved
+
     # Icons for different message types
     ICONS = {
         "debug": "🔍",
@@ -90,9 +120,11 @@ class WorkflowLogger:
             log_format: Output format ('text' or 'json')
         """
         self.log_level = log_level
-        self.log_file = log_file
+        self.log_file = self._sanitize_log_path(log_file) if log_file else None
         self.trace_enabled = trace_enabled
-        self.trace_log_file = trace_log_file
+        self.trace_log_file = (
+            self._sanitize_log_path(trace_log_file) if trace_log_file else None
+        )
         self.enable_console = enable_console
         self.enable_colors = enable_colors and sys.stdout.isatty()
         self.log_format = log_format
@@ -111,7 +143,9 @@ class WorkflowLogger:
         """Check if a message at the given level should be logged."""
         return level.value >= self.log_level.value
 
-    def _format_message(self, level: LogLevel, message: str, icon: Optional[str] = None) -> str:
+    def _format_message(
+        self, level: LogLevel, message: str, icon: Optional[str] = None
+    ) -> str:
         """Format a log message for console output."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -151,7 +185,9 @@ class WorkflowLogger:
                 with open(self.log_file, "a", encoding="utf-8") as f:
                     f.write(formatted_message + "\n")
             except Exception as e:
-                print(f"Failed to write to log file {self.log_file}: {e}", file=sys.stderr)
+                print(
+                    f"Failed to write to log file {self.log_file}: {e}", file=sys.stderr
+                )
 
     def _next_sequence(self) -> int:
         """Return the next monotonic sequence number for trace records."""
@@ -201,9 +237,14 @@ class WorkflowLogger:
             with open(self.trace_log_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(record, default=str) + "\n")
         except Exception as e:
-            print(f"Failed to write to trace log file {self.trace_log_file}: {e}", file=sys.stderr)
+            print(
+                f"Failed to write to trace log file {self.trace_log_file}: {e}",
+                file=sys.stderr,
+            )
 
-    def _trace_log_call(self, level: LogLevel, message: str, icon: Optional[str], emitted: bool):
+    def _trace_log_call(
+        self, level: LogLevel, message: str, icon: Optional[str], emitted: bool
+    ):
         """Capture every log invocation for full-fidelity trace diagnostics."""
         if not self.trace_enabled:
             return
@@ -219,7 +260,9 @@ class WorkflowLogger:
     def _log(self, level: LogLevel, message: str, icon: Optional[str] = None):
         """Internal logging method."""
         should_emit = self._should_log(level)
-        self._trace_log_call(level=level, message=message, icon=icon, emitted=should_emit)
+        self._trace_log_call(
+            level=level, message=message, icon=icon, emitted=should_emit
+        )
 
         if not should_emit:
             return
@@ -317,14 +360,18 @@ class WorkflowLogger:
 
         if self.log_level.value <= LogLevel.DEBUG.value:
             # Include full traceback in debug mode
-            tb_lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
+            tb_lines = traceback.format_exception(
+                type(exception), exception, exception.__traceback__
+            )
             for line in tb_lines:
                 self._write_to_file(line.rstrip())
 
         if context:
             self.pop_context()
 
-    def create_diagnostic_report(self, output_path: str, include_context: bool = True) -> str:
+    def create_diagnostic_report(
+        self, output_path: str, include_context: bool = True
+    ) -> str:
         """
         Create a diagnostic report for troubleshooting.
 
@@ -587,9 +634,13 @@ def get_logger() -> WorkflowLogger:
         default_log_dir = os.path.abspath("./exports")
         log_dir = os.environ.get("HA_AI_LOG_DIR", default_log_dir)
         log_file = os.path.join(log_dir, "workflow.log")
-        trace_log_file = os.environ.get("HA_AI_TRACE_FILE", os.path.join(log_dir, "workflow_trace.log"))
+        trace_log_file = os.environ.get(
+            "HA_AI_TRACE_FILE", os.path.join(log_dir, "workflow_trace.log")
+        )
         log_level_str = os.environ.get("HA_AI_LOG_LEVEL", "INFO")
-        trace_enabled = _parse_bool_env(os.environ.get("HA_AI_TRACE_LOG"), default=False)
+        trace_enabled = _parse_bool_env(
+            os.environ.get("HA_AI_TRACE_LOG"), default=False
+        )
 
         try:
             log_level = LogLevel[log_level_str.upper()]
@@ -637,20 +688,30 @@ def configure_logger(
         try:
             level = LogLevel[log_level.upper()]
         except KeyError:
-            print(f"Warning: Invalid log level '{log_level}', using INFO", file=sys.stderr)
+            print(
+                f"Warning: Invalid log level '{log_level}', using INFO", file=sys.stderr
+            )
 
     resolved_trace_enabled = trace_enabled
     if resolved_trace_enabled is None:
-        resolved_trace_enabled = _parse_bool_env(os.environ.get("HA_AI_TRACE_LOG"), default=False)
+        resolved_trace_enabled = _parse_bool_env(
+            os.environ.get("HA_AI_TRACE_LOG"), default=False
+        )
 
     resolved_trace_log_file = trace_log_file
     if resolved_trace_log_file is None:
         if log_file:
-            resolved_trace_log_file = str(Path(log_file).with_name("workflow_trace.log"))
+            resolved_trace_log_file = str(
+                Path(log_file).with_name("workflow_trace.log")
+            )
         else:
-            default_log_dir = os.environ.get("HA_AI_LOG_DIR", os.path.abspath("./exports"))
+            default_log_dir = os.environ.get(
+                "HA_AI_LOG_DIR", os.path.abspath("./exports")
+            )
             default_trace_file = os.path.join(default_log_dir, "workflow_trace.log")
-            resolved_trace_log_file = os.environ.get("HA_AI_TRACE_FILE", default_trace_file)
+            resolved_trace_log_file = os.environ.get(
+                "HA_AI_TRACE_FILE", default_trace_file
+            )
 
     _global_logger = WorkflowLogger(
         log_level=level,
