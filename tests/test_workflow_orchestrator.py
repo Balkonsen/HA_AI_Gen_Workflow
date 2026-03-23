@@ -22,8 +22,14 @@ class TestWorkflowMainValidateExitCode:
             def validate_export(self, _source):
                 return {"success": False}
 
-        monkeypatch.setattr(workflow_orchestrator, "WorkflowOrchestrator", FailingOrchestrator)
-        monkeypatch.setattr(sys, "argv", ["workflow_orchestrator.py", "validate", "--source", "dummy_path"])
+        monkeypatch.setattr(
+            workflow_orchestrator, "WorkflowOrchestrator", FailingOrchestrator
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["workflow_orchestrator.py", "validate", "--source", "dummy_path"],
+        )
 
         assert workflow_orchestrator.main() == 1
 
@@ -37,8 +43,14 @@ class TestWorkflowMainValidateExitCode:
             def validate_export(self, _source):
                 return {"success": True}
 
-        monkeypatch.setattr(workflow_orchestrator, "WorkflowOrchestrator", PassingOrchestrator)
-        monkeypatch.setattr(sys, "argv", ["workflow_orchestrator.py", "validate", "--source", "dummy_path"])
+        monkeypatch.setattr(
+            workflow_orchestrator, "WorkflowOrchestrator", PassingOrchestrator
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["workflow_orchestrator.py", "validate", "--source", "dummy_path"],
+        )
 
         assert workflow_orchestrator.main() == 0
 
@@ -50,10 +62,16 @@ class TestRunFullWorkflowValidationResult:
         """Full workflow should fail when validation report has success=False."""
         orchestrator = workflow_orchestrator.WorkflowOrchestrator()
 
-        monkeypatch.setattr(orchestrator, "export_local", lambda _source: "dummy_export")
+        monkeypatch.setattr(
+            orchestrator, "export_local", lambda _source: "dummy_export"
+        )
         monkeypatch.setattr(orchestrator, "sanitize_export", lambda _export: True)
-        monkeypatch.setattr(orchestrator, "generate_ai_context", lambda _export: "dummy_context")
-        monkeypatch.setattr(orchestrator, "validate_export", lambda _export: {"success": False})
+        monkeypatch.setattr(
+            orchestrator, "generate_ai_context", lambda _export: "dummy_context"
+        )
+        monkeypatch.setattr(
+            orchestrator, "validate_export", lambda _export: {"success": False}
+        )
 
         assert orchestrator.run_full_workflow("dummy_source", "local") is False
 
@@ -61,9 +79,15 @@ class TestRunFullWorkflowValidationResult:
         """Full workflow should succeed when validation report has success=True."""
         orchestrator = workflow_orchestrator.WorkflowOrchestrator()
 
-        monkeypatch.setattr(orchestrator, "export_local", lambda _source: "dummy_export")
+        monkeypatch.setattr(
+            orchestrator, "export_local", lambda _source: "dummy_export"
+        )
         monkeypatch.setattr(orchestrator, "sanitize_export", lambda _export: True)
-        monkeypatch.setattr(orchestrator, "generate_ai_context", lambda _export: "dummy_context")
-        monkeypatch.setattr(orchestrator, "validate_export", lambda _export: {"success": True})
+        monkeypatch.setattr(
+            orchestrator, "generate_ai_context", lambda _export: "dummy_context"
+        )
+        monkeypatch.setattr(
+            orchestrator, "validate_export", lambda _export: {"success": True}
+        )
 
         assert orchestrator.run_full_workflow("dummy_source", "local") is True

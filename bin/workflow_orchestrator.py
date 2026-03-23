@@ -103,10 +103,14 @@ class WorkflowOrchestrator:
             remote_manager = HARemoteManager(ssh_config)
 
             timestamp = self._get_timestamp()
-            export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            export_dir = (
+                Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            )
 
             self.logger.info(f"Starting remote export to {export_dir}")
-            success = remote_manager.export_config(str(export_dir), self.config.get("export.exclude_patterns", []))
+            success = remote_manager.export_config(
+                str(export_dir), self.config.get("export.exclude_patterns", [])
+            )
 
             if success:
                 self.logger.success(f"Remote export completed: {export_dir}")
@@ -132,7 +136,9 @@ class WorkflowOrchestrator:
         self.logger.push_context("Local Export")
         try:
             timestamp = self._get_timestamp()
-            export_dir = Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            export_dir = (
+                Path(self.config.get("paths.export_dir")) / f"export_{timestamp}"
+            )
             export_dir.mkdir(parents=True, exist_ok=True)
 
             exporter = HAConfigExporter(output_dir=str(export_dir.parent))
@@ -326,9 +332,13 @@ This export contains placeholder labels for sensitive data:
 
         remote_manager = HARemoteManager(ssh_config)
 
-        return remote_manager.import_config(import_path, create_backup=True, restart=False)
+        return remote_manager.import_config(
+            import_path, create_backup=True, restart=False
+        )
 
-    def import_local(self, import_path: str, target_path: str, dry_run: bool = False) -> bool:
+    def import_local(
+        self, import_path: str, target_path: str, dry_run: bool = False
+    ) -> bool:
         """Import configuration to local Home Assistant.
 
         Args:
@@ -499,8 +509,12 @@ Examples:
     parser.add_argument("--config", "-c", help="Path to configuration file")
     parser.add_argument("--source", "-s", help="Source path for export/import")
     parser.add_argument("--target", "-t", help="Target path for import")
-    parser.add_argument("--remote", "-r", action="store_true", help="Use SSH for remote HA")
-    parser.add_argument("--dry-run", "-n", action="store_true", help="Dry run (no changes)")
+    parser.add_argument(
+        "--remote", "-r", action="store_true", help="Use SSH for remote HA"
+    )
+    parser.add_argument(
+        "--dry-run", "-n", action="store_true", help="Dry run (no changes)"
+    )
     parser.add_argument(
         "--ssh-timeout",
         type=int,

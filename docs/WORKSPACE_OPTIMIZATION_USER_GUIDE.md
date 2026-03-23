@@ -3,6 +3,9 @@
 This is the practical, beginner-safe guide for using the workspace customizations.
 If you are unsure what to do next, start with the Top-Down Walkthrough.
 
+Quick one-page version: docs/WORKSPACE_OPERATOR_CARD.md
+Print version: docs/WORKSPACE_OPERATOR_CARD_PRINT.md
+
 ## Top-Down Walkthrough (Start Here)
 
 Follow these steps in order for every task.

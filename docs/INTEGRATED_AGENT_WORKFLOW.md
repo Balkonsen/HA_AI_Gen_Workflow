@@ -35,15 +35,15 @@ Run this sequence for every issue or feature.
 ### Phase 0: Intake and Risk Classification
 
 1. Classify change type:
-	- Module bug fix
-	- Cross-module behavior change
-	- Security/secrets handling
-	- Add-on/runtime/deployment behavior
-	- Versioned release change
+   - Module bug fix
+   - Cross-module behavior change
+   - Security/secrets handling
+   - Add-on/runtime/deployment behavior
+   - Versioned release change
 2. Mark risk level:
-	- High: secrets, import/export correctness, SSH transfer, add-on startup
-	- Medium: API behavior, context generation, validation output
-	- Low: docs or non-runtime tooling
+   - High: secrets, import/export correctness, SSH transfer, add-on startup
+   - Medium: API behavior, context generation, validation output
+   - Low: docs or non-runtime tooling
 
 ### Phase 1: Targeted Context Bootstrap
 
@@ -51,10 +51,10 @@ Run this sequence for every issue or feature.
 2. Read existing tests first in [../tests](../tests).
 3. Confirm real method signatures in source before changing callers.
 4. Confirm constraints that apply:
-	- No `bashio` or `s6` in add-on startup scripts.
-	- Docker COPY paths are relative to [../ha_ai_workflow_addon](../ha_ai_workflow_addon).
-	- No hardcoded `/config/ai_exports` in non-container code.
-	- Version bump requires synchronized changelog update.
+   - No `bashio` or `s6` in add-on startup scripts.
+   - Docker COPY paths are relative to [../ha_ai_workflow_addon](../ha_ai_workflow_addon).
+   - No hardcoded `/config/ai_exports` in non-container code.
+   - Version bump requires synchronized changelog update.
 
 ### Phase 2: Reproduce in Smallest Safe Scope
 
@@ -150,23 +150,23 @@ make validate
 Use this ownership model to reduce overlap and rework.
 
 1. Orchestrator layer:
-	- [../bin/workflow_orchestrator.py](../bin/workflow_orchestrator.py)
-	- Command sequencing and workflow entry points
+   - [../bin/workflow_orchestrator.py](../bin/workflow_orchestrator.py)
+   - Command sequencing and workflow entry points
 2. Domain modules:
-	- Export: [../bin/ha_diagnostic_export.py](../bin/ha_diagnostic_export.py)
-	- Import: [../bin/ha_config_import.py](../bin/ha_config_import.py)
-	- Context: [../bin/ha_ai_context_gen.py](../bin/ha_ai_context_gen.py)
-	- Verify: [../bin/ha_export_verifier.py](../bin/ha_export_verifier.py)
-	- Secrets: [../bin/secrets_manager.py](../bin/secrets_manager.py)
-	- API: [../bin/ha_api_client.py](../bin/ha_api_client.py)
-	- SSH: [../bin/ssh_transfer.py](../bin/ssh_transfer.py)
+   - Export: [../bin/ha_diagnostic_export.py](../bin/ha_diagnostic_export.py)
+   - Import: [../bin/ha_config_import.py](../bin/ha_config_import.py)
+   - Context: [../bin/ha_ai_context_gen.py](../bin/ha_ai_context_gen.py)
+   - Verify: [../bin/ha_export_verifier.py](../bin/ha_export_verifier.py)
+   - Secrets: [../bin/secrets_manager.py](../bin/secrets_manager.py)
+   - API: [../bin/ha_api_client.py](../bin/ha_api_client.py)
+   - SSH: [../bin/ssh_transfer.py](../bin/ssh_transfer.py)
 3. Add-on runtime:
-	- [../ha_ai_workflow_addon/run.sh](../ha_ai_workflow_addon/run.sh)
-	- [../ha_ai_workflow_addon/Dockerfile](../ha_ai_workflow_addon/Dockerfile)
+   - [../ha_ai_workflow_addon/run.sh](../ha_ai_workflow_addon/run.sh)
+   - [../ha_ai_workflow_addon/Dockerfile](../ha_ai_workflow_addon/Dockerfile)
 4. Quality and verification:
-	- [../tests](../tests)
-	- [../tools](../tools)
-	- [../Makefile](../Makefile)
+   - [../tests](../tests)
+   - [../tools](../tools)
+   - [../Makefile](../Makefile)
 
 ## Release-Safe Change Routine
 
