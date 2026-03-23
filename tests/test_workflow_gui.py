@@ -7,6 +7,7 @@ without requiring a running Streamlit instance.
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -15,12 +16,35 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 
 # Import the helper functions directly â€” these do not depend on Streamlit
 from workflow_gui import (  # noqa: E402
+    derive_log_base_dir,
     resolve_and_verify_path,
     find_standard_root,
     list_directory_contents,
     capture_runtime_output,
     STANDARD_ROOT_DIRS,
 )
+
+
+@pytest.mark.unit
+class TestDeriveLogBaseDir:
+    """Tests for derive_log_base_dir()."""
+
+    def test_uses_parent_of_export_dir(self):
+        """Returns parent directory of configured export directory."""
+        export_dir = os.path.abspath("./exports")
+        expected_parent = os.path.dirname(export_dir)
+        assert derive_log_base_dir(export_dir) == expected_parent
+
+    def test_falls_back_when_empty(self):
+        """Falls back to parent of ./exports when value is empty."""
+        expected_parent = os.path.dirname(os.path.abspath("./exports"))
+        assert derive_log_base_dir("") == expected_parent
+
+    def test_expands_home_and_env(self, monkeypatch):
+        """Expands vars and user home before deriving base directory."""
+        monkeypatch.setenv("HA_GUI_BASE", str(Path.home()))
+        derived = derive_log_base_dir("$HA_GUI_BASE/test_exports")
+        assert derived == str(Path.home())
 
 
 @pytest.mark.unit

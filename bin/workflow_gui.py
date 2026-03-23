@@ -35,6 +35,22 @@ STANDARD_ROOT_DIRS = [
 ]
 
 
+def derive_log_base_dir(export_dir_value) -> str:
+    """Derive a safe absolute base directory for GUI log files."""
+    default_export_dir = os.path.abspath("./exports")
+
+    if isinstance(export_dir_value, str) and export_dir_value.strip():
+        expanded = os.path.expanduser(os.path.expandvars(export_dir_value.strip()))
+        resolved_export_dir = os.path.abspath(expanded)
+    else:
+        resolved_export_dir = default_export_dir
+
+    base_dir = os.path.dirname(resolved_export_dir)
+    if not base_dir:
+        return os.path.abspath(".")
+    return base_dir
+
+
 def resolve_and_verify_path(path_str: str) -> tuple:
     """Resolve a path and verify its status.
 
@@ -243,8 +259,8 @@ def init_session_state():
         st.session_state.runtime_output = ""
     if "logger" not in st.session_state:
         # Determine base storage path for logs
-        export_dir = st.session_state.config.get("paths.export_dir", os.path.abspath("./exports"))
-        base_dir = os.path.dirname(export_dir)
+        export_dir = st.session_state.config.get("paths.export_dir")
+        base_dir = derive_log_base_dir(export_dir)
         log_file = os.path.join(base_dir, "workflow.log")
         trace_enabled = os.environ.get("HA_AI_TRACE_LOG", "false").strip().lower() in [
             "1",
@@ -253,7 +269,7 @@ def init_session_state():
             "on",
             "enabled",
         ]
-        trace_log_file = os.environ.get("HA_AI_TRACE_FILE", os.path.join(base_dir, "workflow_trace.log"))
+        trace_log_file = os.environ.get("HA_AI_TRACE_FILE", "").strip() or os.path.join(base_dir, "workflow_trace.log")
         Path(base_dir).mkdir(parents=True, exist_ok=True)
         st.session_state.logger = configure_logger(
             log_level=st.session_state.log_level,
