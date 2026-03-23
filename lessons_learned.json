@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "last_updated": "2026-03-22T18:10:51.235561+00:00",
-  "total_lessons": 15,
+  "last_updated": "2026-03-23T08:36:30.910581+00:00",
+  "total_lessons": 16,
   "lessons": [
     {
       "category": "build_failure",
@@ -252,6 +252,31 @@
       "fix_target": null,
       "fix_content": null,
       "timestamp": "2026-03-01T07:53:39.878365+00:00",
+      "applied": false
+    },
+    {
+      "category": "test_failure",
+      "summary": "Test failures detected: 11 test(s) failed",
+      "details": "Failed tests: tests/test_enhanced_debug.py::TestEnhancedDebugMethods::test_debug_var, tests/test_enhanced_debug.py::TestEnhancedDebugMethods::test_debug_call, tests/test_enhanced_debug.py::TestEnhancedDebugMethods::test_debug_return, tests/test_enhanced_debug.py::TestEnhancedDebugMethods::test_debug_enter_exit, tests/test_enhanced_debug.py::TestEnhancedDebugMethods::test_debug_stack\nError types: TestHomeAssistantAPIError, ValueError, FileNotFoundError",
+      "source_pr": "76",
+      "source_files": [
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py",
+        "tests/test_enhanced_debug.py"
+      ],
+      "recommendation": "Review and fix failing tests before merging",
+      "auto_fixable": false,
+      "fix_target": null,
+      "fix_content": null,
+      "timestamp": "2026-03-23T08:36:30.887257+00:00",
       "applied": false
     }
   ]
