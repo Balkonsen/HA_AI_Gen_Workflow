@@ -33,7 +33,7 @@ LLM-proposed diffs. GUI and HA-API reload are explicitly M2.
   3. The tool prints the resolved config directory, config-check command, and restart command, honoring profile overrides
   4. The tool runs the live baseline check_config and reports pass/fail
   5. The tool refuses to continue when the baseline fails or the SSH user lacks write/restart permission, with a clear message
-**Plans**: TBD
+**Plans**: 4 plans (planned 2026-08-29)
 
 Plans:
 - [ ] 01-01: Host profile model + local persistence (no secrets committed)
@@ -153,7 +153,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Connect & Discover | 0/4 | Not started | - |
+| 1. Connect & Discover | 0/4 | Planned | - |
 | 2. YAML Round-Trip Engine | 0/4 | Not started | - |
 | 3. Pull & Working Copy | 0/2 | Not started | - |
 | 4. Rule Optimizer & Diff Review | 0/4 | Not started | - |
