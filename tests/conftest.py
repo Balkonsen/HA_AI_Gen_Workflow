@@ -7,6 +7,10 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.ssh_server import ssh_server  # noqa: F401 - re-exported as a fixture
+
+__all__ = ["ssh_server", "tmp_config_home"]
+
 
 @pytest.fixture
 def tmp_config_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
