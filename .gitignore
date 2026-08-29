@@ -109,3 +109,4 @@ tmp/
 *.zip
 *.deb
 *.rpm
+.planning/milestone.lock
