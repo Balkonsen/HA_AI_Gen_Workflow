@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 current_phase: 01
 current_phase_name: Connect & Discover
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-08-29T16:06:54.415Z"
+stopped_at: Completed 01-04-PLAN.md code + gate; 01-04 human-verify checkpoint PENDING
+last_updated: "2026-08-29T16:21:06.974Z"
 last_activity: 2026-08-29
 last_activity_desc: Phase 01 execution started
-state_head: 00a880398f65b5376889a0f3f1b889882a791993
+state_head: 4755042d8c097705a10b4627f0474047dd471b0d
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-08-29)
 
 ## Current Position
 
-Phase: 01 (Connect & Discover) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-08-29 — Phase 01 execution started
+Phase: 01 (Connect & Discover) — EXECUTING (awaiting human verification)
+Plan: 4 of 4 — code complete, gate green
+Status: 01-04 checkpoint:human-verify OUTSTANDING — user must smoke-test `haco connect` against a real HA before Phase 01 is verified
+Last activity: 2026-08-29 — 01-04 executed (baseline check + preflight + `haco connect`)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01 | 12 | 6 tasks | 21 files |
 | Phase 01 P02 | 20 | 5 tasks | 6 files |
 | Phase 01 P03 | 15 | 4 tasks | 4 files |
+| Phase 01 P04 | 25 | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 01]: 01-02: known_hosts=None means asyncssh default (verify host key), never trust-any; enforced + regression-tested (CRITICAL commit-review fix)
 - [Phase 01]: 01-03: discover() takes a CommandRunner Protocol (run()-only) so a scripted fake type-checks under mypy --strict; SSHClient satisfies it structurally
 - [Phase 01]: 01-03: every HostFacts field yields to its HostProfile override verbatim; an all-overridden profile makes zero SSH calls
+- [Phase 01]: 01-04: haco connect is end-to-end (SSH -> discover -> preflight -> baseline check); run_config_check never raises, a failing baseline is data on CheckResult; CLI exits 0 READY / 1 NOT READY / 2 on connection|auth|discovery error
 
 ### Pending Todos
 
@@ -81,10 +83,12 @@ None yet.
 
 - Background-session worktree isolation blocked the Write tool during init; planning
   artifacts were written via shell and committed through gsd query commit. Repo-local
-  .claude/settings.json now sets worktree.bgIsolation=none - effective after a session reload.
+  .claude/settings.json now sets worktree.bgIsolation=- effective after a session reload.
 
 - `hass` CLI is often absent on HA OS SSH; Phase 1 must handle `ha core check` and the
   2025.11 path bug (home-assistant/core#156294).
+
+- Phase 01 NOT fully verified: plan 01-04 checkpoint:human-verify is outstanding. User must run 'uv run haco connect <profile>' against a real Home Assistant (healthy + deliberately-broken config) and confirm install type / config dir / baseline result / READY verdict / exit codes. Steps in 01-04-SUMMARY.md. Reply 'approved' to close.
 
 ## Deferred Items
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session
 
-**Last session:** 2026-08-29T16:06:54.400Z
-**Stopped at:** Completed 01-03-PLAN.md
+**Last session:** 2026-08-29T16:21:06.956Z
+**Stopped at:** Completed 01-04-PLAN.md code + gate; 01-04 human-verify checkpoint PENDING
 **Resume file:** None
