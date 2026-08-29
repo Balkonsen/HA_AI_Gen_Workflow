@@ -36,16 +36,16 @@ LLM-proposed diffs. GUI and HA-API reload are explicitly M2.
   4. The tool runs the live baseline check_config and reports pass/fail
   5. The tool refuses to continue when the baseline fails or the SSH user lacks write/restart permission, with a clear message
 
-**Plans**: 2/4 plans executed (planned 2026-08-29)
+**Plans**: 3/4 plans executed (planned 2026-08-29)
 
 Plans:
 
 - [x] 01-01-PLAN.md
 - [x] 01-02-PLAN.md
-- [ ] 01-03-PLAN.md
+- [x] 01-03-PLAN.md
 - [ ] 01-04-PLAN.md
 - [x] 01-01: Host profile model + local persistence (no secrets committed)
-- [ ] 01-02: asyncssh connection with key and password auth
+- [x] 01-02: asyncssh connection with key and password auth
 - [ ] 01-03: Install-type autodetect + path/command matrix with overrides
 - [ ] 01-04: Baseline check_config runner + permission preflight
 
@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Connect & Discover | 2/4 | In Progress|  |
+| 1. Connect & Discover | 3/4 | In Progress|  |
 | 2. YAML Round-Trip Engine | 0/4 | Not started | - |
 | 3. Pull & Working Copy | 0/2 | Not started | - |
 | 4. Rule Optimizer & Diff Review | 0/4 | Not started | - |
