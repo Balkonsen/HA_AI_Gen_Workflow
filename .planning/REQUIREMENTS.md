@@ -10,8 +10,8 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 ### Connection & Host (CONN)
 
 - [x] **CONN-01**: User can define a host profile (hostname, port, SSH user) stored locally, no secrets committed
-- [ ] **CONN-02**: Tool connects over SSH using a key file
-- [ ] **CONN-03**: Tool connects over SSH using a password when no key is available
+- [x] **CONN-02**: Tool connects over SSH using a key file
+- [x] **CONN-03**: Tool connects over SSH using a password when no key is available
 - [ ] **CONN-04**: Tool autodetects the HA install type (HA OS/Supervised, Container, Core venv)
 - [ ] **CONN-05**: Tool resolves the config directory, config-check command, and restart command for the detected install type, with per-field profile overrides
 - [ ] **CONN-06**: Tool runs a baseline `check_config` on the live host and refuses to proceed if the baseline is already failing
@@ -117,8 +117,8 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CONN-01 | Phase 1 | Complete |
-| CONN-02 | Phase 1 | Pending |
-| CONN-03 | Phase 1 | Pending |
+| CONN-02 | Phase 1 | Complete |
+| CONN-03 | Phase 1 | Complete |
 | CONN-04 | Phase 1 | Pending |
 | CONN-05 | Phase 1 | Pending |
 | CONN-06 | Phase 1 | Pending |

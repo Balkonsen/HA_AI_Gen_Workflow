@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 current_phase: 01
 current_phase_name: Connect & Discover
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-08-29T11:55:50.654Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-08-29T15:58:24.213Z"
 last_activity: 2026-08-29
 last_activity_desc: Phase 01 execution started
-state_head: 51dee2f73015c91bddf344e9795ff7163e9e184b
+state_head: f3a7287fc89c29ae6173cd258150078b4348f2bc
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-08-29)
 ## Current Position
 
 Phase: 01 (Connect & Discover) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-29 — Phase 01 execution started
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 12 | 6 tasks | 21 files |
+| Phase 01 P02 | 20 | 5 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Init: M1 = CLI full loop, SSH only; Web GUI and HA REST/WebSocket API are M2
 - [Phase 01]: 01-01: CLI builds HostProfile via model_validate(dict) to keep mypy --strict happy with Literal fields
 - [Phase 01]: 01-01: pinned .python-version to 3.12 (workstation runs 3.14); uv fetches CPython 3.12
+- [Phase 01]: 01-02: known_hosts=None means asyncssh default (verify host key), never trust-any; enforced + regression-tested (CRITICAL commit-review fix)
 
 ### Pending Todos
 
@@ -93,6 +95,6 @@ None yet.
 
 ## Session
 
-**Last session:** 2026-08-29T11:55:50.640Z
-**Stopped at:** Completed 01-01-PLAN.md
+**Last session:** 2026-08-29T15:58:09.886Z
+**Stopped at:** Completed 01-02-PLAN.md
 **Resume file:** None
