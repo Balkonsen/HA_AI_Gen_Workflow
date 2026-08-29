@@ -58,3 +58,22 @@ class DiscoveryError(HacoError):
     the missing piece (``install_type``, ``container_name``, or ``config_dir``).
     The message names the override that would unblock discovery.
     """
+
+
+class CheckError(HacoError):
+    """The baseline config-check command could not be executed at all.
+
+    Distinct from a check that *ran* and reported problems: that outcome is
+    returned as data (:class:`haco.check.CheckResult` with ``ok=False``), never
+    raised. Reserved for callers that need a hard failure signal; the connect
+    flow does not raise it.
+    """
+
+
+class PreflightError(HacoError):
+    """A permission preflight probe could not be run.
+
+    As with :class:`CheckError`, a preflight that runs and finds a missing grant
+    is returned as data (:class:`haco.preflight.PreflightResult` with
+    ``ok=False``), not raised.
+    """
