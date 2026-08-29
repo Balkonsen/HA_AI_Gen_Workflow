@@ -47,6 +47,8 @@ class SSHServerInfo:
     port: int
     client_key_path: str
     good_password: str
+    known_hosts_path: str
+    """A known_hosts file trusting this server's ephemeral host key."""
 
 
 class _TestSSHServer(asyncssh.SSHServer):
@@ -119,12 +121,17 @@ async def ssh_server(tmp_path: Path) -> AsyncIterator[SSHServerInfo]:
         process_factory=_handle_process,
         sftp_factory=_sftp_factory(str(sftp_root)),
     )
+    port = acceptor.get_port()
+    host_pub = host_key.export_public_key().decode().strip()
+    known_hosts_path = tmp_path / "known_hosts"
+    known_hosts_path.write_text(f"[127.0.0.1]:{port} {host_pub}\n")
     try:
         yield SSHServerInfo(
             host="127.0.0.1",
-            port=acceptor.get_port(),
+            port=port,
             client_key_path=str(client_key_path),
             good_password=GOOD_PASSWORD,
+            known_hosts_path=str(known_hosts_path),
         )
     finally:
         acceptor.close()

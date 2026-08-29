@@ -7,7 +7,8 @@ from pathlib import Path
 import asyncssh
 import pytest
 
-from haco.errors import AuthError, RemoteCommandError
+from haco import errors as haco_errors
+from haco.errors import AuthError, HostKeyError, RemoteCommandError
 from haco.models import HostProfile
 from haco.ssh import SSHClient
 from tests.support.ssh_server import SSHServerInfo
@@ -19,7 +20,7 @@ def _profile(server: SSHServerInfo, **overrides: object) -> HostProfile:
         "host": server.host,
         "port": server.port,
         "user": "tester",
-        "known_hosts": None,
+        "known_hosts": server.known_hosts_path,
     }
     data.update(overrides)
     return HostProfile.model_validate(data)
@@ -77,6 +78,19 @@ async def test_run_nonzero(ssh_server: SSHServerInfo) -> None:
         assert result.stdout == ""
         with pytest.raises(RemoteCommandError):
             await client.run("false", check=True)
+
+
+async def test_unknown_host_key_rejected(ssh_server: SSHServerInfo) -> None:
+    """A profile with ``known_hosts=None`` must still verify the host key.
+
+    Regression for the ``known_hosts=None`` MITM footgun: ``None`` means "use
+    asyncssh's default" (check ~/.ssh/known_hosts + system files), NOT "trust any
+    host key". The ephemeral test server is in no such file, so connect fails.
+    """
+    profile = _profile(ssh_server, auth="key", key_path=ssh_server.client_key_path, known_hosts=None)
+    client = SSHClient(profile)
+    with pytest.raises((HostKeyError, haco_errors.ConnectionError)):
+        await client.connect()
 
 
 def test_profile_never_holds_password() -> None:

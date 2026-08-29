@@ -78,8 +78,13 @@ class SSHClient:
         options: dict[str, Any] = {
             "port": profile.port,
             "username": profile.user,
-            "known_hosts": profile.known_hosts,
         }
+        # Only override asyncssh's default when the profile names a file. Passing
+        # ``known_hosts=None`` to asyncssh DISABLES host-key verification (MITM
+        # risk); omitting the key lets it fall back to ~/.ssh/known_hosts + the
+        # system files.
+        if profile.known_hosts is not None:
+            options["known_hosts"] = profile.known_hosts
         if profile.auth == "key":
             if not profile.key_path:
                 raise AuthError("profile uses auth=key but no key_path is set")

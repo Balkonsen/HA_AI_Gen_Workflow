@@ -32,7 +32,9 @@ class HostProfile(BaseModel):
     key_path: str | None = None
     """Filesystem path to a private key. Existence is checked at connect time, not here."""
     known_hosts: str | None = None
-    """Path to a known_hosts file; ``None`` uses the system default."""
+    """Path to a known_hosts file. ``None`` (the default) leaves asyncssh's own
+    default in place: verify the host key against ``~/.ssh/known_hosts`` and the
+    system files. It does NOT disable host-key checking."""
 
     install_type: InstallType | None = None
     """``None`` means autodetect at connect time."""
