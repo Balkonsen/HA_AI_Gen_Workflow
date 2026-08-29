@@ -113,13 +113,59 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (filled during roadmap creation) | | |
+| CONN-01 | Phase 1 | Pending |
+| CONN-02 | Phase 1 | Pending |
+| CONN-03 | Phase 1 | Pending |
+| CONN-04 | Phase 1 | Pending |
+| CONN-05 | Phase 1 | Pending |
+| CONN-06 | Phase 1 | Pending |
+| CONN-07 | Phase 1 | Pending |
+| YAML-01 | Phase 2 | Pending |
+| YAML-02 | Phase 2 | Pending |
+| YAML-03 | Phase 2 | Pending |
+| YAML-04 | Phase 2 | Pending |
+| YAML-05 | Phase 2 | Pending |
+| PULL-01 | Phase 3 | Pending |
+| PULL-02 | Phase 3 | Pending |
+| PULL-03 | Phase 3 | Pending |
+| RULE-01 | Phase 4 | Pending |
+| RULE-02 | Phase 4 | Pending |
+| RULE-03 | Phase 4 | Pending |
+| RULE-04 | Phase 4 | Pending |
+| RULE-05 | Phase 4 | Pending |
+| REVIEW-01 | Phase 4 | Pending |
+| REVIEW-02 | Phase 4 | Pending |
+| REVIEW-03 | Phase 4 | Pending |
+| REVIEW-04 | Phase 4 | Pending |
+| STAGE-01 | Phase 5 | Pending |
+| STAGE-02 | Phase 5 | Pending |
+| STAGE-03 | Phase 5 | Pending |
+| STAGE-04 | Phase 5 | Pending |
+| APPLY-01 | Phase 5 | Pending |
+| APPLY-02 | Phase 5 | Pending |
+| APPLY-03 | Phase 5 | Pending |
+| APPLY-04 | Phase 5 | Pending |
+| SAFE-01 | Phase 6 | Pending |
+| SAFE-02 | Phase 6 | Pending |
+| SAFE-03 | Phase 6 | Pending |
+| SAFE-04 | Phase 6 | Pending |
+| SAFE-05 | Phase 6 | Pending |
+| SAFE-06 | Phase 6 | Pending |
+| CLI-02 | Phase 6 | Pending |
+| LLM-01 | Phase 7 | Pending |
+| LLM-02 | Phase 7 | Pending |
+| LLM-03 | Phase 7 | Pending |
+| LLM-04 | Phase 7 | Pending |
+| LLM-05 | Phase 7 | Pending |
+| CLI-01 | Phase 7 | Pending |
+| CLI-03 | Phase 7 | Pending |
+| CLI-04 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 44 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 44
+- v1 requirements: 47 total
+- Mapped to phases: 47
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-29*
-*Last updated: 2026-08-29 after initial definition*
+*Last updated: 2026-08-29 after roadmap creation*
