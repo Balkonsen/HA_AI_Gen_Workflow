@@ -7,11 +7,20 @@ run against one consistent host without a real server.
 
 from __future__ import annotations
 
-import pytest
+import re
 
-from haco.connect import connect_and_probe
+import pytest
+from typer.testing import CliRunner
+
+from haco import cli
+from haco.check import CheckResult
+from haco.cli import app
+from haco.connect import ConnectReport, connect_and_probe
+from haco.discover import HostFacts
 from haco.errors import ConnectionError as HacoConnectionError
+from haco.errors import DiscoveryError
 from haco.models import HostProfile
+from haco.preflight import PreflightResult
 from haco.ssh import CmdResult
 
 
@@ -110,3 +119,72 @@ async def test_connection_error_propagates(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setattr("haco.connect.SSHClient", RaisingClient())
     with pytest.raises(HacoConnectionError):
         await connect_and_probe(_profile())
+
+
+# --- CLI wiring -------------------------------------------------------------
+
+_runner = CliRunner()
+
+
+def _report(*, ready: bool) -> ConnectReport:
+    facts = HostFacts(
+        install_type="haos",
+        config_dir="/homeassistant",
+        config_check_cmd="ha core check",
+        restart_cmd="ha core restart",
+    )
+    pf = PreflightResult(ok=ready, can_write_config=ready, can_restart=ready, findings=[])
+    chk = CheckResult(ok=ready, exit_status=0 if ready else 1, errors=[] if ready else ["ERROR: boom"])
+    return ConnectReport(facts=facts, preflight=pf, check=chk, ready=ready)
+
+
+def _plain(text: str) -> str:
+    """Strip ANSI escapes and collapse all whitespace so help text is searchable."""
+    no_ansi = re.sub(r"\x1b\[[0-9;]*m", "", text)
+    return re.sub(r"\s+", " ", no_ansi)
+
+
+def test_connect_help_documents_name_and_password_stdin() -> None:
+    result = _runner.invoke(app, ["connect", "--help"], env={"COLUMNS": "200"})
+    assert result.exit_code == 0
+    plain = _plain(result.output)
+    assert "name" in plain.lower()
+    assert "password-stdin" in plain
+
+
+def test_connect_exits_zero_when_ready(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cli, "load_profile", lambda name: _profile())
+
+    async def _fake(profile: HostProfile, *, password_provider: object = None) -> ConnectReport:
+        return _report(ready=True)
+
+    monkeypatch.setattr(cli, "connect_and_probe", _fake)
+    result = _runner.invoke(app, ["connect", "hass"])
+    assert result.exit_code == 0
+    assert "READY" in result.output
+
+
+def test_connect_exits_one_when_not_ready(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cli, "load_profile", lambda name: _profile())
+
+    async def _fake(profile: HostProfile, *, password_provider: object = None) -> ConnectReport:
+        return _report(ready=False)
+
+    monkeypatch.setattr(cli, "connect_and_probe", _fake)
+    result = _runner.invoke(app, ["connect", "hass"])
+    assert result.exit_code == 1
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+    assert "NOT READY" in result.output
+
+
+def test_connect_exits_two_on_discovery_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cli, "load_profile", lambda name: _profile())
+
+    async def _fake(profile: HostProfile, *, password_provider: object = None) -> ConnectReport:
+        raise DiscoveryError("could not determine install type")
+
+    monkeypatch.setattr(cli, "connect_and_probe", _fake)
+    result = _runner.invoke(app, ["connect", "hass"])
+    assert result.exit_code == 2
+    # exits cleanly - the DiscoveryError is turned into an exit code, not a traceback
+    assert result.exception is None or isinstance(result.exception, SystemExit)
