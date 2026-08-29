@@ -6,6 +6,8 @@ library modules (:mod:`haco.models`, :mod:`haco.profile`, and later plans).
 
 from __future__ import annotations
 
+from typing import Any
+
 import typer
 from pydantic import ValidationError
 from rich.console import Console
@@ -39,20 +41,21 @@ def profile_add(
     restart_cmd: str | None = typer.Option(None, "--restart-cmd", help="Override the restart command."),
 ) -> None:
     """Build a :class:`HostProfile` from the options and save it locally."""
+    raw: dict[str, Any] = {
+        "name": name,
+        "host": host,
+        "user": user,
+        "port": port,
+        "auth": auth,
+        "key_path": key_path,
+        "install_type": install_type,
+        "container_name": container_name,
+        "config_dir": config_dir,
+        "config_check_cmd": config_check_cmd,
+        "restart_cmd": restart_cmd,
+    }
     try:
-        profile = HostProfile(
-            name=name,
-            host=host,
-            user=user,
-            port=port,
-            auth=auth,
-            key_path=key_path,
-            install_type=install_type,
-            container_name=container_name,
-            config_dir=config_dir,
-            config_check_cmd=config_check_cmd,
-            restart_cmd=restart_cmd,
-        )
+        profile = HostProfile.model_validate(raw)
     except ValidationError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc

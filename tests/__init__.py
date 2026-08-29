@@ -1,3 +1,1 @@
-"""
-Test suite for HA AI Gen Workflow
-"""
+"""Test suite for haco."""
