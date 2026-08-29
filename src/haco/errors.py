@@ -49,3 +49,12 @@ class RemoteCommandError(HacoError):
 
     Carries the command and a short tail of stderr - never stdin or secrets.
     """
+
+
+class DiscoveryError(HacoError):
+    """The Home Assistant install type or config directory could not be resolved.
+
+    Raised when autodetection is inconclusive and the profile does not supply
+    the missing piece (``install_type``, ``container_name``, or ``config_dir``).
+    The message names the override that would unblock discovery.
+    """
