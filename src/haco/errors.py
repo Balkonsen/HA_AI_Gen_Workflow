@@ -2,7 +2,8 @@
 
 All messages are human-readable and MUST NOT contain secret values
 (passwords, key bytes, tokens). Later plans extend this family; this module
-only defines the base error and the profile-related errors.
+defines the base error, the profile-related errors, and the connection /
+remote-command errors used by the SSH layer.
 """
 
 from __future__ import annotations
@@ -22,3 +23,29 @@ class ProfileNotFound(ProfileError):
     def __init__(self, name: str) -> None:
         self.name = name
         super().__init__(f"No profile named {name!r}. Run 'haco profile add {name} ...' to create one.")
+
+
+class ConnectionError(HacoError):
+    """An SSH connection to the Home Assistant host could not be established.
+
+    Deliberately shadows the builtin ``ConnectionError`` within haco so callers
+    can catch a single ``haco.errors`` hierarchy.
+    """
+
+
+class AuthError(ConnectionError):
+    """SSH authentication failed: bad key, wrong password, or no credentials available.
+
+    The message never contains the attempted password or any key material.
+    """
+
+
+class HostKeyError(ConnectionError):
+    """The SSH server host key could not be verified against the known_hosts file."""
+
+
+class RemoteCommandError(HacoError):
+    """A remote command exited non-zero when a zero exit was required.
+
+    Carries the command and a short tail of stderr - never stdin or secrets.
+    """
