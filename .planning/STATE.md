@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 current_phase: 02
 current_phase_name: YAML Round-Trip Engine
 status: executing
-stopped_at: Completed 02-02-PLAN.md (whole-tree include engine + graph)
-last_updated: "2026-08-30T18:39:58.219Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-08-30T18:57:58.481Z"
 last_activity: 2026-08-30
 last_activity_desc: Executed plan 02-01 (round-trip loader + compose() span index)
-state_head: 5a5d90e71831eeacecb634164a620a8009d3fe38
+state_head: 66ed6ef3aa5b9090c57a5e9804acce9f56c4be7e
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 14
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-08-29)
 ## Current Position
 
 Phase: 02 (YAML Round-Trip Engine) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-08-30 — 02-01 done (loader + span index + Wave 0 fixtures); YAML-01, YAML-02
 
@@ -58,6 +58,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 01 P04 | 25 | 5 tasks | 8 files |
 | Phase 02 P01 | 45 | 3 tasks | 29 files |
 | Phase 02 P02 | 20 | 3 tasks | 13 files |
+| Phase 02 P03 | 35min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 02]: 02-02: ensure_contained() runs on every resolved target - single file and the directory argument before os.walk - so an untrusted include string can never load or enumerate outside the config root (ASVS V12, RESEARCH Pitfall 9)
 - [Phase 02]: 02-02: include failures are typed under ConfigTreeError - IncludeCycleError (ordered loading stack, names the cycle in walk order, never RecursionError), MissingIncludeError (absent file or dir target), IncludeEscapeError (out-of-root); message names parent + argument, never a !secret
 - [Phase 02]: 02-02: IncludeGraph.package_files() selects package edges by node_path prefix (homeassistant, packages), so it works whether packages: is written !include_dir_named or as an explicit mapping of !include tags
+- [Phase 02]: 02-03: surgical splice writer - touched files rewritten as original[:span.start]+rendered+original[span.end:], never a whole-file ruamel dump (D-01)
+- [Phase 02]: 02-03: ConfigTree.set() renders replacement in the node's own scalar style (ruamel scalar-string classes, no hand-rolled escaping) and records against a resolved span with zero disk I/O; missing/alias/collection span raises UnspliceableNodeError before recording, no whole-file dump fallback (D-02, D-03)
 
 ### Pending Todos
 
@@ -115,6 +118,6 @@ None yet.
 
 ## Session
 
-**Last session:** 2026-08-30T18:39:17.439Z
-**Stopped at:** Completed 02-02-PLAN.md (whole-tree include engine + graph)
+**Last session:** 2026-08-30T18:57:58.280Z
+**Stopped at:** Completed 02-03-PLAN.md
 **Resume file:** None

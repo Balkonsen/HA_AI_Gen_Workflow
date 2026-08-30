@@ -62,13 +62,13 @@ Plans:
   4. After an edit to one file, only that file is rewritten on disk; sibling files are unchanged
   5. Running analysis twice on the same tree yields zero proposed changes on the second run
 
-**Plans**: 2/4 plans executed (planned 2026-08-30)
+**Plans**: 3/4 plans executed (planned 2026-08-30)
 
 Plans:
 
 - [x] 02-01-PLAN.md — Round-trip loader + compose() span index + Wave 0 fixture trees (YAML-01, YAML-02)
 - [x] 02-02-PLAN.md — HA-faithful include resolver, ConfigTree, and include graph (YAML-03)
-- [ ] 02-03-PLAN.md — Mutation API + surgical splice writer, dirty-only atomic writes (YAML-02, YAML-04)
+- [x] 02-03-PLAN.md — Mutation API + surgical splice writer, dirty-only atomic writes (YAML-02, YAML-04)
 - [ ] 02-04-PLAN.md — No-op stability harness proving D-10's three properties (YAML-05)
 
 ### Phase 3: Pull & Working Copy
@@ -186,7 +186,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Connect & Discover | 4/4 | Complete    | 2026-08-30 |
-| 2. YAML Round-Trip Engine | 2/4 | In Progress|  |
+| 2. YAML Round-Trip Engine | 3/4 | In Progress|  |
 | 3. Pull & Working Copy | 0/2 | Not started | - |
 | 4. Rule Optimizer & Diff Review | 0/4 | Not started | - |
 | 5. Sandbox, Apply & Version | 0/4 | Not started | - |

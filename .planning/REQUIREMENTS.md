@@ -26,9 +26,9 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 ### YAML Engine (YAML)
 
 - [x] **YAML-01**: Loader parses HA custom tags (`!secret`, `!include`, `!include_dir_list`, `!include_dir_merge_list`, `!include_dir_named`, `!include_dir_merge_named`, `!env_var`, `!input`) without error
-- [ ] **YAML-02**: Load -> dump of an untouched file is byte-identical (comments, quote style, key order, indentation preserved) — _diagnostic canary done in 02-01; untouched-file-not-rewritten guarantee lands with the 02-03 writer_
+- [x] **YAML-02**: Load -> dump of an untouched file is byte-identical (comments, quote style, key order, indentation preserved) — _diagnostic canary in 02-01; untouched-file-not-rewritten guarantee delivered by the 02-03 writer: flush() opens only dirty files, empty change set writes zero files, a touched file's byte diff is confined to the changed span_
 - [x] **YAML-03**: Tool builds the include graph linking configuration.yaml to every included file
-- [ ] **YAML-04**: Only files containing an approved change are rewritten; all others are left untouched on disk
+- [x] **YAML-04**: Only files containing an approved change are rewritten; all others are left untouched on disk
 - [ ] **YAML-05**: Re-running analysis on an already-optimized tree produces zero proposed changes (idempotent)
 
 ### Rule Optimizer (RULE)
@@ -124,9 +124,9 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 | CONN-06 | Phase 1 | Complete |
 | CONN-07 | Phase 1 | Complete |
 | YAML-01 | Phase 2 | Complete |
-| YAML-02 | Phase 2 | Partial (02-01 diagnostic; writer in 02-03) |
+| YAML-02 | Phase 2 | Complete |
 | YAML-03 | Phase 2 | Complete |
-| YAML-04 | Phase 2 | Pending |
+| YAML-04 | Phase 2 | Complete |
 | YAML-05 | Phase 2 | Pending |
 | PULL-01 | Phase 3 | Pending |
 | PULL-02 | Phase 3 | Pending |
