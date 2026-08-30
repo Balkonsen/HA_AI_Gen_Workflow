@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from haco.configtree import atomic_write, flush, load_config_tree, serialize, splice
+from haco.errors import UnspliceableNodeError
 
 _CONFIG = "configuration.yaml"
 _AUTOMATIONS = "automations.yaml"
@@ -252,3 +253,75 @@ def test_multiple_edits_in_one_file(ha_config_tree: Path) -> None:
     # applying them one at a time gives the same file
     one = splice(original, [edits[0]])
     assert splice(one, [edits[1]]) == result
+
+
+# --------------------------------------------------------------------------- #
+# Task 3: fail loud on unresolvable spans, and the untouched-file guarantee
+# --------------------------------------------------------------------------- #
+
+
+def test_ambiguous_span_fails_loud_alias(ha_config_tree: Path) -> None:
+    before = _snapshot(ha_config_tree)
+    tree = load_config_tree(ha_config_tree)
+
+    with pytest.raises(UnspliceableNodeError) as caught:
+        tree.set(_CONFIG, ("script", "other"), "anything")
+
+    assert "wakeup_script" in str(caught.value)
+    assert tree.dirty_files() == ()
+    assert flush(tree) == ()
+    # no whole-file dump fallback: every file's serialized text is its original
+    assert serialize(tree) == {node.rel: node.text for node in tree.files.values()}
+    assert _snapshot(ha_config_tree) == before
+
+
+def test_ambiguous_span_fails_loud_unknown_path(ha_config_tree: Path) -> None:
+    tree = load_config_tree(ha_config_tree)
+
+    with pytest.raises(UnspliceableNodeError) as caught:
+        tree.set(_CONFIG, ("does", "not", "exist"), "x")
+
+    message = str(caught.value)
+    assert _CONFIG in message
+    assert "('does', 'not', 'exist')" in message
+    assert tree.dirty_files() == ()
+
+
+def test_ambiguous_span_fails_loud_collection(ha_config_tree: Path) -> None:
+    tree = load_config_tree(ha_config_tree)
+
+    with pytest.raises(UnspliceableNodeError) as caught:
+        tree.set(_CONFIG, ("http",), {"server_port": 9000})
+
+    assert "collection" in str(caught.value)
+    assert tree.dirty_files() == ()
+    assert flush(tree) == ()
+
+
+def test_untouched_identical_after_flush(ha_config_tree: Path) -> None:
+    before = _snapshot(ha_config_tree)
+    tree = load_config_tree(ha_config_tree)
+
+    written = flush(tree)
+
+    assert written == ()
+    assert _snapshot(ha_config_tree) == before
+
+
+def test_serialize_matches_flush_without_touching_disk(ha_config_tree: Path) -> None:
+    before = _snapshot(ha_config_tree)
+    tree = load_config_tree(ha_config_tree)
+
+    dry = serialize(tree)
+    assert set(dry) == set(tree.files)
+    assert _snapshot(ha_config_tree) == before  # serialize alone touched nothing
+
+    tree.set(_CONFIG, ("homeassistant", "name"), "Serialized House")
+    planned = serialize(tree)
+    written = flush(tree)
+
+    assert written == (Path(_CONFIG),)
+    assert _text(ha_config_tree, _CONFIG) == planned[Path(_CONFIG)]
+    for node in tree.files.values():
+        if node.rel != Path(_CONFIG):
+            assert planned[node.rel] == node.text
