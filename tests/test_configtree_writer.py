@@ -15,6 +15,7 @@ import pytest
 
 from haco.configtree import atomic_write, flush, load_config_tree, serialize, splice
 from haco.errors import UnspliceableNodeError
+from tests.support.snapshots import snapshot_tree
 
 _CONFIG = "configuration.yaml"
 _AUTOMATIONS = "automations.yaml"
@@ -24,16 +25,6 @@ _ENCODING = "encoding/crlf_bom.yaml"
 _BOM = chr(0xFEFF)
 _NAIVE = "plain na" + chr(0xEF) + "ve value"
 _DEGREES = chr(0x22) + chr(0xB0) + "C" + chr(0x22)
-
-
-def _snapshot(root: Path) -> dict[Path, tuple[bytes, int]]:
-    """Every file under ``root`` mapped to its raw bytes and mtime in nanoseconds."""
-    out: dict[Path, tuple[bytes, int]] = {}
-    for path in sorted(root.rglob("*")):
-        if path.is_file():
-            stat = path.stat()
-            out[path] = (path.read_bytes(), stat.st_mtime_ns)
-    return out
 
 
 def _text(root: Path, rel: str) -> str:
@@ -46,7 +37,7 @@ def _text(root: Path, rel: str) -> str:
 
 
 def test_dirty_only_one_file_rewritten(ha_config_tree: Path) -> None:
-    original = _snapshot(ha_config_tree)
+    original = snapshot_tree(ha_config_tree)
     tree = load_config_tree(ha_config_tree)
 
     tree.set(_CONFIG, ("homeassistant", "name"), "My House")
@@ -58,7 +49,7 @@ def test_dirty_only_one_file_rewritten(ha_config_tree: Path) -> None:
     assert "name: My House" in new_config
     assert "My Home" not in new_config
 
-    after = _snapshot(ha_config_tree)
+    after = snapshot_tree(ha_config_tree)
     for path, (raw, mtime) in original.items():
         if path == ha_config_tree / _CONFIG:
             continue
@@ -83,11 +74,11 @@ def test_splice_touches_only_the_span(ha_config_tree: Path) -> None:
 
 def test_set_performs_no_disk_io(ha_config_tree: Path) -> None:
     tree = load_config_tree(ha_config_tree)
-    before = _snapshot(ha_config_tree)
+    before = snapshot_tree(ha_config_tree)
 
     tree.set(_CONFIG, ("homeassistant", "name"), "My House")
 
-    assert _snapshot(ha_config_tree) == before
+    assert snapshot_tree(ha_config_tree) == before
     assert tree.dirty_files() == (Path(_CONFIG),)
 
 
@@ -127,11 +118,11 @@ def test_atomic_write_unlinks_temp_on_failure(tmp_path: Path, monkeypatch: pytes
 
 
 def test_flush_empty_change_set_writes_nothing(ha_config_tree: Path) -> None:
-    before = _snapshot(ha_config_tree)
+    before = snapshot_tree(ha_config_tree)
     tree = load_config_tree(ha_config_tree)
 
     assert flush(tree) == ()
-    assert _snapshot(ha_config_tree) == before
+    assert snapshot_tree(ha_config_tree) == before
 
 
 # --------------------------------------------------------------------------- #
@@ -261,7 +252,7 @@ def test_multiple_edits_in_one_file(ha_config_tree: Path) -> None:
 
 
 def test_ambiguous_span_fails_loud_alias(ha_config_tree: Path) -> None:
-    before = _snapshot(ha_config_tree)
+    before = snapshot_tree(ha_config_tree)
     tree = load_config_tree(ha_config_tree)
 
     with pytest.raises(UnspliceableNodeError) as caught:
@@ -272,7 +263,7 @@ def test_ambiguous_span_fails_loud_alias(ha_config_tree: Path) -> None:
     assert flush(tree) == ()
     # no whole-file dump fallback: every file's serialized text is its original
     assert serialize(tree) == {node.rel: node.text for node in tree.files.values()}
-    assert _snapshot(ha_config_tree) == before
+    assert snapshot_tree(ha_config_tree) == before
 
 
 def test_ambiguous_span_fails_loud_unknown_path(ha_config_tree: Path) -> None:
@@ -299,22 +290,22 @@ def test_ambiguous_span_fails_loud_collection(ha_config_tree: Path) -> None:
 
 
 def test_untouched_identical_after_flush(ha_config_tree: Path) -> None:
-    before = _snapshot(ha_config_tree)
+    before = snapshot_tree(ha_config_tree)
     tree = load_config_tree(ha_config_tree)
 
     written = flush(tree)
 
     assert written == ()
-    assert _snapshot(ha_config_tree) == before
+    assert snapshot_tree(ha_config_tree) == before
 
 
 def test_serialize_matches_flush_without_touching_disk(ha_config_tree: Path) -> None:
-    before = _snapshot(ha_config_tree)
+    before = snapshot_tree(ha_config_tree)
     tree = load_config_tree(ha_config_tree)
 
     dry = serialize(tree)
     assert set(dry) == set(tree.files)
-    assert _snapshot(ha_config_tree) == before  # serialize alone touched nothing
+    assert snapshot_tree(ha_config_tree) == before  # serialize alone touched nothing
 
     tree.set(_CONFIG, ("homeassistant", "name"), "Serialized House")
     planned = serialize(tree)
