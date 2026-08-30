@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
 
@@ -131,3 +132,60 @@ class MultiDocumentError(YamlError):
     def __init__(self, path: Path) -> None:
         self.path = path
         super().__init__(f"{path} contains more than one YAML document; expected a single document")
+
+
+class IncludeError(ConfigTreeError):
+    """An ``!include`` / ``!include_dir_*`` reference could not be honoured.
+
+    The message names the *including* file, the include tag, and the include
+    argument (a relative path or directory). ``!secret`` is not an include tag
+    and is never followed, so no message in this family carries a secret key.
+    """
+
+
+class IncludeCycleError(IncludeError):
+    """The include walk revisited a file already on the loading stack.
+
+    Home Assistant's own loader has no cycle guard and dies with a bare
+    :class:`RecursionError`; this fails cleanly instead. The message lists the
+    files in the cycle in walk order.
+    """
+
+    def __init__(self, cycle: Sequence[Path]) -> None:
+        self.cycle = tuple(cycle)
+        rendered = " -> ".join(str(p) for p in self.cycle)
+        super().__init__(f"include cycle detected: {rendered}")
+
+
+class IncludeEscapeError(IncludeError):
+    """A resolved include target lies outside the config root.
+
+    ASVS V12: an include argument is an untrusted string. A target that
+    resolves - via ``..`` or a symlink - outside the pulled config root is
+    refused here and never loaded as an editable node, nor is its directory
+    handed to ``os.walk``.
+    """
+
+    def __init__(self, parent: Path, argument: str, resolved: Path, root: Path) -> None:
+        self.parent = parent
+        self.argument = argument
+        self.resolved = resolved
+        self.root = root
+        super().__init__(
+            f"{parent}: include target {argument!r} resolves to {resolved}, outside the config root {root}"
+        )
+
+
+class MissingIncludeError(IncludeError):
+    """A resolved include target does not exist on disk.
+
+    An include that resolves to nothing is a config bug the user needs told
+    about, not a silently empty node. The message names the parent file and
+    the unresolved argument.
+    """
+
+    def __init__(self, parent: Path, argument: str, resolved: Path) -> None:
+        self.parent = parent
+        self.argument = argument
+        self.resolved = resolved
+        super().__init__(f"{parent}: include target {argument!r} not found (looked for {resolved})")
