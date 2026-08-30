@@ -112,7 +112,10 @@ class ConfigTree:
 
         Renders ``value`` in the node's own scalar style and stores the text
         against the file's :class:`FileNode`; the disk is not touched here, so an
-        aborted review in a later phase writes nothing. Raises
+        aborted review in a later phase writes nothing. When ``value`` is a
+        string equal to the node's exact source slice the slice is recorded
+        verbatim (an identity splice), so reverting a node to its original text
+        is always byte-for-byte (CONTEXT.md D-10.3). Raises
         :class:`haco.errors.UnspliceableNodeError` - and records nothing - when
         the path has no span, when the span was reached through a YAML alias or
         ``<<`` merge, or when it covers a whole block collection (CONTEXT.md
@@ -131,6 +134,14 @@ class ConfigTree:
                 "value is a block collection; only scalar values can be spliced",
             )
         original = node.text[span.start : span.end]
+        if isinstance(value, str) and value == original:
+            # The caller passed back the node's exact source slice (a revert).
+            # Record it verbatim - an identity splice - rather than re-rendering:
+            # re-quoting or re-wrapping the text through render_scalar would
+            # change bytes the caller explicitly asked to restore (CONTEXT.md
+            # D-10.3, the apply-then-revert stability property).
+            node.edits[node_path] = original
+            return
         indent = _block_body_indent(original) if span.kind in ("literal", "folded") else 0
         node.edits[node_path] = render_scalar(value, span.kind, indent, original=original)
 
