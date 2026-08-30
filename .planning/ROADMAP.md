@@ -62,11 +62,11 @@ Plans:
   4. After an edit to one file, only that file is rewritten on disk; sibling files are unchanged
   5. Running analysis twice on the same tree yields zero proposed changes on the second run
 
-**Plans**: 4 plans (planned 2026-08-30)
+**Plans**: 1/4 plans executed (planned 2026-08-30)
 
 Plans:
 
-- [ ] 02-01-PLAN.md — Round-trip loader + compose() span index + Wave 0 fixture trees (YAML-01, YAML-02)
+- [x] 02-01-PLAN.md — Round-trip loader + compose() span index + Wave 0 fixture trees (YAML-01, YAML-02)
 - [ ] 02-02-PLAN.md — HA-faithful include resolver, ConfigTree, and include graph (YAML-03)
 - [ ] 02-03-PLAN.md — Mutation API + surgical splice writer, dirty-only atomic writes (YAML-02, YAML-04)
 - [ ] 02-04-PLAN.md — No-op stability harness proving D-10's three properties (YAML-05)

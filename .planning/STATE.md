@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
-current_phase: 2
+current_phase: 02
 current_phase_name: YAML Round-Trip Engine
-status: planning
-stopped_at: Phase 02 context gathered
-last_updated: "2026-08-30T09:31:35.053Z"
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-08-30T14:28:07.000Z"
 last_activity: 2026-08-30
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
-state_head: f7c8ab9e2268d10924213052c32b217bf1292b7e
+last_activity_desc: Executed plan 02-01 (round-trip loader + compose() span index)
+state_head: a10a22978e809896d1c65824040ab14048bdbb9c
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 5
   percent: 14
 ---
 
@@ -23,22 +23,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-29)
 
 **Core value:** Safely apply reviewed optimizations to a live Home Assistant config over the local network, with one-command rollback - no import/export cycle.
-**Current focus:** Phase 01 — Connect & Discover
+**Current focus:** Phase 02 — YAML Round-Trip Engine
 
 ## Current Position
 
-Phase: 2 — YAML Round-Trip Engine
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-08-30 — Phase 01 complete, transitioned to Phase 2
+Phase: 02 (YAML Round-Trip Engine) — EXECUTING
+Plan: 2 of 4
+Status: Executing Phase 02
+Last activity: 2026-08-30 — 02-01 done (loader + span index + Wave 0 fixtures); YAML-01, YAML-02
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 4 | - | - |
+| 02 | 1 | - | - |
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -55,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P02 | 20 | 5 tasks | 6 files |
 | Phase 01 P03 | 15 | 4 tasks | 4 files |
 | Phase 01 P04 | 25 | 5 tasks | 8 files |
+| Phase 02 P01 | 45 | 3 tasks | 29 files |
 
 ## Accumulated Context
 
@@ -74,6 +76,11 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 01]: 01-03: discover() takes a CommandRunner Protocol (run()-only) so a scripted fake type-checks under mypy --strict; SSHClient satisfies it structurally
 - [Phase 01]: 01-03: every HostFacts field yields to its HostProfile override verbatim; an all-overridden profile makes zero SSH calls
 - [Phase 01]: 01-04: haco connect is end-to-end (SSH -> discover -> preflight -> baseline check); run_config_check never raises, a failing baseline is data on CheckResult; CLI exits 0 READY / 1 NOT READY / 2 on connection|auth|discovery error
+- [Phase 02]: 02-01: two-parse load - compose() for (start,end) source offsets on every node, load() for the navigable round-trip tree; provenance attached at load time (D-01)
+- [Phase 02]: 02-01: load_file reads bytes+decode (not Path.read_text(newline=), which is 3.13+) so CRLF/BOM survive verbatim on Python 3.12
+- [Phase 02]: 02-01: unknown !tag round-trips as an inert TaggedScalar and warns exactly once per distinct tag (ours to emit - ruamel is silent); load never fails (D-08)
+- [Phase 02]: 02-01: id(node) seen-set marks alias/merge-shared paths unspliceable (naming the anchor) and never recurses into them (D-03/D-07 groundwork)
+- [Phase 02]: 02-01: pinned indent(2,4,2) left-shifts a document-root block sequence; the load->dump diagnostic tolerates that one uniform shift for top-level-list files, strict for mapping-root
 
 ### Pending Todos
 
@@ -102,6 +109,6 @@ None yet.
 
 ## Session
 
-**Last session:** 2026-08-30T09:31:34.939Z
-**Stopped at:** Phase 02 context gathered
-**Resume file:** .planning/phases/02-yaml-round-trip-engine/02-CONTEXT.md
+**Last session:** 2026-08-30T14:28:07.000Z
+**Stopped at:** Completed 02-01-PLAN.md (loader + span index + Wave 0 fixtures)
+**Resume file:** None
