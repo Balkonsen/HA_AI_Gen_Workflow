@@ -3,7 +3,8 @@
 End-to-end tracer: one walk from ``configuration.yaml`` reaches every
 transitively included file and loads each as its own editable node, and the
 include graph carries one edge per resolved target. The three include failure
-modes (cycle, missing target, containment escape) are added in Task 3.
+modes (cycle, missing target, containment escape) each raise their own typed
+``ConfigTreeError`` subclass naming the offending file.
 """
 
 from __future__ import annotations
@@ -11,8 +12,16 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
-from haco.configtree import load_config_tree
+import pytest
+
+from haco.configtree import load_config_tree, resolve_include_targets
 from haco.configtree.tree import FileNode
+from haco.errors import (
+    ConfigTreeError,
+    IncludeCycleError,
+    IncludeEscapeError,
+    MissingIncludeError,
+)
 
 # The exact set of root-relative paths reachable from configuration.yaml in the
 # tests/fixtures/ha_config tree. configuration.yaml itself, one !include each for
@@ -83,3 +92,55 @@ def test_include_graph_has_one_edge_per_resolved_target(ha_config_tree: Path) ->
     assert by_child["automations.yaml"].node_path == ("automation",)
     assert by_child["sensors/nested/c_extra.yaml"].tag == "!include_dir_merge_list"
     assert by_child["packages/climate.yaml"].node_path == ("homeassistant", "packages")
+
+
+def test_include_cycle_raises_configtree_error(ha_config_bad: Path) -> None:
+    with pytest.raises(IncludeCycleError) as excinfo:
+        load_config_tree(ha_config_bad / "cycle")
+
+    exc = excinfo.value
+    # a typed ConfigTreeError, never the bare RecursionError HA dies with
+    assert isinstance(exc, ConfigTreeError)
+    assert not isinstance(exc, RecursionError)
+    # the message names the files in the cycle, in walk order
+    message = str(exc)
+    assert "ring_a.yaml" in message
+    assert "ring_b.yaml" in message
+    assert [p.name for p in exc.cycle] == ["ring_a.yaml", "ring_b.yaml", "ring_a.yaml"]
+
+
+def test_missing_include_target_raises(ha_config_bad: Path) -> None:
+    with pytest.raises(MissingIncludeError) as excinfo:
+        load_config_tree(ha_config_bad / "missing")
+
+    exc = excinfo.value
+    assert isinstance(exc, ConfigTreeError)
+    # the message names both the parent file and the unresolved argument
+    assert exc.argument == "nowhere.yaml"
+    message = str(exc)
+    assert "nowhere.yaml" in message
+    assert "configuration.yaml" in message
+
+
+def test_include_outside_root_is_refused(ha_config_bad: Path) -> None:
+    # the escape subtree is loaded with its own directory as the config root, so
+    # `!include ../escape_target.yaml` resolves one level above it
+    with pytest.raises(IncludeEscapeError) as excinfo:
+        load_config_tree(ha_config_bad / "escape")
+
+    exc = excinfo.value
+    assert isinstance(exc, ConfigTreeError)
+    # containment is checked before the target is ever opened: a sibling
+    # MissingIncludeError would mean the file was stat-ed first
+    assert not isinstance(exc, MissingIncludeError)
+    assert exc.resolved.name == "escape_target.yaml"
+    assert (ha_config_bad / "escape") not in exc.resolved.parents
+
+
+def test_dir_include_outside_root_refused_before_walk(ha_config_bad: Path) -> None:
+    # a directory-variant argument that climbs out of the root is refused by the
+    # containment check before os.walk is allowed to enumerate anything
+    root = ha_config_bad / "escape"
+    parent = root / "configuration.yaml"
+    with pytest.raises(IncludeEscapeError):
+        resolve_include_targets(parent, "!include_dir_merge_list", "..", root)
