@@ -623,28 +623,24 @@ def atomic_write(path: Path, text: str) -> None:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **D-05 "non-recursive" vs HA's recursive `os.walk`.**
    - What we know: HA's `_find_files` is recursive (verbatim source + docstring).
-   - What's unclear: whether D-05's wording was a deliberate simplification or a mistaken belief about HA.
-   - Recommendation: implement **recursive** to match HA; raise this in `/gsd-plan-phase` so D-05 is amended. If non-recursive is wanted, document it as an intentional divergence.
+   - **RESOLVED (2026-08-30):** D-05 amended in CONTEXT.md to **recursive**, `.yaml`-only, per-dir `sorted()`, dotfiles + `secrets.yaml` skipped — matching `annotatedyaml._find_files`. Plan 02-02 Task 1 implements it.
 
 2. **Path canonicalization for the span-index key vs the `load()` navigation key.**
    - What we know: `compose()` keys are raw strings; `load()` keys may be typed (int/bool/date/`null`).
-   - What's unclear: whether any real HA config uses non-string mapping keys at an editable position (rare but legal, e.g. numeric keys under `modbus`).
-   - Recommendation: key paths on the scalar's resolved string form; add a fixture with a numeric key; if `tree.get/set` and the span walk agree, done.
+   - **RESOLVED:** Executor discretion per CONTEXT.md "Claude's Discretion"; plans key paths on the scalar's resolved string form and 02-01 fixtures include a numeric mapping key so `tree.get/set` and the span walk are cross-checked.
 
-3. **Does Phase 2 need a public mutation API at all, or just the read tree + span index + writer?**
-   - What we know: no analyzer exists yet (D-10). Phase 4 consumes the tree.
-   - Recommendation: ship a minimal `tree.set(path, value)` / `tree.get(path)` so the idempotency harness (apply-then-revert) can be written without a fake analyzer; keep it small.
+3. **Does Phase 2 need a public mutation API at all?**
+   - **RESOLVED:** Yes — a minimal `tree.set(path, value)` / `tree.get(path)` ships in 02-03 Task 1 so the apply-then-revert idempotency harness (D-10.3) is writable without a fake analyzer.
 
 4. **`!include` targets outside the pulled config root** (symlinks, `../`).
-   - Recommendation: `Path.resolve()` + containment check; warn + record as read-only external node; don't crash. Confirm with the user whether external includes should be an error.
+   - **RESOLVED:** 02-02 Task 1 builds `Path.resolve()` + a containment check (`ensure_contained` / equivalent) into the include resolver's tracer — an out-of-root target raises rather than being loaded as an editable node (ASVS V12, RESEARCH Pitfall 9). Not deferred, not a bolt-on.
 
 5. **Multi-document files (`---`).**
-   - What we know: HA config files are single-document; `compose()` handles one doc, `compose_all()` many.
-   - Recommendation: assume single-document; raise a clear `ConfigTreeError` if a `---` second document appears rather than silently dropping it.
+   - **RESOLVED:** 02-01 Task 2 raises a clear `YamlError` / `MultiDocumentError` when a second `---` document appears; single-document is assumed for all HA config files.
 
 ---
 
