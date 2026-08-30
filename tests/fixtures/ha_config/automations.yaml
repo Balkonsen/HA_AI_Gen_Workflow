@@ -1,0 +1,35 @@
+# Automations - block literal, folded scalar, flow sequence, numeric mapping keys
+- id: '1700000000001'
+  alias: Evening lights
+  description: >
+    Turns the living room lights on
+    when the sun goes down.
+  trigger:
+    - platform: sun
+      event: sunset
+  condition: []
+  action:
+    - service: light.turn_on
+      target:
+        entity_id: [light.living_room, light.hallway]
+      data:
+        brightness_pct: 60
+
+- id: '1700000000002'
+  alias: "Notify on door"
+  variables:
+    template_body: |
+      Front door opened at
+      {{ now() }}
+  action:
+    - service: notify.persistent_notification
+      data:
+        message: "{{ template_body }}"
+
+- id: '1700000000003'
+  alias: Numeric keyed map
+  action:
+    - service: modbus.write_register
+      data:
+        1: 100
+        2: 200

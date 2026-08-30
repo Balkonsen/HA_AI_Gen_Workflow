@@ -1,0 +1,3 @@
+# Fixture bytes are load-bearing: span offsets and byte-identical round-trip tests
+# depend on them being checked out exactly as authored on every platform.
+tests/fixtures/** -text

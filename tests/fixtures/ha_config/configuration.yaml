@@ -1,0 +1,11 @@
+# haco configtree fixture - representative Home Assistant configuration.yaml
+homeassistant:
+  name: My Home
+  latitude: 52.3731
+  longitude: 4.8922
+  unit_system: metric
+  time_zone: "Europe/Berlin"
+  external_url: 'https://ha.example.invalid'
+  packages: !include_dir_named packages/
+
+automation: !include automations.yaml

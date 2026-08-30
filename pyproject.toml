@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "asyncssh>=2.17",
-    "ruamel.yaml>=0.18",
+    "ruamel.yaml>=0.19.1,<0.20",
     "pydantic>=2.7",
     "typer>=0.12",
     "rich>=13",

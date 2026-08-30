@@ -1,0 +1,12 @@
+name: Home
+num: 42   # trailing comment
+quoted: "Quoted Name"
+single: 'single'
+block: |
+  line one
+  line two
+folded: >
+  wrapped
+  text
+flow: [a, b, c]
+tagged: !include child.yaml

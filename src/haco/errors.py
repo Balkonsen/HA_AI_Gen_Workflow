@@ -77,3 +77,25 @@ class PreflightError(HacoError):
     is returned as data (:class:`haco.preflight.PreflightResult` with
     ``ok=False``), not raised.
     """
+
+
+class ConfigTreeError(HacoError):
+    """Assembling, mutating, or writing back the config tree failed.
+
+    Raised for structural problems found *after* a file parses: a node whose
+    source byte range cannot be resolved unambiguously, a value reached through
+    a YAML alias that cannot be spliced in place, or a write-back that would
+    have to fall back to a whole-file dump. The message never contains secret
+    material; a ``!secret`` argument is a key name, not a value, and is still
+    not echoed above DEBUG.
+    """
+
+
+class YamlError(HacoError):
+    """A single YAML file could not be parsed into an editable tree.
+
+    Carries the offending file path and, where useful, the key or marker that
+    triggered the failure. A ``!secret`` argument is a key *name*, never a
+    value, and is still not to be echoed above DEBUG; no message in this family
+    includes one.
+    """
