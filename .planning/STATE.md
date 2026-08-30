@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 current_phase: 02
 current_phase_name: YAML Round-Trip Engine
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-08-30T14:28:07.000Z"
+stopped_at: Completed 02-02-PLAN.md (whole-tree include engine + graph)
+last_updated: "2026-08-30T18:39:58.219Z"
 last_activity: 2026-08-30
 last_activity_desc: Executed plan 02-01 (round-trip loader + compose() span index)
-state_head: a10a22978e809896d1c65824040ab14048bdbb9c
+state_head: 5a5d90e71831eeacecb634164a620a8009d3fe38
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 14
 ---
 
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-29)
 ## Current Position
 
 Phase: 02 (YAML Round-Trip Engine) — EXECUTING
-Plan: 2 of 4
-Status: Executing Phase 02
+Plan: 3 of 4
+Status: Ready to execute
 Last activity: 2026-08-30 — 02-01 done (loader + span index + Wave 0 fixtures); YAML-01, YAML-02
 
-Progress: [██░░░░░░░░] 25%
+Progress: [█░░░░░░░░░] 14%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [██░░░░░░░░] 25%
 | Phase 01 P03 | 15 | 4 tasks | 4 files |
 | Phase 01 P04 | 25 | 5 tasks | 8 files |
 | Phase 02 P01 | 45 | 3 tasks | 29 files |
+| Phase 02 P02 | 20 | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,11 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 02]: 02-01: unknown !tag round-trips as an inert TaggedScalar and warns exactly once per distinct tag (ours to emit - ruamel is silent); load never fails (D-08)
 - [Phase 02]: 02-01: id(node) seen-set marks alias/merge-shared paths unspliceable (naming the anchor) and never recurses into them (D-03/D-07 groundwork)
 - [Phase 02]: 02-01: pinned indent(2,4,2) left-shifts a document-root block sequence; the load->dump diagnostic tolerates that one uniform shift for top-level-list files, strict for mapping-root
+- [Phase 02]: 02-02: load_config_tree walks configuration.yaml through every !include / !include_dir_* / packages: reference in one DFS; include graph is a byproduct, one IncludeEdge per resolved target, !include_dir_* expanded to one edge per matched .yaml
+- [Phase 02]: 02-02: find_dir_yaml mirrors annotatedyaml._find_files rule-for-rule (recursive os.walk, per-dir sorted(), *.yaml only, dotfile + secrets.yaml skip); a whole-list sort on top is stricter than HA, not divergent (RESEARCH A5)
+- [Phase 02]: 02-02: ensure_contained() runs on every resolved target - single file and the directory argument before os.walk - so an untrusted include string can never load or enumerate outside the config root (ASVS V12, RESEARCH Pitfall 9)
+- [Phase 02]: 02-02: include failures are typed under ConfigTreeError - IncludeCycleError (ordered loading stack, names the cycle in walk order, never RecursionError), MissingIncludeError (absent file or dir target), IncludeEscapeError (out-of-root); message names parent + argument, never a !secret
+- [Phase 02]: 02-02: IncludeGraph.package_files() selects package edges by node_path prefix (homeassistant, packages), so it works whether packages: is written !include_dir_named or as an explicit mapping of !include tags
 
 ### Pending Todos
 
@@ -109,6 +115,6 @@ None yet.
 
 ## Session
 
-**Last session:** 2026-08-30T14:28:07.000Z
-**Stopped at:** Completed 02-01-PLAN.md (loader + span index + Wave 0 fixtures)
+**Last session:** 2026-08-30T18:39:17.439Z
+**Stopped at:** Completed 02-02-PLAN.md (whole-tree include engine + graph)
 **Resume file:** None
