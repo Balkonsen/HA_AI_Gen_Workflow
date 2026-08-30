@@ -110,3 +110,4 @@ tmp/
 *.deb
 *.rpm
 .planning/milestone.lock
+state.json
