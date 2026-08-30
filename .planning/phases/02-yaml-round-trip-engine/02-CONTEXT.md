@@ -49,9 +49,12 @@ against fixture config trees, not a live HA.
   assume they can edit inside any included file; narrowing this later breaks them.
 - **D-05:** The include **graph** (YAML-03) is a byproduct of the load walk: an
   edge `parent file --tag--> child path(s)`, with the `!include_dir_*` variants
-  expanding to one edge per matched file (directory scan **sorted by filename**,
-  non-recursive — matches HA semantics). `secrets.yaml` is **not** a node in the
-  graph in this phase.
+  expanding to one edge per matched file. Directory scan matches HA's real loader
+  (`annotatedyaml._find_files`, verified in 02-RESEARCH.md): **recursive**
+  (`os.walk`), `.yaml` files only, `sorted()` per directory, dotfiles and
+  `secrets.yaml` skipped. `secrets.yaml` is **not** a node in the graph in this
+  phase. *(Amended 2026-08-30 after research — original D-05 said "non-recursive",
+  which contradicts HA source.)*
 - **D-06:** `!include*` tag nodes themselves round-trip as **opaque tagged
   scalars** — they re-emit verbatim; includes are never inlined into the parent
   file. The child file's content is edited in the child file.
