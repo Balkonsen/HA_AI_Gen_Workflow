@@ -32,9 +32,27 @@ from haco.configtree.graph import IncludeEdge, IncludeGraph
 from haco.configtree.includes import iter_include_refs, resolve_include_targets
 from haco.configtree.loader import load_file
 from haco.configtree.spans import NodePath, Span
-from haco.errors import IncludeCycleError, MissingIncludeError
+from haco.configtree.writer import render_scalar
+from haco.errors import IncludeCycleError, MissingIncludeError, UnspliceableNodeError
 
 CONFIG_ENTRYPOINT = "configuration.yaml"
+
+
+def _block_body_indent(source: str) -> int:
+    """The column a literal/folded block's body was indented to in ``source``.
+
+    ``source`` is the span slice, e.g. ``"|\\n      body\\n"``; the answer is the
+    lead-space count of the first non-blank line after the ``|`` / ``>`` line, so
+    the replacement body lands in the same column as the one it replaces.
+    """
+    newline = source.find("\n")
+    if newline == -1:
+        return 0
+    for line in source[newline + 1 :].split("\n"):
+        stripped = line.lstrip(" ")
+        if stripped:
+            return len(line) - len(stripped)
+    return 0
 
 
 @dataclass
@@ -88,6 +106,38 @@ class ConfigTree:
         node = self.node(file)
         span = node.spans[node_path]
         return node.text[span.start : span.end]
+
+    def set(self, file: Path | str, node_path: NodePath, value: object) -> None:
+        """Record a replacement of ``node_path`` inside ``file`` with ``value``.
+
+        Renders ``value`` in the node's own scalar style and stores the text
+        against the file's :class:`FileNode`; the disk is not touched here, so an
+        aborted review in a later phase writes nothing. Raises
+        :class:`haco.errors.UnspliceableNodeError` - and records nothing - when
+        the path has no span, when the span was reached through a YAML alias or
+        ``<<`` merge, or when it covers a whole block collection (CONTEXT.md
+        D-03). There is no whole-file dump fallback.
+        """
+        node = self.node(file)
+        span = node.spans.get(node_path)
+        if span is None:
+            raise UnspliceableNodeError(node.rel, node_path, "no source span for this path")
+        if span.unspliceable is not None:
+            raise UnspliceableNodeError(node.rel, node_path, span.unspliceable)
+        if span.kind == "collection":
+            raise UnspliceableNodeError(
+                node.rel,
+                node_path,
+                "value is a block collection; only scalar values can be spliced",
+            )
+        original = node.text[span.start : span.end]
+        indent = _block_body_indent(original) if span.kind in ("literal", "folded") else 0
+        node.edits[node_path] = render_scalar(value, span.kind, indent, original=original)
+
+    def dirty_files(self) -> tuple[Path, ...]:
+        """The root-relative paths of every file carrying at least one edit, sorted."""
+        dirty = (node.rel for node in self.files.values() if node.dirty)
+        return tuple(sorted(dirty, key=lambda path: path.as_posix()))
 
     def _relative(self, path: Path | str) -> Path:
         candidate = Path(path)

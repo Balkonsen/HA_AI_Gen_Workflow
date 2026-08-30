@@ -97,6 +97,27 @@ class ConfigTreeError(HacoError):
     """
 
 
+class UnspliceableNodeError(ConfigTreeError):
+    """A node cannot be rewritten by surgical text splice, so nothing is written.
+
+    This is CONTEXT.md D-03's fail-loud contract. A node is unspliceable when its
+    source byte range cannot be resolved unambiguously: the path has no span at
+    all, the value was reached through a YAML alias or ``<<`` merge (its span
+    points at the anchor, not the alias), or the span covers a whole block
+    collection rather than a single scalar. There is deliberately **no** fallback
+    to re-emitting the whole file - a silent whole-file reformat is exactly what
+    the splice writer exists to avoid. The message names the file, the node path
+    and the reason; a ``!secret`` argument is a key name, never a value, and is
+    still not echoed above DEBUG.
+    """
+
+    def __init__(self, file: Path | str, node_path: tuple[str | int, ...], reason: str) -> None:
+        self.file = file
+        self.node_path = tuple(node_path)
+        self.reason = reason
+        super().__init__(f"{file}: cannot splice node {self.node_path!r}: {reason}")
+
+
 class YamlError(HacoError):
     """A single YAML file could not be parsed into an editable tree.
 

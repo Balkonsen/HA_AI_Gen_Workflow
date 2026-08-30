@@ -20,6 +20,7 @@ from haco.configtree.loader import (
 )
 from haco.configtree.spans import NodePath, Span, SpanKind, build_span_index
 from haco.configtree.tree import ConfigTree, FileNode, load_config_tree
+from haco.configtree.writer import atomic_write, flush, render_scalar, serialize, splice
 from haco.errors import (
     DuplicateKeyError,
     IncludeCycleError,
@@ -27,6 +28,7 @@ from haco.errors import (
     IncludeEscapeError,
     MissingIncludeError,
     MultiDocumentError,
+    UnspliceableNodeError,
 )
 
 __all__ = [
@@ -47,13 +49,19 @@ __all__ = [
     "NodePath",
     "Span",
     "SpanKind",
+    "UnspliceableNodeError",
+    "atomic_write",
     "build_span_index",
     "ensure_contained",
     "find_dir_yaml",
+    "flush",
     "iter_include_refs",
     "load_config_tree",
     "load_file",
     "make_yaml",
+    "render_scalar",
     "resolve_include_targets",
+    "serialize",
+    "splice",
     "warn_unknown_tags",
 ]
