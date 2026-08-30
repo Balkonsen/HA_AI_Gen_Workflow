@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from ruamel.yaml.nodes import MappingNode, Node, SequenceNode
+from ruamel.yaml.nodes import MappingNode, Node, ScalarNode, SequenceNode
 
 NodePath = tuple[str | int, ...]
 """A logical path to a node: mapping keys as strings, sequence indices as ints."""
@@ -57,17 +57,34 @@ def _anchor_name(node: Node) -> str:
 
 def _alias_reason(node: Node) -> str:
     return (
-        f"value is reached through a YAML alias to anchor '{_anchor_name(node)}'; "
+        f"value is shared via a YAML alias/merge to anchor '{_anchor_name(node)}'; "
         f"edit the anchor definition instead"
     )
 
 
 def _classify(node: Node) -> SpanKind:
-    """Placeholder classification - Task 3 replaces this with per-style detection."""
+    """Map a ``compose()`` node to the :class:`SpanKind` its source text is delimited by.
+
+    A ``!`` tag wins over style: an ``!include`` scalar is ``"tagged"`` no matter
+    how it is written. The literal and folded kinds are the ones whose span runs
+    through the block's trailing newline - a later splice must re-emit that
+    newline or it bleeds into the next line.
+    """
     if str(node.tag).startswith("!"):
         return "tagged"
+    if isinstance(node, ScalarNode):
+        style = node.style
+        if style == "'":
+            return "single"
+        if style == '"':
+            return "double"
+        if style == "|":
+            return "literal"
+        if style == ">":
+            return "folded"
+        return "plain"
     if isinstance(node, (MappingNode, SequenceNode)):
-        return "collection"
+        return "flow" if getattr(node, "flow_style", False) else "collection"
     return "plain"
 
 
