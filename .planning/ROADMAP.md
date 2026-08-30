@@ -14,7 +14,7 @@ LLM-proposed diffs. GUI and HA-API reload are explicitly M2.
 ## Phases
 
 - [x] **Phase 1: Connect & Discover** - SSH connection, auth, HA install-type autodetect, path/command matrix, baseline check (completed 2026-08-30)
-- [ ] **Phase 2: YAML Round-Trip Engine** - comment/tag-preserving loader, include graph, touched-only rewrite, idempotency
+- [x] **Phase 2: YAML Round-Trip Engine** - comment/tag-preserving loader, include graph, touched-only rewrite, idempotency (completed 2026-08-30)
 - [ ] **Phase 3: Pull & Working Copy** - recursive SFTP pull with skip list into isolated local working copies
 - [ ] **Phase 4: Rule Optimizer & Diff Review** - deterministic optimization passes and per-hunk accept/reject review loop
 - [ ] **Phase 5: Sandbox, Apply & Version** - host staging copy, config check on staging, atomic live apply, host-side git history
@@ -186,7 +186,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Connect & Discover | 4/4 | Complete    | 2026-08-30 |
-| 2. YAML Round-Trip Engine | 4/4 | In Progress|  |
+| 2. YAML Round-Trip Engine | 4/4 | Complete    | 2026-08-30 |
 | 3. Pull & Working Copy | 0/2 | Not started | - |
 | 4. Rule Optimizer & Diff Review | 0/4 | Not started | - |
 | 5. Sandbox, Apply & Version | 0/4 | Not started | - |
