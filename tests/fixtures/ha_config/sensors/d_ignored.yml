@@ -1,0 +1,4 @@
+- platform: template
+  sensors:
+    yml_probe:
+      value_template: "{{ 0 }}"

@@ -1,0 +1,7 @@
+# power sensors
+- platform: template
+  sensors:
+    house_power:
+      friendly_name: House Power
+      unit_of_measurement: "W"
+      value_template: "{{ states('sensor.meter') | float(0) }}"

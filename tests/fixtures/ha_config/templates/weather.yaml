@@ -1,0 +1,4 @@
+- sensor:
+    - name: Outdoor Feels Like
+      state: "{{ 21.5 }}"
+      unit_of_measurement: "°C"

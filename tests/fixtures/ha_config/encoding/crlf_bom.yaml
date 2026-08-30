@@ -1,0 +1,4 @@
+# Encoding probe: rewritten by the ha_config_tree fixture with BOM + CRLF
+label: "Küche - Außentür"
+note: plain naïve value
+temperature_unit: "°C"

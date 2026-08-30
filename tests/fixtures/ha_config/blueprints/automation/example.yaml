@@ -1,0 +1,18 @@
+blueprint:
+  name: Example Blueprint
+  domain: automation
+  input:
+    motion_entity:
+      name: Motion Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+
+trigger:
+  - platform: state
+    entity_id: !input motion_entity
+
+action:
+  - service: light.turn_on
+    target: !input
+      entity_id: light.living_room

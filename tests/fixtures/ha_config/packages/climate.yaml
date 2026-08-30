@@ -1,0 +1,6 @@
+input_number:
+  target_temp:
+    name: Target Temperature
+    min: 15
+    max: 25
+    step: 0.5

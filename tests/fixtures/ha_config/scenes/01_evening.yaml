@@ -1,0 +1,5 @@
+- name: Evening
+  entities:
+    light.living_room:
+      state: "on"
+      brightness: 120

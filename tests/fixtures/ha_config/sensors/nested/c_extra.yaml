@@ -1,0 +1,5 @@
+- platform: template
+  sensors:
+    nested_probe:
+      friendly_name: Nested Probe
+      value_template: "{{ 1 }}"

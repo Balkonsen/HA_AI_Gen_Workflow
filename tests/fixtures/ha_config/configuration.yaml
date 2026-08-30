@@ -9,3 +9,28 @@ homeassistant:
   packages: !include_dir_named packages/
 
 automation: !include automations.yaml
+
+sensor: !include_dir_merge_list sensors/
+scene: !include_dir_list scenes/
+group: !include_dir_merge_named groups/
+template: !include_dir_named templates/
+encoding_probe: !include encoding/crlf_bom.yaml
+
+default_config:
+
+http:
+  api_password: !secret http_password
+  server_port: 8123
+
+recorder:
+  db_url: !env_var HA_DB_URL sqlite:///default.db
+
+shell_command:
+  greet: !custom_tag echo hello
+
+script:
+  wakeup: &wakeup_script
+    alias: Wake up
+    sequence:
+      - delay: "00:00:05"
+  other: *wakeup_script

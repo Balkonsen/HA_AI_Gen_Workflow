@@ -1,0 +1,5 @@
+homeassistant:
+  name: First document
+---
+homeassistant:
+  name: Second document

@@ -1,0 +1,4 @@
+- name: Morning
+  entities:
+    light.hallway:
+      state: "off"
