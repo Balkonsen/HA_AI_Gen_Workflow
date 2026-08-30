@@ -8,6 +8,11 @@ remote-command errors used by the SSH layer.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class HacoError(Exception):
     """Base class for every error raised by haco."""
@@ -99,3 +104,30 @@ class YamlError(HacoError):
     value, and is still not to be echoed above DEBUG; no message in this family
     includes one.
     """
+
+
+class DuplicateKeyError(YamlError):
+    """A mapping key appears twice in one file.
+
+    Home Assistant's own loader rejects duplicate keys; so do we, rather than
+    silently keeping the last one. The message names the file and, when it can
+    be recovered from the parser, the offending key.
+    """
+
+    def __init__(self, path: Path, key: str | None = None) -> None:
+        self.path = path
+        self.key = key
+        detail = f" (key {key!r})" if key is not None else ""
+        super().__init__(f"{path} contains a duplicate mapping key{detail}")
+
+
+class MultiDocumentError(YamlError):
+    """The file carries more than one YAML document (a second ``---``).
+
+    Home Assistant config files are single-document; a trailing document is
+    almost always a mistake, so it is refused rather than silently dropped.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        super().__init__(f"{path} contains more than one YAML document; expected a single document")
