@@ -9,13 +9,13 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 
 ### Connection & Host (CONN)
 
-- [ ] **CONN-01**: User can define a host profile (hostname, port, SSH user) stored locally, no secrets committed
-- [ ] **CONN-02**: Tool connects over SSH using a key file
-- [ ] **CONN-03**: Tool connects over SSH using a password when no key is available
-- [ ] **CONN-04**: Tool autodetects the HA install type (HA OS/Supervised, Container, Core venv)
-- [ ] **CONN-05**: Tool resolves the config directory, config-check command, and restart command for the detected install type, with per-field profile overrides
-- [ ] **CONN-06**: Tool runs a baseline `check_config` on the live host and refuses to proceed if the baseline is already failing
-- [ ] **CONN-07**: Tool verifies the SSH user has write access to the config dir and permission to run the restart command, failing early with a clear message
+- [x] **CONN-01**: User can define a host profile (hostname, port, SSH user) stored locally, no secrets committed
+- [x] **CONN-02**: Tool connects over SSH using a key file
+- [x] **CONN-03**: Tool connects over SSH using a password when no key is available
+- [x] **CONN-04**: Tool autodetects the HA install type (HA OS/Supervised, Container, Core venv)
+- [x] **CONN-05**: Tool resolves the config directory, config-check command, and restart command for the detected install type, with per-field profile overrides
+- [x] **CONN-06**: Tool runs a baseline `check_config` on the live host and refuses to proceed if the baseline is already failing
+- [x] **CONN-07**: Tool verifies the SSH user has write access to the config dir and permission to run the restart command, failing early with a clear message
 
 ### Sync (PULL)
 
@@ -87,14 +87,17 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 ## v2 Requirements
 
 ### API & Reload (API)
+
 - **API-01**: Connect to HA via REST/WebSocket API with a long-lived token
 - **API-02**: Reload changed domains without a full restart where HA supports it
 - **API-03**: Pull live entity/device/area registry via API instead of inferring from YAML
 
 ### Interface (GUI)
+
 - **GUI-01**: Web GUI (FastAPI) wrapping the CLI core for connect/review/apply/rollback
 
 ### AI (AIX)
+
 - **AIX-01**: Local LLM backend (Ollama) so sensitive setups avoid cloud entirely
 
 ## Out of Scope
@@ -113,13 +116,13 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONN-01 | Phase 1 | Pending |
-| CONN-02 | Phase 1 | Pending |
-| CONN-03 | Phase 1 | Pending |
-| CONN-04 | Phase 1 | Pending |
-| CONN-05 | Phase 1 | Pending |
-| CONN-06 | Phase 1 | Pending |
-| CONN-07 | Phase 1 | Pending |
+| CONN-01 | Phase 1 | Complete |
+| CONN-02 | Phase 1 | Complete |
+| CONN-03 | Phase 1 | Complete |
+| CONN-04 | Phase 1 | Complete |
+| CONN-05 | Phase 1 | Complete |
+| CONN-06 | Phase 1 | Complete |
+| CONN-07 | Phase 1 | Complete |
 | YAML-01 | Phase 2 | Pending |
 | YAML-02 | Phase 2 | Pending |
 | YAML-03 | Phase 2 | Pending |
@@ -162,6 +165,7 @@ Milestone 1 = full optimize loop in the CLI, SSH-only.
 | CLI-04 | Phase 7 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 47 total
 - Mapped to phases: 47
 - Unmapped: 0

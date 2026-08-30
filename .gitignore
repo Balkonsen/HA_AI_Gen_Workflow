@@ -1,3 +1,13 @@
+# haco rewrite (src/haco, uv project)
+.venv/
+__pycache__/
+.haco/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+dist/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -99,3 +109,4 @@ tmp/
 *.zip
 *.deb
 *.rpm
+.planning/milestone.lock
